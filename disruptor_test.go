@@ -7,7 +7,7 @@ import (
 
 func BenchmarkDisruptor(b *testing.B) {
 	consumer, producer := NewSequence(), NewSequence()
-	ring := make([]uint64, BufferSize)
+	ring := NewRingBuffer(BufferSize)
 	iterations := uint64(b.N)
 
 	go func() {
