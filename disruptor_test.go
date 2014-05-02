@@ -1,7 +1,6 @@
 package disruptor
 
 import (
-	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -12,9 +11,9 @@ func BenchmarkDisruptor(b *testing.B) {
 	iterations := uint64(b.N)
 
 	go func() {
-		for current, max := uint64(0), uint64(0); current < iterations; {
-			for current >= max {
-				max = consumer.AtomicLoad() + BufferSize
+		for current, maxAvailable := uint64(0), uint64(0); current < iterations; {
+			for current >= maxAvailable {
+				maxAvailable = consumer.AtomicLoad() + BufferSize
 				time.Sleep(WaitStrategy)
 			}
 
@@ -24,9 +23,9 @@ func BenchmarkDisruptor(b *testing.B) {
 		}
 	}()
 
-	for current, max := uint64(0), uint64(0); current < iterations; current++ {
-		for current >= max {
-			max = producer.AtomicLoad()
+	for current, maxPublished := uint64(0), uint64(0); current < iterations; current++ {
+		for current >= maxPublished {
+			maxPublished = producer.AtomicLoad()
 			time.Sleep(WaitStrategy)
 		}
 
@@ -40,17 +39,4 @@ func BenchmarkDisruptor(b *testing.B) {
 
 const BufferSize = 1024 * 128
 const BufferMask = BufferSize - 1
-const FillCPUCacheLine = 8
 const WaitStrategy = time.Nanosecond
-
-type Sequence []uint64
-
-func NewSequence() Sequence {
-	return Sequence(make([]uint64, FillCPUCacheLine))
-}
-func (this Sequence) AtomicLoad() uint64 {
-	return atomic.LoadUint64(&this[0])
-}
-func (this Sequence) Store(value uint64) {
-	this[0] = value
-}
