@@ -12,10 +12,6 @@ type Consumer struct {
 
 func (this *Consumer) Start() {
 	this.started = true
-	wait := this.waitStrategy
-	producer := this.producer
-	sequence := this.sequence
-	handler := this.handler
 
 	current := uint64(0)
 	maxPublished := uint64(0)
@@ -27,13 +23,14 @@ func (this *Consumer) Start() {
 				return
 			}
 
-			maxPublished = producer.AtomicLoad()
-			remaining = uint32(maxPublished - current)
-			time.Sleep(wait)
+			maxPublished = this.producer.AtomicLoad()
+			remaining = uint32(maxPublished - current - 1)
+			time.Sleep(this.waitStrategy)
 		}
 
-		handler.Handle(current, remaining)
-		sequence.Store(current)
+		this.handler.Handle(current, remaining)
+		this.sequence.Store(current)
+		//fmt.Println("Completed sequence:", this.sequence[0])
 		current++
 		remaining--
 	}
@@ -46,7 +43,9 @@ func (this *Consumer) Stop() {
 func NewConsumer(producer Sequence, handler MessageHandler, waitStrategy time.Duration) Consumer {
 	return Consumer{
 		producer:     producer,
+		sequence:     NewSequence(),
 		handler:      handler,
 		waitStrategy: waitStrategy,
+		started:      false,
 	}
 }
