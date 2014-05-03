@@ -3,16 +3,17 @@ package disruptor
 import "time"
 
 type Worker struct {
-	ringSequence Sequence
-	sequence     Sequence
-	callback     func(uint64)
-	sleep        time.Duration
+	cursor   Sequence
+	sequence Sequence
+	callback func(uint64)
+	sleep    time.Duration
 }
 
 func (this *Worker) Process() {
-	for current, max := uint64(0), uint64(0); ; current++ {
+	current, max := uint64(0), uint64(0)
+	for {
 		for current >= max {
-			max = this.ringSequence.atomicLoad()
+			max = this.cursor.atomicLoad()
 			time.Sleep(this.sleep)
 		}
 
@@ -22,15 +23,16 @@ func (this *Worker) Process() {
 
 		this.callback(current)
 		this.sequence.store(current)
+		current++
 	}
 }
 
-func NewWorker(ringSequence Sequence, callback func(uint64), sleep time.Duration) Worker {
+func NewWorker(cursor Sequence, callback func(uint64), sleep time.Duration) Worker {
 	return Worker{
-		ringSequence: ringSequence,
-		sequence:     NewSequence(),
-		callback:     callback,
-		sleep:        sleep,
+		cursor:   cursor,
+		sequence: NewSequence(),
+		callback: callback,
+		sleep:    sleep,
 	}
 }
 
