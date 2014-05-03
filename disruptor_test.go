@@ -1,57 +1,32 @@
 package disruptor
 
 import (
-	"fmt"
 	"testing"
 	"time"
 )
 
 func BenchmarkDisruptor(b *testing.B) {
-	//consumer, producer := NewSequence(), NewSequence()
-	//ring := NewRingBuffer(BufferSize)
 	iterations := uint64(b.N)
-	iterations = 64
 
-	producerSequence := NewSequence()
-	handler := MyHandler{}
-	consumer := NewConsumer(producerSequence, handler, WaitStrategy)
-	consumerSequence := consumer.sequence
+	cursor := NewSequence()
+	handler := func(value uint64) {}
+	worker := NewWorker(cursor, handler, WaitStrategy)
 
 	go func() {
-		for current, maxAvailable := uint64(0), uint64(0); current < iterations; {
-			for current >= maxAvailable {
-				maxAvailable = consumerSequence.AtomicLoad() + BufferSize
-				//fmt.Println("Max available", maxAvailable, iterations)
+		for current, max := uint64(0), uint64(0); current < iterations; {
+			for current >= max {
+				max = worker.sequence.atomicLoad() + BufferSize
 				time.Sleep(WaitStrategy)
 			}
 
-			//ring[current&BufferMask] = current
 			current++
-			producerSequence.Store(current)
+			cursor.store(current)
 		}
+
+		cursor.close()
 	}()
 
-	consumer.Start()
-
-	// for current, maxPublished := uint64(0), uint64(0); current < iterations; current++ {
-	// 	for current >= maxPublished {
-	// 		maxPublished = producer.AtomicLoad()
-	// 		time.Sleep(WaitStrategy)
-	// 	}
-
-	// 	message := ring[current&BufferMask]
-	// 	if message != current {
-	// 		panic("Out of sequence")
-	// 	}
-	// 	consumer.Store(current)
-	// }
-}
-
-type MyHandler struct{}
-
-func (this MyHandler) Handle(sequence uint64, remaining uint32) {
-	fmt.Println("Current Sequence:", sequence, remaining)
-	//time.Sleep(time.Millisecond * 250)
+	worker.Process()
 }
 
 const BufferSize = 1024 * 128

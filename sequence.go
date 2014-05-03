@@ -4,11 +4,14 @@ import "sync/atomic"
 
 type Sequence []uint64
 
-func (this Sequence) AtomicLoad() uint64 {
+func (this Sequence) atomicLoad() uint64 {
 	return atomic.LoadUint64(&this[0])
 }
-func (this Sequence) Store(value uint64) {
+func (this Sequence) store(value uint64) {
 	this[0] = value
+}
+func (this Sequence) close() {
+	this[0] = Uint64MaxValue
 }
 
 func NewSequence() Sequence {
@@ -16,5 +19,5 @@ func NewSequence() Sequence {
 }
 
 // TODO: use build tags for i386, amd64, and ARM-v4,5,6,7,8 processors
-// i386, ARM = 32-byte cache line vs 64-byte cache line for amd64
+// i386, ARM? = 32-byte cache line vs 64-byte cache line for amd64
 const FillCPUCacheLine = 8
