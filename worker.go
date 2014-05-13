@@ -6,14 +6,10 @@ func (this Worker) Process() uint8 {
 	availableSequence := this.barrier.Load()
 
 	if nextSequence <= availableSequence {
-		if currentSequence < 0 {
-			currentSequence = 0
-		}
-
 		processedSequence := currentSequence
 
 		for nextSequence <= availableSequence {
-			this.handler.Consume(currentSequence, availableSequence-currentSequence)
+			this.handler.Consume(currentSequence+1, availableSequence-(currentSequence+1))
 			processedSequence = nextSequence
 			nextSequence++
 		}

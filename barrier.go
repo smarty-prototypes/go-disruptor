@@ -1,13 +1,12 @@
 package main
 
 func (this Barrier) Load() int64 {
-	minimum := int64(0)
+	minimum := MaxSequenceValue
 	length := this.length
 	upstream := this.upstream
 
 	for i := 0; i < length; i++ {
 		cursor := upstream[i].Load()
-		minimum = cursor
 		if cursor < minimum {
 			minimum = cursor
 		}

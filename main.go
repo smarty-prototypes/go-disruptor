@@ -47,7 +47,7 @@ func (this TestHandler) Consume(sequence, remaining int64) {
 	if message != sequence {
 		panic(fmt.Sprintf("\n", message, sequence))
 	} else {
-		if sequence%10000000 == 0 {
+		if sequence%1000000 == 0 {
 			fmt.Println(sequence)
 		}
 	}
