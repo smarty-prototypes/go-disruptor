@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"runtime"
-	"time"
 )
 
 func main() {
@@ -22,7 +21,6 @@ func main() {
 	for i := int64(0); i < MaxSequenceValue; i++ {
 		ticket := sequencer.Next(1)
 		ringBuffer[ticket&RingMask] = ticket
-		time.Sleep(time.Nanosecond)
 		sequencer.Publish(ticket)
 	}
 }
@@ -37,7 +35,7 @@ func consume(barrier Barrier, source, sequence *Sequence) {
 
 const RingSize = 1024
 const RingMask = RingSize - 1
-
+const Mod = 1000 * 1000 * 10 // 10 Million
 var ringBuffer [RingSize]int64
 
 type TestHandler struct{}
@@ -47,8 +45,8 @@ func (this TestHandler) Consume(sequence, remaining int64) {
 	if message != sequence {
 		panic(fmt.Sprintf("\n", message, sequence))
 	} else {
-		if sequence%1000000 == 0 {
-			fmt.Println(sequence)
+		if sequence%Mod == 0 {
+			fmt.Println("Current Sequence:", sequence)
 		}
 	}
 }
