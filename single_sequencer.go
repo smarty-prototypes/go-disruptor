@@ -1,6 +1,6 @@
 package main
 
-func (this MonoSequencer) Next(slotCount int64) int64 {
+func (this SingleProducerSequencer) Next(slotCount int64) int64 {
 	nextValue := this.pad.Load()
 	nextSequence := nextValue + slotCount
 	wrapPoint := nextSequence - this.ringSize
@@ -19,15 +19,15 @@ func (this MonoSequencer) Next(slotCount int64) int64 {
 	return nextSequence
 }
 
-func (this MonoSequencer) Publish(sequence int64) {
+func (this SingleProducerSequencer) Publish(sequence int64) {
 	this.cursor.Store(sequence)
 }
 
-func NewMonoSequencer(cursor *Sequence, ringSize int32, last Barrier) MonoSequencer {
+func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, last Barrier) SingleProducerSequencer {
 	pad := NewSequence()
 	pad[cachedGatingSequencePadIndex] = InitialSequenceValue
 
-	return MonoSequencer{
+	return SingleProducerSequencer{
 		pad:      pad,
 		cursor:   cursor,
 		ringSize: int64(ringSize),
@@ -35,7 +35,7 @@ func NewMonoSequencer(cursor *Sequence, ringSize int32, last Barrier) MonoSequen
 	}
 }
 
-type MonoSequencer struct {
+type SingleProducerSequencer struct {
 	pad      *Sequence
 	cursor   *Sequence
 	ringSize int64

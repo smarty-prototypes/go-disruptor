@@ -14,7 +14,7 @@ func main() {
 	producerBarrier := NewBarrier(producerSequence)
 	consumerBarrier := NewBarrier(consumerSequence)
 
-	sequencer := NewMonoSequencer(producerSequence, RingSize, consumerBarrier)
+	sequencer := NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
 
 	go consume(producerBarrier, producerSequence, consumerSequence)
 
