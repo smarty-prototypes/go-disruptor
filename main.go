@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"runtime"
+	"time"
 )
 
 func main() {
@@ -21,6 +22,7 @@ func main() {
 	for i := int64(0); i < MaxSequenceValue; i++ {
 		ticket := sequencer.Next(1)
 		ringBuffer[ticket&RingMask] = ticket
+		time.Sleep(time.Nanosecond)
 		sequencer.Publish(ticket)
 	}
 }
@@ -41,7 +43,12 @@ var ringBuffer [RingSize]int64
 type TestHandler struct{}
 
 func (this TestHandler) Consume(sequence, remaining int64) {
-	if sequence%10000000 == 0 {
-		fmt.Println(sequence)
+	message := ringBuffer[sequence&RingMask]
+	if message != sequence {
+		panic(fmt.Sprintf("\n", message, sequence))
+	} else {
+		if sequence%10000000 == 0 {
+			fmt.Println(sequence)
+		}
 	}
 }
