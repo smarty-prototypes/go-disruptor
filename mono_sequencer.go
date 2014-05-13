@@ -2,10 +2,10 @@ package main
 
 import "time"
 
-func (this MonoSequencer) Next(slotCount int32) int64 {
+func (this MonoSequencer) Next(slotCount int64) int64 {
 	nextValue := this.pad.Load()
-	nextSequence := nextValue + int64(slotCount)
-	wrapPoint := nextSequence - int64(this.ringSize)
+	nextSequence := nextValue + slotCount
+	wrapPoint := nextSequence - this.ringSize
 	cachedGatingSequence := this.pad[cachedGatingSequencePadIndex]
 
 	if wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue {
@@ -33,7 +33,7 @@ func NewMonoSequencer(cursor *Sequence, ringSize int32, last Barrier) MonoSequen
 	return MonoSequencer{
 		pad:      pad,
 		cursor:   cursor,
-		ringSize: ringSize,
+		ringSize: int64(ringSize),
 		last:     last,
 	}
 }
@@ -41,7 +41,7 @@ func NewMonoSequencer(cursor *Sequence, ringSize int32, last Barrier) MonoSequen
 type MonoSequencer struct {
 	pad      *Sequence
 	cursor   *Sequence
-	ringSize int32
+	ringSize int64
 	last     Barrier
 }
 

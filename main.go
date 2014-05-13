@@ -1,6 +1,14 @@
 package main
 
+import (
+	"fmt"
+	"runtime"
+	"time"
+)
+
 func main() {
+	runtime.GOMAXPROCS(2)
+
 	producerSequence := NewSequence()
 	consumerSequence := NewSequence()
 
@@ -13,7 +21,11 @@ func main() {
 
 	for i := int64(0); i < MaxSequenceValue; i++ {
 		ticket := sequencer.Next(1)
+		if i%50000000 == 0 {
+			fmt.Println(i)
+		}
 		sequencer.Publish(ticket)
+		consumerSequence.Store(ticket)
 	}
 }
 
@@ -22,6 +34,7 @@ func consume(barrier Barrier, source, sequence *Sequence) {
 
 	for {
 		worker.Process()
+		time.Sleep(time.Nanosecond)
 	}
 }
 

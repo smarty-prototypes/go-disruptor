@@ -1,17 +1,11 @@
 package main
 
-import "fmt"
-
 func (this Worker) Process() uint8 {
 	current := this.sequence.Load()
 	available := this.barrier.Load()
 
 	if current+1 <= available {
 		for ; current <= available; current++ {
-			if current%1000000 == 0 {
-				fmt.Println(current)
-			}
-
 			//this.handler.Consume(current, available-current)
 		}
 
