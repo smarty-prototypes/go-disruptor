@@ -6,7 +6,7 @@ func (this Worker) Process() uint8 {
 
 	if current+1 <= available {
 		for ; current <= available; current++ {
-			//this.handler.Consume(current, available-current)
+			this.handler.Consume(current, available-current)
 		}
 
 		this.sequence.Store(available + 1)

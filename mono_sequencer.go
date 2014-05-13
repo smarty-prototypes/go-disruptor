@@ -1,7 +1,5 @@
 package main
 
-import "time"
-
 func (this MonoSequencer) Next(slotCount int64) int64 {
 	nextValue := this.pad.Load()
 	nextSequence := nextValue + slotCount
@@ -12,7 +10,6 @@ func (this MonoSequencer) Next(slotCount int64) int64 {
 		minSequence := int64(0)
 		for wrapPoint > minSequence {
 			minSequence = this.last.Load()
-			time.Sleep(time.Nanosecond)
 		}
 
 		this.pad[cachedGatingSequencePadIndex] = minSequence
