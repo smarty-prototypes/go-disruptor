@@ -1,20 +1,16 @@
 package main
 
-func (this Worker) Process(consumer int) uint8 {
+func (this Worker) Process() uint8 {
 	next := this.sequence.Load() + 1
-	available := this.barrier.Load(consumer)
+	available := this.barrier.Load()
 
 	if next <= available {
-		// fmt.Printf("\t\t\t\t\t\t\t\t\tConsumer %d:: %d work items found.\n", consumer, available-next+1)
 
 		for next <= available {
-			// fmt.Printf("\t\t\t\t\t\t\t\t\tConsumer %d:: Consuming sequence %d\n", consumer, next)
-
 			this.handler.Consume(next, available-next)
 			next++
 		}
 
-		// fmt.Printf("\t\t\t\t\t\t\t\t\tConsumer %d:: Completed through sequence %d\n", consumer, next-1)
 		this.sequence.Store(next - 1)
 		return Processing
 	} else if next <= this.source.Load() {

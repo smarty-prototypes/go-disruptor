@@ -4,24 +4,15 @@ func (this *SingleProducerSequencer) Next(items int64) int64 {
 	claimed, gate := this.claimed, this.gate
 	next := claimed + items
 	wrap := next - this.ringSize
-	// fmt.Printf("Producer:: Last claim: %d, Next: %d, Wrap: %d, Gate:%d\n", claimed, next, wrap, gate)
 
 	if wrap > gate {
 		last := this.last
-		min := last.Load(1)
-		// fmt.Printf("Producer:: (a) Wrap: %d, Current Gate, %d, Proposed Gate:%d\n", wrap, gate, min)
+		min := last.Load()
 
 		for wrap > min || min < 0 {
-			min = last.Load(1)
-			// fmt.Printf("Producer:: (b) Wrap: %d, Current Gate, %d, Proposed Gate:%d\n", wrap, gate, min)
-
-			// if wrap <= min {
-			// 	fmt.Printf("Producer:: Consumers have caught up to producer.\n")
-			// }
-
+			min = last.Load()
 		}
 
-		// fmt.Printf("Producer:: (c) Wrap: %d, Current Gate, %d, Proposed Gate:%d\n", wrap, gate, min)
 		this.gate = min
 	}
 
@@ -30,7 +21,7 @@ func (this *SingleProducerSequencer) Next(items int64) int64 {
 }
 
 func (this *SingleProducerSequencer) Publish(sequence int64) {
-	this.cursor[0] = sequence
+	this.cursor[SequencePayloadIndex] = sequence
 }
 
 func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, last Barrier) *SingleProducerSequencer {
