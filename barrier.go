@@ -2,11 +2,9 @@ package main
 
 func (this Barrier) Load() int64 {
 	minimum := MaxSequenceValue
-	length := this.length
-	upstream := this.upstream
 
-	for i := 0; i < length; i++ {
-		cursor := upstream[i].Load()
+	for i := 0; i < len(this); i++ {
+		cursor := this[i].Load()
 		if cursor < minimum {
 			minimum = cursor
 		}
@@ -16,13 +14,11 @@ func (this Barrier) Load() int64 {
 }
 
 func NewBarrier(upstream ...*Sequence) Barrier {
-	length := len(upstream)
-	target := make([]*Sequence, length, length)
-	copy(target, upstream)
-	return Barrier{length: length, upstream: target}
+	this := Barrier{}
+	for i := 0; i < len(upstream); i++ {
+		this = append(this, upstream[0])
+	}
+	return this
 }
 
-type Barrier struct {
-	length   int
-	upstream []*Sequence
-}
+type Barrier []*Sequence
