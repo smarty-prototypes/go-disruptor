@@ -1,18 +1,18 @@
 package main
 
-func (this Worker) Process() uint8 {
+func (this Worker) Process() int64 {
 	next := this.sequence.Load() + 1
 	available := this.barrier.Load()
 
 	if next <= available {
-
 		for next <= available {
 			this.handler.Consume(next, available-next)
 			next++
 		}
 
-		this.sequence.Store(next - 1)
-		return Processing
+		next--
+		this.sequence.Store(next)
+		return next
 	} else if next <= this.source.Load() {
 		return Gating
 	} else {
@@ -42,7 +42,6 @@ type Consumer interface {
 }
 
 const (
-	Processing uint8 = iota
-	Gating
-	Idle
+	Gating int64 = -2
+	Idle         = -3
 )
