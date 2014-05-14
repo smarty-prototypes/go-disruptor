@@ -2,6 +2,17 @@ package main
 
 import "testing"
 
+func BenchmarkSingleProducerSequencerPublish(b *testing.B) {
+	sequencer := NewSingleProducerSequencer(NewSequence(), 1024, Barrier{})
+	iterations := int64(b.N)
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := int64(0); i < iterations; i++ {
+		sequencer.Publish(i)
+	}
+}
+
 func BenchmarkSingleProducerSequencerNext(b *testing.B) {
 	consumerSequence := NewSequence()
 	publisherSequence := NewSequence()
@@ -18,7 +29,7 @@ func BenchmarkSingleProducerSequencerNext(b *testing.B) {
 	}
 }
 
-func BenchmarkSingleProducerSequencerNextWrap(b *testing.B) {
+func BenchmarkSingleProducerSequencerNextWrapPoint(b *testing.B) {
 	consumerSequence := NewSequence()
 	publisherSequence := NewSequence()
 	consumerBarrier := NewBarrier(consumerSequence)
@@ -31,16 +42,5 @@ func BenchmarkSingleProducerSequencerNextWrap(b *testing.B) {
 	consumerSequence.Store(MaxSequenceValue)
 	for i := int64(0); i < iterations; i++ {
 		sequencer.Next(1)
-	}
-}
-
-func BenchmarkSingleProducerSequencerPublish(b *testing.B) {
-	sequencer := NewSingleProducerSequencer(NewSequence(), 1024, Barrier{})
-	iterations := int64(b.N)
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for i := int64(0); i < iterations; i++ {
-		sequencer.Publish(i)
 	}
 }
