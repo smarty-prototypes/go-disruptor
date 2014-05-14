@@ -1,18 +1,18 @@
 package main
 
 func (this Worker) Process() uint8 {
-	nextSequence := this.sequence.Load() + 1
-	availableSequence := this.barrier.Load()
+	next := this.sequence.Load() + 1
+	available := this.barrier.Load()
 
-	if nextSequence <= availableSequence {
-		for nextSequence <= availableSequence {
-			this.handler.Consume(nextSequence, availableSequence-nextSequence)
-			nextSequence++
+	if next <= available {
+		for next <= available {
+			this.handler.Consume(next, available-next)
+			next++
 		}
 
-		this.sequence.Store(nextSequence - 1)
+		this.sequence.Store(next - 1)
 		return Processing
-	} else if nextSequence <= this.source.Load() {
+	} else if next <= this.source.Load() {
 		return Gating
 	} else {
 		return Idle
