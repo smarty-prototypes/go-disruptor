@@ -1,35 +1,30 @@
 package main
 
-func (this *SingleProducerSequencer) Next(slotCount int64) int64 {
-	nextValue := this.pad.Load()
-	nextSequence := nextValue + slotCount
-	wrap := nextSequence - this.ringSize
-	cachedGate := this.pad[cachedGatePadIndex]
+func (this *SingleProducerSequencer) Next(slots int64) int64 {
+	current, gate := this.current, this.gate
+	next := current + slots
+	wrap := next - this.ringSize
 
-	if wrap > cachedGate || cachedGate > nextValue {
-		minSequence := int64(0)
-		for wrap > minSequence {
-			minSequence = this.last.Load()
+	if wrap > gate || gate > current {
+		min, last := int64(0), this.last
+		for wrap > min {
+			min = last.Load()
 		}
-
-		this.pad[cachedGatePadIndex] = minSequence
+		this.gate = min
 	}
 
-	this.pad.Store(nextSequence)
-	return nextSequence
+	this.current = next
+	return next
 }
 
 func (this *SingleProducerSequencer) Publish(sequence int64) {
-	// this.cursor.Store(sequence)
 	this.cursor[0] = sequence
 }
 
 func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, last Barrier) *SingleProducerSequencer {
-	pad := NewSequence()
-	pad[cachedGatePadIndex] = InitialSequenceValue
-
 	return &SingleProducerSequencer{
-		pad:      pad,
+		current:  InitialSequenceValue,
+		gate:     InitialSequenceValue,
 		cursor:   cursor,
 		ringSize: int64(ringSize),
 		last:     last,
@@ -37,10 +32,9 @@ func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, last Barrier) 
 }
 
 type SingleProducerSequencer struct {
-	pad      *Sequence
+	current  int64
+	gate     int64
 	cursor   *Sequence
 	ringSize int64
 	last     Barrier
 }
-
-const cachedGatePadIndex = 1

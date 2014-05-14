@@ -12,9 +12,12 @@ func BenchmarkSingleProducerSequencerNext(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 
+	consumerSequence.Store(MaxSequenceValue)
+
 	for i := int64(0); i < iterations; i++ {
-		claimed := sequencer.Next(1)
-		consumerSequence.Store(claimed)
+		sequencer.Next(1)
+		// claimed := sequencer.Next(1)
+		// consumerSequence.Store(claimed)
 	}
 }
 
