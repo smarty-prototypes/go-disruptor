@@ -16,18 +16,13 @@ func main() {
 	consumerBarrier := NewBarrier(consumerSequence)
 
 	sequencer := NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
-
 	go consume(producerBarrier, producerSequence, consumerSequence)
 
 	started := time.Now()
-
-	// consumerSequence.Store(MaxSequenceValue)
-
 	for i := int64(0); i < MaxSequenceValue; i++ {
 		ticket := sequencer.Next(1)
 		ringBuffer[ticket&RingMask] = ticket
 		sequencer.Publish(ticket)
-		// consumerSequence[0] = ticket
 		if ticket%Mod == 0 {
 			finished := time.Now()
 			elapsed := finished.Sub(started)
@@ -45,9 +40,16 @@ func consume(barrier Barrier, source, sequence *Sequence) {
 	}
 }
 
-const RingSize = 1024
+const Mod = 1000000 * 10 // 1 million * 10
+const RingSize = 1024 * 256
 const RingMask = RingSize - 1
-const Mod = 1000000 * 100 // 1 million * 100
+
+// RingMask = RingSize - 1 // slightly faster than a mod operation
+// 0&3 = 0
+// 1&3 = 1
+// 2&3 = 2
+// 3&3 = 3
+// 4&3 = 0
 
 var ringBuffer [RingSize]int64
 
@@ -57,9 +59,7 @@ func (this TestHandler) Consume(sequence, remaining int64) {
 	message := ringBuffer[sequence&RingMask]
 	if message != sequence {
 		panic(fmt.Sprintf("\n", message, sequence))
-	} else {
-		if sequence%Mod == 0 {
-			// 	fmt.Println("Current Sequence:", sequence)
-		}
+	} else if sequence%Mod == 0 {
+		// fmt.Println("Current Sequence:", sequence)
 	}
 }
