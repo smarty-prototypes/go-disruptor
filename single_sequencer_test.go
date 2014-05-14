@@ -14,7 +14,6 @@ func BenchmarkSingleProducerSequencerNext(b *testing.B) {
 
 	for i := int64(0); i < iterations; i++ {
 		claimed := sequencer.Next(1)
-		//consumerSequence[0] = claimed
 		consumerSequence.Store(claimed)
 	}
 }

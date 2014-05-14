@@ -3,16 +3,16 @@ package main
 func (this *SingleProducerSequencer) Next(slotCount int64) int64 {
 	nextValue := this.pad.Load()
 	nextSequence := nextValue + slotCount
-	wrapPoint := nextSequence - this.ringSize
-	cachedGatingSequence := this.pad[cachedGatingSequencePadIndex]
+	wrap := nextSequence - this.ringSize
+	cachedGate := this.pad[cachedGatePadIndex]
 
-	if wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue {
+	if wrap > cachedGate || cachedGate > nextValue {
 		minSequence := int64(0)
-		for wrapPoint > minSequence {
+		for wrap > minSequence {
 			minSequence = this.last.Load()
 		}
 
-		this.pad[cachedGatingSequencePadIndex] = minSequence
+		this.pad[cachedGatePadIndex] = minSequence
 	}
 
 	this.pad.Store(nextSequence)
@@ -26,7 +26,7 @@ func (this *SingleProducerSequencer) Publish(sequence int64) {
 
 func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, last Barrier) *SingleProducerSequencer {
 	pad := NewSequence()
-	pad[cachedGatingSequencePadIndex] = InitialSequenceValue
+	pad[cachedGatePadIndex] = InitialSequenceValue
 
 	return &SingleProducerSequencer{
 		pad:      pad,
@@ -43,4 +43,4 @@ type SingleProducerSequencer struct {
 	last     Barrier
 }
 
-const cachedGatingSequencePadIndex = 1
+const cachedGatePadIndex = 1
