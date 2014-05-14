@@ -1,22 +1,22 @@
 package main
 
 func (this *SingleProducerSequencer) Next(items int64) int64 {
-	claimed, gate := this.claimed, this.gate
-	next := claimed + items
+	previous, gate := this.previous, this.gate
+	next := previous + items
 	wrap := next - this.ringSize
 
-	if wrap > gate {
-		last := this.last
-		min := last.Load()
+	if wrap > gate || gate > previous {
+		barrier := this.barrier
+		min := barrier.Load()
 
 		for wrap > min || min < 0 {
-			min = last.Load()
+			min = barrier.Load()
 		}
 
 		this.gate = min
 	}
 
-	this.claimed = next
+	this.previous = next
 	return next
 }
 
@@ -24,20 +24,20 @@ func (this *SingleProducerSequencer) Publish(sequence int64) {
 	this.cursor[SequencePayloadIndex] = sequence
 }
 
-func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, last Barrier) *SingleProducerSequencer {
+func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, barrier Barrier) *SingleProducerSequencer {
 	return &SingleProducerSequencer{
-		claimed:  InitialSequenceValue,
+		previous: InitialSequenceValue,
 		gate:     InitialSequenceValue,
 		cursor:   cursor,
 		ringSize: int64(ringSize),
-		last:     last,
+		barrier:  barrier,
 	}
 }
 
 type SingleProducerSequencer struct {
-	claimed  int64
+	previous int64
 	gate     int64
 	cursor   *Sequence
 	ringSize int64
-	last     Barrier
+	barrier  Barrier
 }
