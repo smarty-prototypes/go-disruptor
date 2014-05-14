@@ -1,9 +1,12 @@
 package main
 
+import "sync/atomic"
+
 type Sequence [FillCPUCacheLine]int64
 
 func (this *Sequence) Store(value int64) {
-	(*this)[0] = value
+	atomic.StoreInt64(&(*this)[0], value)
+	// (*this)[0] = value
 }
 func (this *Sequence) Load() int64 {
 	return (*this)[0]

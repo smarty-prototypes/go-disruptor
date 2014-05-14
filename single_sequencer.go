@@ -1,19 +1,31 @@
 package main
 
-func (this *SingleProducerSequencer) Next(slots int64) int64 {
-	current, cachedGate := this.current, this.cachedGate
-	next := current + slots
+func (this *SingleProducerSequencer) Next(items int64) int64 {
+	claimed, gate := this.claimed, this.gate
+	next := claimed + items
 	wrap := next - this.ringSize
+	// fmt.Printf("Producer:: Last claim: %d, Next: %d, Wrap: %d, Gate:%d\n", claimed, next, wrap, gate)
 
-	if wrap > cachedGate /*|| cachedGate > current*/ {
-		min, last := int64(0), this.last
-		for wrap > min {
-			min = last.Load()
+	if wrap > gate {
+		last := this.last
+		min := last.Load(1)
+		// fmt.Printf("Producer:: (a) Wrap: %d, Current Gate, %d, Proposed Gate:%d\n", wrap, gate, min)
+
+		for wrap > min || min < 0 {
+			min = last.Load(1)
+			// fmt.Printf("Producer:: (b) Wrap: %d, Current Gate, %d, Proposed Gate:%d\n", wrap, gate, min)
+
+			// if wrap <= min {
+			// 	fmt.Printf("Producer:: Consumers have caught up to producer.\n")
+			// }
+
 		}
-		this.cachedGate = min
+
+		// fmt.Printf("Producer:: (c) Wrap: %d, Current Gate, %d, Proposed Gate:%d\n", wrap, gate, min)
+		this.gate = min
 	}
 
-	this.current = next
+	this.claimed = next
 	return next
 }
 
@@ -23,18 +35,18 @@ func (this *SingleProducerSequencer) Publish(sequence int64) {
 
 func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, last Barrier) *SingleProducerSequencer {
 	return &SingleProducerSequencer{
-		current:    InitialSequenceValue,
-		cachedGate: InitialSequenceValue,
-		cursor:     cursor,
-		ringSize:   int64(ringSize),
-		last:       last,
+		claimed:  InitialSequenceValue,
+		gate:     InitialSequenceValue,
+		cursor:   cursor,
+		ringSize: int64(ringSize),
+		last:     last,
 	}
 }
 
 type SingleProducerSequencer struct {
-	current    int64
-	cachedGate int64
-	cursor     *Sequence
-	ringSize   int64
-	last       Barrier
+	claimed  int64
+	gate     int64
+	cursor   *Sequence
+	ringSize int64
+	last     Barrier
 }
