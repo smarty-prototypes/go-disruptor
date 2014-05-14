@@ -7,19 +7,18 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(2)
+	runtime.GOMAXPROCS(3)
 
 	producerSequence := NewSequence()
 	consumerSequence1 := NewSequence()
-	//consumerSequence2 := NewSequence()
+	consumerSequence2 := NewSequence()
 
 	producerBarrier := NewBarrier(producerSequence)
-	consumerBarrier := NewBarrier(consumerSequence1)
-	// consumerBarrier := NewBarrier(consumerSequence1, consumerSequence2)
+	consumerBarrier := NewBarrier(consumerSequence1, consumerSequence2)
 
 	sequencer := NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
 	go consume(producerBarrier, producerSequence, consumerSequence1)
-	// go consume(2, producerBarrier, producerSequence, consumerSequence2)
+	go consume(producerBarrier, producerSequence, consumerSequence2)
 
 	started := time.Now()
 	for i := int64(0); i < MaxSequenceValue; i++ {
@@ -54,9 +53,11 @@ type TestHandler struct{}
 func (this TestHandler) Consume(sequence, remaining int64) {
 	message := ringBuffer[sequence&RingMask]
 	if message != sequence {
-		//fmt.Printf("\t\t\t\t\t\t\t\t\tERROR Consumer %d:: Sequence: %d, Message: %d\n", this.name, sequence, message)
+		fmt.Printf("ERROR Consumer:: Sequence: %d, Message: %d\n", sequence, message)
 		panic(fmt.Sprintf("Consumer:: Sequence: %d, Message: %d\n", sequence, message))
-	} else if sequence%Mod == 0 {
-		//fmt.Printf("\t\t\t\t\t\t\t\t\tConsumer %d:: Sequence: %d, Message: %d\n", this.name, sequence, message)
+	}
+
+	if sequence%Mod == 0 {
+		//fmt.Printf("Consumer:: Sequence: %d, Message: %d\n", sequence, message)
 	}
 }
