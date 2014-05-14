@@ -15,9 +15,8 @@ func NewSequence() *Sequence {
 	return this
 }
 
-const MaxSequenceValue int64 = (1 << 63) - 1
-const InitialSequenceValue int64 = -1
-
-// TODO: use build tags for i386, amd64, and ARM-v4,5,6,7,8 processors
-// i386, ARM? = 32-byte cache line vs 64-byte cache line for amd64
-const FillCPUCacheLine = 8
+const (
+	MaxSequenceValue     int64 = (1 << 63) - 1
+	InitialSequenceValue int64 = -1
+	FillCPUCacheLine     uint8 = 8 // FUTURE: use build tags for i386, amd64, and ARM-v4,5,6,7,8 processors
+)
