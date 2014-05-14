@@ -42,7 +42,7 @@ func consume(barrier Barrier, source, sequence *Sequence) {
 	}
 }
 
-const Mod = 1000000 * 100 // 1 million * 100
+const Mod = 1000000 * 10 // 1 million * 10
 const RingSize = 1024 * 16
 const RingMask = RingSize - 1
 
