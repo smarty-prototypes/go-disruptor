@@ -12,6 +12,7 @@ func BenchmarkSequenceLoad(b *testing.B) {
 		sequence.Load()
 	}
 }
+
 func BenchmarkSequenceStore(b *testing.B) {
 	sequence := NewSequence()
 	iterations := int64(b.N)
