@@ -1,6 +1,6 @@
 package main
 
-func (this SingleProducerSequencer) Next(slotCount int64) int64 {
+func (this *SingleProducerSequencer) Next(slotCount int64) int64 {
 	nextValue := this.pad.Load()
 	nextSequence := nextValue + slotCount
 	wrapPoint := nextSequence - this.ringSize
@@ -19,15 +19,15 @@ func (this SingleProducerSequencer) Next(slotCount int64) int64 {
 	return nextSequence
 }
 
-func (this SingleProducerSequencer) Publish(sequence int64) {
-	this.cursor.Store(sequence)
+func (this *SingleProducerSequencer) Publish(sequence int64) {
+	this.cursor[0] = sequence
 }
 
-func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, last Barrier) SingleProducerSequencer {
+func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, last Barrier) *SingleProducerSequencer {
 	pad := NewSequence()
 	pad[cachedGatingSequencePadIndex] = InitialSequenceValue
 
-	return SingleProducerSequencer{
+	return &SingleProducerSequencer{
 		pad:      pad,
 		cursor:   cursor,
 		ringSize: int64(ringSize),
