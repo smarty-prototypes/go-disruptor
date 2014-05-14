@@ -2,11 +2,11 @@ package main
 
 func (this Worker) Process() int64 {
 	next := this.sequence.Load() + 1
-	available := this.barrier.Load()
+	ready := this.barrier.Load()
 
-	if next <= available {
-		for next <= available {
-			this.handler.Consume(next, available-next)
+	if next <= ready {
+		for next <= ready {
+			this.handler.Consume(next, ready-next)
 			next++
 		}
 
