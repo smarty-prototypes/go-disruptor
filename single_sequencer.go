@@ -20,6 +20,7 @@ func (this *SingleProducerSequencer) Next(slotCount int64) int64 {
 }
 
 func (this *SingleProducerSequencer) Publish(sequence int64) {
+	// this.cursor.Store(sequence)
 	this.cursor[0] = sequence
 }
 
