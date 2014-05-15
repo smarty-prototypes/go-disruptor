@@ -7,18 +7,18 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(3)
+	runtime.GOMAXPROCS(2)
 
 	producerSequence := NewSequence()
 	consumerSequence1 := NewSequence()
-	consumerSequence2 := NewSequence()
+	// consumerSequence2 := NewSequence()
 
 	producerBarrier := NewBarrier(producerSequence)
-	consumerBarrier := NewBarrier(consumerSequence1, consumerSequence2)
+	consumerBarrier := NewBarrier(consumerSequence1) //, consumerSequence2)
 
 	sequencer := NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
 	go consume(producerBarrier, producerSequence, consumerSequence1)
-	go consume(producerBarrier, producerSequence, consumerSequence2)
+	// go consume(producerBarrier, producerSequence, consumerSequence2)
 
 	started := time.Now()
 	for i := int64(0); i < MaxIterations; i++ {
