@@ -2,6 +2,8 @@ package main
 
 import "sync/atomic"
 
+// TODO: looks like there's one more race condition in the ARM processor.
+
 func (this *Sequence) Store(value int64) {
 	atomic.StoreInt64(&(*this)[SequencePayloadIndex], value)
 }
