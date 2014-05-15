@@ -7,18 +7,18 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(2)
+	runtime.GOMAXPROCS(3)
 
 	producerSequence := NewSequence()
 	consumerSequence1 := NewSequence()
-	// consumerSequence2 := NewSequence()
+	consumerSequence2 := NewSequence()
 
 	producerBarrier := NewBarrier(producerSequence)
-	consumerBarrier := NewBarrier(consumerSequence1) //, consumerSequence2)
+	consumerBarrier := NewBarrier(consumerSequence1, consumerSequence2)
 
 	sequencer := NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
 	go consume(producerBarrier, producerSequence, consumerSequence1)
-	// go consume(producerBarrier, producerSequence, consumerSequence2)
+	go consume(producerBarrier, producerSequence, consumerSequence2)
 
 	started := time.Now()
 	for i := int64(0); i < MaxIterations; i++ {
@@ -43,8 +43,8 @@ func consume(barrier Barrier, source, sequence *Sequence) {
 }
 
 const MaxIterations = MaxSequenceValue
-const Mod = 1000000 * 1 // 1 million * N
-const RingSize = 1024
+const Mod = 1000000 * 100 // 1 million * N
+const RingSize = 1024 * 128
 const RingMask = RingSize - 1
 
 var ringBuffer [RingSize]int64

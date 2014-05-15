@@ -1,18 +1,16 @@
 package main
 
-import "sync/atomic"
-
 type Sequence [FillCPUCacheLine]int64
 
 func (this *Sequence) Store(value int64) {
 	// TODO: this needs build tags for i386, arm, and amd64 because of torn writes
-	atomic.StoreInt64(&(*this)[SequencePayloadIndex], value)
-	//(*this)[SequencePayloadIndex] = value
+	// atomic.StoreInt64(&(*this)[SequencePayloadIndex], value)
+	(*this)[SequencePayloadIndex] = value
 }
 func (this *Sequence) Load() int64 {
-	return atomic.LoadInt64(&(*this)[SequencePayloadIndex])
+	// return atomic.LoadInt64(&(*this)[SequencePayloadIndex])
 	// TODO: this needs build tags for i386, arm, and amd64 because of torn writes
-	// return (*this)[SequencePayloadIndex]
+	return (*this)[SequencePayloadIndex]
 }
 
 func NewSequence() *Sequence {
