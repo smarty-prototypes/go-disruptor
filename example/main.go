@@ -7,20 +7,26 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(2)
+	runtime.GOMAXPROCS(MaxConsumers + 1)
 
 	producerSequence := disruptor.NewSequence()
 	producerBarrier := disruptor.NewBarrier(producerSequence)
 
-	consumerSequences := []*disruptor.Sequence{}
-	for i := 0; i < 1; i++ {
-		sequence := disruptor.NewSequence()
-		consumerSequences = append(consumerSequences, sequence)
-		go consume(producerBarrier, producerSequence, sequence)
-	}
+	consumers := startConsumers(producerBarrier, producerSequence)
+	consumerBarrier := disruptor.NewBarrier(consumers...)
 
-	consumerBarrier := disruptor.NewBarrier(consumerSequences...)
 	sequencer := disruptor.NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
-
 	publish(sequencer)
 }
+
+func startConsumers(barrier disruptor.Barrier, sequence *disruptor.Sequence) (consumers []*disruptor.Sequence) {
+	for i := 0; i < MaxConsumers; i++ {
+		sequence := disruptor.NewSequence()
+		consumers = append(consumers, sequence)
+		go consume(barrier, sequence, sequence)
+	}
+
+	return
+}
+
+const MaxConsumers int = 2
