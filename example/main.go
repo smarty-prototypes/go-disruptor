@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"runtime"
-	"time"
 
 	"bitbucket.org/jonathanoliver/go-disruptor"
 )
@@ -14,36 +12,15 @@ func main() {
 	producerSequence := disruptor.NewSequence()
 	producerBarrier := disruptor.NewBarrier(producerSequence)
 
-	consumerSequence1 := disruptor.NewSequence()
-	// consumerSequence2 := disruptor.NewSequence()
+	consumerSequences := []*disruptor.Sequence{}
+	for i := 0; i < 1; i++ {
+		sequence := disruptor.NewSequence()
+		consumerSequences = append(consumerSequences, sequence)
+		go consume(producerBarrier, producerSequence, sequence)
+	}
 
-	consumerBarrier := disruptor.NewBarrier(consumerSequence1) //, consumerSequence2)
+	consumerBarrier := disruptor.NewBarrier(consumerSequences...)
 	sequencer := disruptor.NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
 
-	go consume(producerBarrier, producerSequence, consumerSequence1)
-	// go consume(producerBarrier, producerSequence, consumerSequence2)
-
-	started := time.Now()
-	for i := int64(0); i < MaxIterations; i++ {
-		ticket := sequencer.Next(1)
-		ringBuffer[ticket&RingMask] = ticket
-		sequencer.Publish(ticket)
-		if ticket%Mod == 0 && ticket > 0 {
-			finished := time.Now()
-			elapsed := finished.Sub(started)
-			fmt.Println(ticket, elapsed)
-			started = time.Now()
-		}
-	}
+	publish(sequencer)
 }
-
-func publish() {
-
-}
-
-const MaxIterations = disruptor.MaxSequenceValue
-const Mod = 1000000 * 10 // 1 million * N
-const RingSize = 1024 * 128
-const RingMask = RingSize - 1
-
-var ringBuffer [RingSize]int64

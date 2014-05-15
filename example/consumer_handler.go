@@ -2,9 +2,9 @@ package main
 
 import "fmt"
 
-type TestHandler struct{}
+type ConsumerHandler struct{}
 
-func (this TestHandler) Consume(sequence, remaining int64) {
+func (this ConsumerHandler) Consume(sequence, remaining int64) {
 	message := ringBuffer[sequence&RingMask]
 
 	if message != sequence {
