@@ -1,4 +1,4 @@
-package main
+package disruptor
 
 func (this *SingleProducerSequencer) Next(items int64) int64 {
 	previous, gate := this.previous, this.gate

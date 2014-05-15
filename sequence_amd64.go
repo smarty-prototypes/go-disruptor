@@ -1,4 +1,4 @@
-package main
+package disruptor
 
 func (this *Sequence) Store(value int64) {
 	(*this)[SequencePayloadIndex] = value

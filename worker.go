@@ -1,4 +1,4 @@
-package main
+package disruptor
 
 func (this Worker) Process() int64 {
 	next := this.sequence.Load() + 1

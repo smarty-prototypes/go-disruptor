@@ -1,4 +1,4 @@
-package main
+package disruptor
 
 func (this Barrier) Load() int64 {
 	minimum := MaxSequenceValue
