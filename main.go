@@ -43,7 +43,7 @@ func consume(barrier Barrier, source, sequence *Sequence) {
 }
 
 const MaxIterations = MaxSequenceValue
-const Mod = 1000000 * 100 // 1 million * N
+const Mod = 1000000 * 10 // 1 million * N
 const RingSize = 1024 * 128
 const RingMask = RingSize - 1
 
