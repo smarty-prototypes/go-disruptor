@@ -1,23 +1,15 @@
 package main
 
-func (this Worker) Process(consumer int) int64 {
+func (this Worker) Process() int64 {
 	next := this.sequence.Load() + 1
-	ready := this.barrier.Load(consumer)
+	ready := this.barrier.Load()
 
 	if next <= ready {
-		// fmt.Printf("\t\t\t\t\t\t\t\t\tConsumer %d:: %d work items found (Next %d, Ready %d).\n", consumer, ready-next+1, ready, next)
-
-		// if ready > 1000 {
-		// 	fmt.Println("\t\t\t\t\t\t\t\t\tMalformed Next!", next, ready)
-		// }
-
 		for next <= ready {
-			// fmt.Printf("\t\t\t\t\t\t\t\t\tConsumer %d:: Consuming sequence %d\n", consumer, next)
 			this.handler.Consume(next, ready-next)
 			next++
 		}
 
-		// fmt.Printf("\t\t\t\t\t\t\t\t\tConsumer %d:: Completed through sequence %d\n", consumer, next-1)
 		next--
 		this.sequence.Store(next)
 		return next

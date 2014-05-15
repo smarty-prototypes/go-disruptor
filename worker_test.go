@@ -15,7 +15,7 @@ func BenchmarkWorker(b *testing.B) {
 	producerSequence.Store(1)
 
 	for i := int64(0); i < iterations; i++ {
-		workerSequence[SequencePayloadIndex] = 0
+		workerSequence.Store(0)
 		worker.Process()
 	}
 }

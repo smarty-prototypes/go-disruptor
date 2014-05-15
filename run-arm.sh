@@ -6,9 +6,8 @@ export PATH="$PATH:~/Downloads/android/adt-bundle-mac-x86_64-20140321/sdk/platfo
 case "$1" in
 	copy)
 		GOOS=linux GOARCH=arm GOARM=7 go build
-		adb push run.sh /data/local/tmp
 		adb push go-disruptor /data/local/tmp
 	;;
 esac
 
-adb shell "cd /data/local/tmp; chmod 755 *; ./run.sh"
+adb shell "cd /data/local/tmp; chmod 755 *; ./go-disruptor"
