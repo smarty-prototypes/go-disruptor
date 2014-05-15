@@ -7,44 +7,53 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(3)
+	runtime.GOMAXPROCS(2)
 
 	producerSequence := NewSequence()
 	consumerSequence1 := NewSequence()
-	consumerSequence2 := NewSequence()
+	// consumerSequence2 := NewSequence()
 
 	producerBarrier := NewBarrier(producerSequence)
-	consumerBarrier := NewBarrier(consumerSequence1, consumerSequence2)
+	consumerBarrier := NewBarrier(consumerSequence1) //, consumerSequence2)
 
 	sequencer := NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
-	go consume(producerBarrier, producerSequence, consumerSequence1)
-	go consume(producerBarrier, producerSequence, consumerSequence2)
+	go consume(1, producerBarrier, producerSequence, consumerSequence1)
+	// go consume(2, producerBarrier, producerSequence, consumerSequence2)
 
-	started := time.Now()
-	for i := int64(0); i < 10; i++ {
+	// started := time.Now()
+	for i := int64(0); i < MaxIterations; i++ {
+		// fmt.Printf("Producer:: Attempting to claim next sequence.\n")
 		ticket := sequencer.Next(1)
+		// fmt.Printf("Producer:: Claimed sequence: %d, Assigning slot...\n", ticket)
 		ringBuffer[ticket&RingMask] = ticket
+		// fmt.Printf("Producer:: Claimed sequence: %d, Publishing...\n", ticket)
 		sequencer.Publish(ticket)
-		if ticket%Mod == 0 && ticket > 0 {
-			finished := time.Now()
-			elapsed := finished.Sub(started)
-			fmt.Println(ticket, elapsed)
-			started = time.Now()
-		}
+		// fmt.Printf("Producer:: Claimed sequence: %d, Published\n", ticket)
+		// if ticket%Mod == 0 && ticket > 0 {
+		// 	finished := time.Now()
+		// 	elapsed := finished.Sub(started)
+		// 	fmt.Println(ticket, elapsed)
+		// 	started = time.Now()
+		// }
 	}
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Nanosecond * 50)
+	// fmt.Println("Graceful shutdown\n-------------------------------------------------\n")
 }
 
-func consume(barrier Barrier, source, sequence *Sequence) {
+func consume(name int, barrier Barrier, source, sequence *Sequence) {
 	worker := NewWorker(barrier, TestHandler{}, source, sequence)
 
 	for {
-		worker.Process()
+		// fmt.Printf("\t\t\t\t\t\t\t\t\tConsumer %d:: Attempting to process messages.\n", name)
+		if worker.Process(name)+1 > MaxIterations {
+			break
+		}
 	}
 }
 
-const Mod = 1000000 * 100 // 1 million * 10
+const MaxIterations = MaxSequenceValue
+const Mod = 1000000 * 1 // 1 million * N
 const RingSize = 2
 const RingMask = RingSize - 1
 
@@ -54,12 +63,14 @@ type TestHandler struct{}
 
 func (this TestHandler) Consume(sequence, remaining int64) {
 	message := ringBuffer[sequence&RingMask]
+	// fmt.Printf("\t\t\t\t\t\t\t\t\tConsumer %d:: Sequence: %d, Message: %d\n", sequence, message)
+
 	if message != sequence {
-		fmt.Printf("ERROR Consumer:: Sequence: %d, Message: %d\n", sequence, message)
+		fmt.Printf("\t\t\t\t\t\t\t\t\tERROR Consumer:: Sequence: %d, Message: %d\n", sequence, message)
 		panic(fmt.Sprintf("Consumer:: Sequence: %d, Message: %d\n", sequence, message))
 	}
 
-	if sequence%Mod == 0 {
-		//fmt.Printf("Consumer:: Sequence: %d, Message: %d\n", sequence, message)
+	if sequence%Mod == 0 && sequence > 0 {
+		fmt.Printf("\t\t\t\t\t\t\t\t\tConsumer:: Sequence: %d, Message: %d\n", sequence, message)
 	}
 }
