@@ -21,7 +21,7 @@ func main() {
 	go consume(producerBarrier, producerSequence, consumerSequence2)
 
 	started := time.Now()
-	for i := int64(0); i < MaxSequenceValue; i++ {
+	for i := int64(0); i < 10; i++ {
 		ticket := sequencer.Next(1)
 		ringBuffer[ticket&RingMask] = ticket
 		sequencer.Publish(ticket)
@@ -32,6 +32,8 @@ func main() {
 			started = time.Now()
 		}
 	}
+
+	time.Sleep(time.Millisecond * 100)
 }
 
 func consume(barrier Barrier, source, sequence *Sequence) {
@@ -43,7 +45,7 @@ func consume(barrier Barrier, source, sequence *Sequence) {
 }
 
 const Mod = 1000000 * 100 // 1 million * 10
-const RingSize = 1024 * 256
+const RingSize = 2
 const RingMask = RingSize - 1
 
 var ringBuffer [RingSize]int64
