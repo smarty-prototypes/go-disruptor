@@ -1,6 +1,6 @@
 package disruptor
 
-func (this Worker) Process() int64 {
+func (this *Worker) Process() int64 {
 	next := this.sequence.Load() + 1
 	ready := this.barrier.Load()
 
@@ -20,8 +20,8 @@ func (this Worker) Process() int64 {
 	}
 }
 
-func NewWorker(barrier Barrier, handler Consumer, source, sequence *Sequence) Worker {
-	return Worker{
+func NewWorker(barrier Barrier, handler Consumer, source, sequence *Sequence) *Worker {
+	return &Worker{
 		barrier:  barrier,
 		handler:  handler,
 		source:   source,
