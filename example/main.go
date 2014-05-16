@@ -29,4 +29,4 @@ func startConsumers(barrier disruptor.Barrier, sequence *disruptor.Sequence) (co
 	return
 }
 
-const MaxConsumers int = 2
+const MaxConsumers int = 1

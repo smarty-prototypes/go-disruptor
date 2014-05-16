@@ -23,4 +23,4 @@ func publish(sequencer *disruptor.SingleProducerSequencer) {
 }
 
 const MaxIterations = disruptor.MaxSequenceValue
-const Mod = 1000000 * 10 // 1 million * N
+const Mod = 1000000 * 100 // 1 million * N
