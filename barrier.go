@@ -14,11 +14,9 @@ func (this Barrier) Load() int64 {
 }
 
 func NewBarrier(upstream ...*Sequence) Barrier {
-	this := Barrier{}
-	for i := 0; i < len(upstream); i++ {
-		this = append(this, upstream[i])
-	}
-	return this
+	buffer := make([]*Sequence, len(upstream))
+	copy(buffer, upstream)
+	return Barrier(buffer)
 }
 
 type Barrier []*Sequence
