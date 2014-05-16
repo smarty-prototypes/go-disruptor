@@ -1,0 +1,15 @@
+TODO:
+
+- Wireup DSL
+- Attempt "diamond" consumer pattern (with tests)
+- Rewrite code test first
+- Benchmark code (go test -bench=.) (with GOMAXPROCS=2 if env GOMAXPROCS=1)
+- MultiProducerSequencer (and appropriate hooks to barrier)
+- Squeeze little bits of performance here and there by trying a few different things
+	e.g. pointers vs structs, padding, etc.
+
+- contributors
+- license
+- readme (Github markdown?)
+
+- Website with cool images and documentation? (e.g. GoConvey)
