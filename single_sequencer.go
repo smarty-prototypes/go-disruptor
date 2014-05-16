@@ -1,15 +1,13 @@
 package disruptor
 
 func (this *SingleProducerSequencer) Next(items int64) int64 {
-	previous, gate := this.previous, this.gate
-	next := previous + items
+	next := this.previous + items
 	wrap := next - this.ringSize
 
-	if wrap > gate || gate > previous {
-		barrier := this.barrier
-		min := barrier.Load()
+	if wrap > this.gate {
+		min := this.barrier.Load()
 		for wrap > min || min < 0 {
-			min = barrier.Load()
+			min = this.barrier.Load()
 		}
 
 		this.gate = min
