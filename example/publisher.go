@@ -9,14 +9,14 @@ import (
 
 func publish(sequencer *disruptor.SingleProducerSequencer) {
 	started := time.Now()
-	for i := int64(0); i < MaxIterations; i++ {
+	for sequence := int64(0); sequence < MaxIterations; sequence++ {
 		sequencer.Next(1)
-		ringBuffer[i&RingMask] = i
-		sequencer.Publish(i)
-		if i%Mod == 0 && i > 0 {
+		ringBuffer[sequence&RingMask] = sequence
+		sequencer.Publish(sequence)
+		if sequence%Mod == 0 && sequence > 0 {
 			finished := time.Now()
 			elapsed := finished.Sub(started)
-			fmt.Println(i, elapsed)
+			fmt.Println(sequence, elapsed)
 			started = time.Now()
 		}
 	}
