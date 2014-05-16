@@ -1,8 +1,8 @@
 package disruptor
 
 func (this *Sequence) Store(value int64) {
-	this[SequencePayloadIndex] = value
+	this.value = value
 }
 func (this *Sequence) Load() int64 {
-	return this[SequencePayloadIndex]
+	return this.value
 }
