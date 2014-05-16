@@ -1,9 +1,13 @@
 package main
 
-import "bitbucket.org/jonathanoliver/go-disruptor"
+import (
+	"time"
+
+	"bitbucket.org/jonathanoliver/go-disruptor"
+)
 
 func consume(barrier disruptor.Barrier, source, sequence *disruptor.Sequence) {
-	worker := disruptor.NewWorker(barrier, ConsumerHandler{}, source, sequence)
+	worker := disruptor.NewWorker(barrier, &ConsumerHandler{time.Now()}, source, sequence)
 
 	for {
 		worker.Process()
