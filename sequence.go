@@ -10,4 +10,5 @@ const (
 	MaxSequenceValue     int64 = (1 << 63) - 1
 	InitialSequenceValue int64 = -1
 	SequencePayloadIndex uint8 = 0
+	FillCPUCacheLine     uint8 = 8
 )
