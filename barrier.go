@@ -3,8 +3,8 @@ package disruptor
 func (this Barrier) Load() int64 {
 	minimum := MaxSequenceValue
 
-	for i := 0; i < len(this); i++ {
-		cursor := this[i].Load()
+	for _, item := range this {
+		cursor := item[0]
 		if cursor < minimum {
 			minimum = cursor
 		}
