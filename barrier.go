@@ -4,7 +4,7 @@ func (this Barrier) Load() int64 {
 	minimum := MaxSequenceValue
 
 	for _, item := range this {
-		cursor := item[0]
+		cursor := item.Load()
 		if cursor < minimum {
 			minimum = cursor
 		}
