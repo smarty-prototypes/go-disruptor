@@ -11,21 +11,21 @@ const MaxConsumers = 1
 func main() {
 	runtime.GOMAXPROCS(MaxConsumers + 1)
 
-	producerSequence := disruptor.NewSequence()
-	producerBarrier := disruptor.NewBarrier(producerSequence)
+	writerCursor := disruptor.NewCursor()
+	writerBarrier := disruptor.NewBarrier(writerCursor)
 
-	consumers := startConsumers(producerBarrier, producerSequence)
-	consumerBarrier := disruptor.NewBarrier(consumers...)
+	readerCursors := startReaders(writerBarrier, writerCursor)
+	readerBarrier := disruptor.NewBarrier(readerCursors...)
 
-	sequencer := disruptor.NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
-	publish(sequencer)
+	writer := disruptor.NewWriter(writerCursor, RingSize, readerBarrier)
+	publish(writer)
 }
-func startConsumers(barrier *disruptor.Barrier, sequence *disruptor.Sequence) (consumers []*disruptor.Sequence) {
+func startReaders(barrier *disruptor.Barrier, sequence *disruptor.Cursor) (readerCursors []*disruptor.Cursor) {
 	for i := 0; i < MaxConsumers; i++ {
-		sequence := disruptor.NewSequence()
-		consumers = append(consumers, sequence)
+		sequence := disruptor.NewCursor()
+		readerCursors = append(readerCursors, sequence)
 		go consume(barrier, sequence, sequence)
 	}
 
-	return consumers
+	return readerCursors
 }

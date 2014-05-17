@@ -3,7 +3,7 @@ package disruptor
 import "testing"
 
 func BenchmarkBarrierLoadSingle(b *testing.B) {
-	barrier := NewBarrier(NewSequence())
+	barrier := NewBarrier(NewCursor())
 
 	iterations := int64(b.N)
 	b.ReportAllocs()
@@ -15,7 +15,7 @@ func BenchmarkBarrierLoadSingle(b *testing.B) {
 }
 
 func BenchmarkBarrierLoadMultiple(b *testing.B) {
-	barrier := NewBarrier(NewSequence(), NewSequence(), NewSequence(), NewSequence())
+	barrier := NewBarrier(NewCursor(), NewCursor(), NewCursor(), NewCursor())
 
 	iterations := int64(b.N)
 	b.ReportAllocs()

@@ -6,10 +6,10 @@ import (
 	"github.com/smartystreets/go-disruptor"
 )
 
-func consume(barrier *disruptor.Barrier, source, sequence *disruptor.Sequence) {
-	worker := disruptor.NewWorker(barrier, &ConsumerHandler{time.Now()}, source, sequence)
+func consume(writerBarrier *disruptor.Barrier, writerCursor, readerCursor *disruptor.Cursor) {
+	reader := disruptor.NewReader(writerBarrier, &ConsumerHandler{time.Now()}, writerCursor, readerCursor)
 
 	for {
-		worker.Process()
+		reader.Process()
 	}
 }

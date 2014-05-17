@@ -2,24 +2,24 @@ package disruptor
 
 import "testing"
 
-func BenchmarkSequenceLoad(b *testing.B) {
-	sequence := NewSequence()
+func BenchmarkCursorLoad(b *testing.B) {
+	cursor := NewCursor()
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		sequence.Load()
+		cursor.Load()
 	}
 }
 
-func BenchmarkSequenceStore(b *testing.B) {
-	sequence := NewSequence()
+func BenchmarkCursorStore(b *testing.B) {
+	cursor := NewCursor()
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		sequence.Store(i)
+		cursor.Store(i)
 	}
 }
