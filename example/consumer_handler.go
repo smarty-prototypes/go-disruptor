@@ -17,3 +17,5 @@ func (this *ConsumerHandler) Consume(sequence, remaining int64) {
 		panic(fmt.Sprintf("Race condition--Sequence: %d, Message: %d\n", sequence, message))
 	}
 }
+
+const Mod = 1000000 * 10 // 1 million * N
