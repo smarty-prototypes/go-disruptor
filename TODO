@@ -1,12 +1,25 @@
 TODO:
 
+- The consumer code needs a much cleaner abstraction
+    In the end, it's two-phase, e.g. receive message, ack message, perhaps we make this a
+    first-class citizen in the API on the consumer side where the consumer calls:
+    Receive() and gets the sequence of the message in question (or a specific value for
+    gating/idling?) and then calls Ack/Confirm etc with the message sequence?
+
 - Wireup DSL
-- Attempt "diamond" consumer pattern (with tests)
 - Rewrite code test first
+- Verify "diamond" consumer pattern (with tests)
 - Benchmark code (go test -bench=.) (with GOMAXPROCS=2 if env GOMAXPROCS=1)
-- MultiProducerSequencer (and appropriate hooks to barrier)
+- MultiProducerSequencer (and appropriate hooks into Barrier)
 - Squeeze little bits of performance here and there by trying a few different things
 	e.g. pointers vs structs, padding, etc.
+- Investigate ways to utilize an int32 under the hood but have it be exposed as an int64?
+   e.g. utilizing two int32s? This would allow us to remove the atomic statements surrounding
+   i386 and ARM architecutes, but may be more effort than it's worth for our particular
+   use case...
+
+- I need to get some help doing some low-level profiling the application to find out where
+  the bottlenecks are and determining how the Go scheduler is hindering performance, if at all.
 
 - contributors
 - license
