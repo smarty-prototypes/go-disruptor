@@ -12,10 +12,10 @@ func main() {
 	runtime.GOMAXPROCS(MaxConsumers + 1)
 
 	producerSequence := disruptor.NewSequence()
-	producerBarrier := disruptor.NewBarrier([]*disruptor.Sequence{producerSequence})
+	producerBarrier := disruptor.NewBarrier(producerSequence)
 
 	consumers := startConsumers(producerBarrier, producerSequence)
-	consumerBarrier := disruptor.NewBarrier(consumers)
+	consumerBarrier := disruptor.NewBarrier(consumers...)
 
 	sequencer := disruptor.NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
 	publish(sequencer)

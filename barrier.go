@@ -2,7 +2,7 @@ package disruptor
 
 type Barrier []*Sequence
 
-func NewBarrier(upstream []*Sequence) Barrier {
+func NewBarrier(upstream ...*Sequence) Barrier {
 	buffer := make([]*Sequence, len(upstream))
 	copy(buffer, upstream)
 	return Barrier(buffer)
