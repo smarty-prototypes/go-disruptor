@@ -1,9 +1,9 @@
 package disruptor
 
 const (
+	InitialSequenceValue       = -1
+	cpuCacheLinePadding        = 7
 	MaxSequenceValue     int64 = (1 << 63) - 1
-	InitialSequenceValue int64 = -1
-	cpuCacheLinePadding  uint8 = 7
 )
 
 type Sequence struct {

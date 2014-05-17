@@ -1,8 +1,8 @@
 package disruptor
 
 const (
-	Gating int64 = -2
-	Idle         = -3
+	Gating = -2
+	Idle   = -3
 )
 
 type Worker struct {
