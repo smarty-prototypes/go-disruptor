@@ -26,8 +26,7 @@ func isPowerOfTwo(value int32) bool {
 	return value > 0 && (value&(value-1)) == 0
 }
 
-// TODO: rename to Reserve
-func (this *Writer) Next(items int64) int64 {
+func (this *Writer) Reserve(items int64) int64 {
 	next := this.previous + items
 	wrap := next - this.ringSize
 

@@ -4,8 +4,8 @@ import "github.com/smartystreets/go-disruptor"
 
 func publish(writer *disruptor.Writer) {
 	for {
-		sequence := writer.Next(1)
+		sequence := writer.Reserve(1)
 		ringBuffer[sequence&RingMask] = sequence
-		writer.Publish(sequence)
+		writer.Commit(sequence)
 	}
 }

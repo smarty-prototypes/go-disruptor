@@ -21,6 +21,7 @@ func NewReader(upstreamBarrier *Barrier, callback Consumer, writerCursor, reader
 	}
 }
 
+// IDEA: Read returns remaining and consumer calls Commit(seq) once they're done reading
 func (this *Reader) Process() int64 {
 	next := this.readerCursor.Load() + 1
 	ready := this.upstreamBarrier.Load()

@@ -10,7 +10,7 @@ TODO:
 - Rewrite code test first
 - Verify "diamond" consumer pattern (with tests)
 - Benchmark code (go test -bench=.) (with GOMAXPROCS=2 if env GOMAXPROCS=1)
-- MultiProducerSequencer (and appropriate hooks into Barrier)
+- MultiWriter (and appropriate hooks into Barrier)
 - Squeeze little bits of performance here and there by trying a few different things
 	e.g. pointers vs structs, padding, etc.
 - Investigate ways to utilize an int32 under the hood but have it be exposed as an int64?

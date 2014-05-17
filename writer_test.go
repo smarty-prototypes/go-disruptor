@@ -2,18 +2,18 @@ package disruptor
 
 import "testing"
 
-func BenchmarkWriterPublish(b *testing.B) {
+func BenchmarkWriterCommit(b *testing.B) {
 	writer := NewWriter(NewCursor(), 1024, &Barrier{})
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		writer.Publish(i)
+		writer.Commit(i)
 	}
 }
 
-func BenchmarkWriterNext(b *testing.B) {
+func BenchmarkWriterReserve(b *testing.B) {
 	readerCursor := NewCursor()
 	writerCursor := NewCursor()
 	readerBarrier := NewBarrier(readerCursor)
@@ -24,7 +24,7 @@ func BenchmarkWriterNext(b *testing.B) {
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		claimed := writer.Next(1)
+		claimed := writer.Reserve(1)
 		readerCursor.Store(claimed)
 	}
 }
@@ -41,6 +41,6 @@ func BenchmarkWriterNextWrapPoint(b *testing.B) {
 
 	readerCursor.Store(MaxCursorValue)
 	for i := int64(0); i < iterations; i++ {
-		writer.Next(1)
+		writer.Reserve(1)
 	}
 }
