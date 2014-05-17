@@ -9,8 +9,8 @@ func NewBarrier(upstream ...*Cursor) Barrier {
 	if len(upstream) == 0 {
 		panic("At least one upstream cursor is required.")
 	} else if len(upstream) == 1 {
-		first := cursors[0]
-		return func() int64 { return first.Load() }
+		single := cursors[0]
+		return func() int64 { return single.Load() }
 	} else {
 		return func() int64 {
 			minimum := MaxCursorValue
