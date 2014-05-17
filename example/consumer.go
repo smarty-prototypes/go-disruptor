@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"bitbucket.org/jonathanoliver/go-disruptor"
+	"github.com/smartystreets/go-disruptor"
 )
 
 func consume(barrier disruptor.Barrier, source, sequence *disruptor.Sequence) {

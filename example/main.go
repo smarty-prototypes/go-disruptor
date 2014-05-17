@@ -3,7 +3,7 @@ package main
 import (
 	"runtime"
 
-	"bitbucket.org/jonathanoliver/go-disruptor"
+	"github.com/smartystreets/go-disruptor"
 )
 
 func main() {

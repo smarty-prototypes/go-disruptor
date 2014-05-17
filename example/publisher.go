@@ -1,6 +1,6 @@
 package main
 
-import "bitbucket.org/jonathanoliver/go-disruptor"
+import "github.com/smartystreets/go-disruptor"
 
 func publish(sequencer *disruptor.SingleProducerSequencer) {
 	for {
