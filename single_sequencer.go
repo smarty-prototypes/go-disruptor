@@ -5,10 +5,10 @@ type SingleProducerSequencer struct {
 	gate     int64
 	cursor   *Sequence
 	ringSize int64
-	barrier  Barrier
+	barrier  *Barrier
 }
 
-func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, barrier Barrier) *SingleProducerSequencer {
+func NewSingleProducerSequencer(cursor *Sequence, ringSize int32, barrier *Barrier) *SingleProducerSequencer {
 	if !isPowerOfTwo(ringSize) {
 		panic("The ring size must be a power of two, e.g. 2, 4, 8, 16, 32, 64, etc.")
 	}

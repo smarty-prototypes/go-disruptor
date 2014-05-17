@@ -20,7 +20,7 @@ func main() {
 	sequencer := disruptor.NewSingleProducerSequencer(producerSequence, RingSize, consumerBarrier)
 	publish(sequencer)
 }
-func startConsumers(barrier disruptor.Barrier, sequence *disruptor.Sequence) (consumers []*disruptor.Sequence) {
+func startConsumers(barrier *disruptor.Barrier, sequence *disruptor.Sequence) (consumers []*disruptor.Sequence) {
 	for i := 0; i < MaxConsumers; i++ {
 		sequence := disruptor.NewSequence()
 		consumers = append(consumers, sequence)

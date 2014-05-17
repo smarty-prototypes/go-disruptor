@@ -6,13 +6,13 @@ const (
 )
 
 type Worker struct {
-	barrier  Barrier
+	barrier  *Barrier
 	handler  Consumer
 	source   *Sequence
 	sequence *Sequence
 }
 
-func NewWorker(barrier Barrier, handler Consumer, source, sequence *Sequence) *Worker {
+func NewWorker(barrier *Barrier, handler Consumer, source, sequence *Sequence) *Worker {
 	return &Worker{
 		barrier:  barrier,
 		handler:  handler,
