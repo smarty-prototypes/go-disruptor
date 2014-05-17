@@ -31,9 +31,10 @@ func (this *Writer) Reserve(items int64) int64 {
 	wrap := next - this.ringSize
 
 	if wrap > this.gate {
-		min := this.readerBarrier()
+		readerBarrier := this.readerBarrier
+		min := readerBarrier()
 		for wrap > min || min < 0 {
-			min = this.readerBarrier()
+			min = readerBarrier()
 		}
 
 		this.gate = min
