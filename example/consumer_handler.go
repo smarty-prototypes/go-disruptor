@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const Mod = 1000000 * 10 // 1 million * N
+
 type ConsumerHandler struct{ started time.Time }
 
 func (this *ConsumerHandler) Consume(sequence, remaining int64) {
@@ -17,5 +19,3 @@ func (this *ConsumerHandler) Consume(sequence, remaining int64) {
 		panic(fmt.Sprintf("Race condition--Sequence: %d, Message: %d\n", sequence, message))
 	}
 }
-
-const Mod = 1000000 * 10 // 1 million * N

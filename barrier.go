@@ -1,5 +1,13 @@
 package disruptor
 
+type Barrier []*Sequence
+
+func NewBarrier(upstream ...*Sequence) Barrier {
+	buffer := make([]*Sequence, len(upstream))
+	copy(buffer, upstream)
+	return Barrier(buffer)
+}
+
 func (this Barrier) Load() int64 {
 	minimum := MaxSequenceValue
 
@@ -12,11 +20,3 @@ func (this Barrier) Load() int64 {
 
 	return minimum
 }
-
-func NewBarrier(upstream ...*Sequence) Barrier {
-	buffer := make([]*Sequence, len(upstream))
-	copy(buffer, upstream)
-	return Barrier(buffer)
-}
-
-type Barrier []*Sequence
