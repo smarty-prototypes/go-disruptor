@@ -3,7 +3,7 @@ package disruptor
 import "testing"
 
 func BenchmarkWriterCommit(b *testing.B) {
-	writer := NewWriter(NewCursor(), 1024, &Barrier{})
+	writer := NewWriter(NewCursor(), 1024, nil)
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()

@@ -5,10 +5,10 @@ type Writer struct {
 	gate          int64
 	writerCursor  *Cursor
 	ringSize      int64
-	readerBarrier *Barrier
+	readerBarrier Barrier
 }
 
-func NewWriter(writerCursor *Cursor, ringSize int32, readerBarrier *Barrier) *Writer {
+func NewWriter(writerCursor *Cursor, ringSize int32, readerBarrier Barrier) *Writer {
 	if !isPowerOfTwo(ringSize) {
 		panic("The ring size must be a power of two, e.g. 2, 4, 8, 16, 32, 64, etc.")
 	}
@@ -31,9 +31,9 @@ func (this *Writer) Reserve(items int64) int64 {
 	wrap := next - this.ringSize
 
 	if wrap > this.gate {
-		min := this.readerBarrier.Load()
+		min := this.readerBarrier()
 		for wrap > min || min < 0 {
-			min = this.readerBarrier.Load()
+			min = this.readerBarrier()
 		}
 
 		this.gate = min

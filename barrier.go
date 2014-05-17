@@ -1,35 +1,28 @@
 package disruptor
 
-type Barrier struct {
-	single  bool
-	cursors []*Cursor
-}
+type Barrier func() int64
 
-func NewBarrier(upstream ...*Cursor) *Barrier {
+func NewBarrier(upstream ...*Cursor) Barrier {
 	cursors := make([]*Cursor, len(upstream))
 	copy(cursors, upstream)
 
-	// TODO: the "Load" function could be set here as a callback
-	// such that the public "Load" points to one of two private load functions
-	return &Barrier{
-		single:  len(cursors) == 1,
-		cursors: cursors,
-	}
-}
+	if len(upstream) == 0 {
+		panic("At least one upstream cursor is required.")
+	} else if len(upstream) == 1 {
+		first := cursors[0]
+		return func() int64 { return first.Load() }
+	} else {
+		return func() int64 {
+			minimum := MaxCursorValue
 
-func (this *Barrier) Load() int64 {
-	if this.single {
-		return this.cursors[0].Load()
-	}
+			for _, item := range cursors {
+				cursor := item.Load()
+				if cursor < minimum {
+					minimum = cursor
+				}
+			}
 
-	minimum := MaxCursorValue
-
-	for _, item := range this.cursors {
-		cursor := item.Load()
-		if cursor < minimum {
-			minimum = cursor
+			return minimum
 		}
 	}
-
-	return minimum
 }

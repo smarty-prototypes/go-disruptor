@@ -6,13 +6,13 @@ const (
 )
 
 type Reader struct {
-	upstreamBarrier *Barrier
+	upstreamBarrier Barrier
 	callback        Consumer
 	writerCursor    *Cursor
 	readerCursor    *Cursor
 }
 
-func NewReader(upstreamBarrier *Barrier, callback Consumer, writerCursor, readerCursor *Cursor) *Reader {
+func NewReader(upstreamBarrier Barrier, callback Consumer, writerCursor, readerCursor *Cursor) *Reader {
 	return &Reader{
 		upstreamBarrier: upstreamBarrier,
 		callback:        callback,
@@ -24,7 +24,7 @@ func NewReader(upstreamBarrier *Barrier, callback Consumer, writerCursor, reader
 // IDEA: Read returns remaining and consumer calls Commit(seq) once they're done reading
 func (this *Reader) Process() int64 {
 	next := this.readerCursor.Load() + 1
-	ready := this.upstreamBarrier.Load()
+	ready := this.upstreamBarrier()
 
 	if next <= ready {
 		for next <= ready {

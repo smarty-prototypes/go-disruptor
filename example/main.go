@@ -20,7 +20,7 @@ func main() {
 	writer := disruptor.NewWriter(writerCursor, RingSize, readerBarrier)
 	publish(writer)
 }
-func startReaders(barrier *disruptor.Barrier, sequence *disruptor.Cursor) (readerCursors []*disruptor.Cursor) {
+func startReaders(barrier disruptor.Barrier, sequence *disruptor.Cursor) (readerCursors []*disruptor.Cursor) {
 	for i := 0; i < MaxConsumers; i++ {
 		sequence := disruptor.NewCursor()
 		readerCursors = append(readerCursors, sequence)
