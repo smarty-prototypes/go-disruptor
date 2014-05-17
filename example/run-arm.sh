@@ -10,4 +10,4 @@ case "$1" in
 	;;
 esac
 
-adb shell "cd /data/local/tmp; chmod 755 *; ./go-disruptor"
+adb shell "cd /data/local/tmp; chmod 755 go-disruptor; ./go-disruptor"
