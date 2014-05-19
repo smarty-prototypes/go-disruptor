@@ -31,7 +31,7 @@ func (this *Writer) Reserve(items int64) int64 {
 	wrap := next - this.ringSize
 
 	if wrap > this.gate {
-		min := this.readerBarrier()
+		min := this.readerBarrier.Load() // TODO: the most expensive call
 		if wrap > min {
 			return Gating
 		}

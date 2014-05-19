@@ -22,6 +22,6 @@ func BenchmarkBarrierLoadMultiple(b *testing.B) {
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		barrier()
+		barrier.Load()
 	}
 }

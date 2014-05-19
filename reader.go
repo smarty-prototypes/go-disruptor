@@ -21,7 +21,7 @@ func NewReader(upstreamBarrier Barrier, writerCursor, readerCursor *Cursor) *Rea
 
 func (this *Reader) Receive() (int64, int64) {
 	next := this.readerCursor.Load() + 1
-	ready := this.upstreamBarrier()
+	ready := this.upstreamBarrier.Load()
 
 	if next <= ready {
 		return next, ready - next
