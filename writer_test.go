@@ -39,7 +39,7 @@ func BenchmarkWriterNextWrapPoint(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	readerCursor.Store(MaxCursorValue)
+	readerCursor.Store(MaxSequenceValue)
 	for i := int64(0); i < iterations; i++ {
 		writer.Reserve(1)
 	}
