@@ -13,12 +13,12 @@ func NewBarrier(upstream ...*Cursor) Barrier {
 		return func() int64 { return single.Load() }
 	} else {
 		return func() int64 {
-			minimum := MaxCursorValue
+			minimum := MaxSequenceValue
 
 			for _, item := range cursors {
-				cursor := item.Load()
-				if cursor < minimum {
-					minimum = cursor
+				sequence := item.Load()
+				if sequence < minimum {
+					minimum = sequence
 				}
 			}
 

@@ -1,9 +1,9 @@
 package disruptor
 
 const (
-	InitialCursorValue        = -1
-	cpuCacheLinePadding       = 7
-	MaxCursorValue      int64 = (1 << 63) - 1
+	InitialSequenceValue int64 = -1
+	MaxSequenceValue     int64 = (1 << 63) - 1
+	cpuCacheLinePadding        = 7
 )
 
 // TODO: aligned read/write: https://groups.google.com/forum/#!topic/golang-nuts/XDfQUn4U_g8
@@ -16,5 +16,5 @@ type Cursor struct {
 }
 
 func NewCursor() *Cursor {
-	return &Cursor{value: InitialCursorValue}
+	return &Cursor{value: InitialSequenceValue}
 }
