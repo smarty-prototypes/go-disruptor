@@ -10,16 +10,15 @@ import (
 const Mod = 1000000 * 10 // 1 million * N
 
 func consume(writerBarrier disruptor.Barrier, writerCursor, readerCursor *disruptor.Cursor) {
+	// runtime.LockOSThread()
+
 	reader := disruptor.NewReader(writerBarrier, writerCursor, readerCursor)
 	started := time.Now()
 
 	for {
 		sequence, remaining := reader.Receive()
-		if remaining == disruptor.Idle {
-		} else if remaining == disruptor.Gating {
-		} else {
+		if remaining >= 0 {
 			for ; remaining >= 0; remaining-- {
-				sequence++
 
 				if sequence%Mod == 0 {
 					finished := time.Now()
@@ -32,9 +31,13 @@ func consume(writerBarrier disruptor.Barrier, writerCursor, readerCursor *disrup
 					panic(fmt.Sprintf("Sequence: %d, Message %d\n", sequence, message))
 				}
 
+				sequence++
 			}
 
 			reader.Commit(sequence)
+
+		} else {
+
 		}
 	}
 }

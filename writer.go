@@ -26,20 +26,19 @@ func isPowerOfTwo(value int32) bool {
 	return value > 0 && (value&(value-1)) == 0
 }
 
-func (this *Writer) Reserve(items int64) (int64, int64) {
-	current := this.previous + 1
+func (this *Writer) Reserve(items int64) int64 {
 	next := this.previous + items
 	wrap := next - this.ringSize
 
 	if wrap > this.gate {
 		min := this.readerBarrier()
 		if wrap > min {
-			return current, Gating
+			return Gating
 		}
 
 		this.gate = min
 	}
 
 	this.previous = next
-	return current, next
+	return next
 }
