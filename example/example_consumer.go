@@ -18,7 +18,7 @@ func consume(writerBarrier disruptor.Barrier, writerCursor, readerCursor *disrup
 	for {
 		sequence, remaining := reader.Receive()
 		if remaining >= 0 {
-			for ; remaining >= 0; remaining-- {
+			for remaining >= 0 {
 
 				if sequence%Mod == 0 {
 					finished := time.Now()
@@ -31,6 +31,7 @@ func consume(writerBarrier disruptor.Barrier, writerCursor, readerCursor *disrup
 					panic(fmt.Sprintf("Sequence: %d, Message %d\n", sequence, message))
 				}
 
+				remaining--
 				sequence++
 			}
 
