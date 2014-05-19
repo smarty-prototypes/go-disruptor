@@ -2,6 +2,7 @@ package main
 
 import (
 	"runtime"
+	"time"
 
 	"github.com/smartystreets/go-disruptor"
 )
@@ -14,11 +15,15 @@ func main() {
 	writerCursor := disruptor.NewCursor()
 	writerBarrier := disruptor.NewBarrier(writerCursor)
 
-	readerCursors := startReaders(writerBarrier, writerCursor)
-	readerBarrier := disruptor.NewBarrier(readerCursors...)
+	writerCursor.Store(disruptor.MaxSequenceValue)
+	startReaders(writerBarrier, writerCursor)
+	time.Sleep(time.Second * 10)
 
-	writer := disruptor.NewWriter(writerCursor, RingSize, readerBarrier)
-	publish(writer)
+	// readerCursors := startReaders(writerBarrier, writerCursor)
+	// readerBarrier := disruptor.NewBarrier(readerCursors...)
+
+	// writer := disruptor.NewWriter(writerCursor, RingSize, readerBarrier)
+	// publish(writer)
 }
 func startReaders(writerBarrier disruptor.Barrier, writerCursor *disruptor.Cursor) (readerCursors []*disruptor.Cursor) {
 	for i := 0; i < MaxConsumers; i++ {
