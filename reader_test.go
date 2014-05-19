@@ -7,7 +7,7 @@ func BenchmarkReader(b *testing.B) {
 	readerCursor := NewCursor()
 	writerBarrier := NewBarrier(writerCursor)
 
-	reader := NewReader(writerBarrier, &testHandler{}, writerCursor, readerCursor)
+	reader := NewReader(writerBarrier, writerCursor, readerCursor)
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -16,11 +16,7 @@ func BenchmarkReader(b *testing.B) {
 
 	for i := int64(0); i < iterations; i++ {
 		readerCursor.Store(0)
-		sequence := reader.Receive()
+		sequence, _ := reader.Receive()
 		reader.Commit(sequence)
 	}
 }
-
-type testHandler struct{}
-
-func (this testHandler) Consume(sequence, remaining int64) {}

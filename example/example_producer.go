@@ -4,12 +4,12 @@ import "github.com/smartystreets/go-disruptor"
 
 func publish(writer *disruptor.Writer) {
 	for {
-		upper := writer.Reserve(1)
-		if upper != disruptor.Gating {
-			// ringBuffer[(upper-2)&RingMask] = upper - 2
-			// ringBuffer[(upper-1)&RingMask] = upper - 1
-			ringBuffer[upper&RingMask] = upper
-			writer.Commit(upper)
+		sequence := writer.Reserve(1)
+		if sequence != disruptor.Gating {
+			// ringBuffer[(sequence-2)&RingMask] = sequence - 2
+			// ringBuffer[(sequence-1)&RingMask] = sequence - 1
+			ringBuffer[sequence&RingMask] = sequence
+			writer.Commit(sequence)
 		}
 	}
 }
