@@ -24,10 +24,10 @@ func consume(reader *disruptor.Reader) {
 					started = time.Now()
 				}
 
-				// if sequence != ringBuffer[sequence&RingMask] {
-				// 	message := ringBuffer[sequence&RingMask]
-				// 	panic(fmt.Sprintf("Sequence: %d, Message %d\n", sequence, message))
-				// }
+				if sequence != ringBuffer[sequence&RingMask] {
+					message := ringBuffer[sequence&RingMask]
+					panic(fmt.Sprintf("Sequence: %d, Message %d\n", sequence, message))
+				}
 
 				remaining--
 				sequence++
