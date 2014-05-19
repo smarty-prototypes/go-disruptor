@@ -14,8 +14,8 @@ func NewWriter(writerCursor *Cursor, ringSize int32, readerBarrier Barrier) *Wri
 	}
 
 	return &Writer{
-		previous:      InitialCursorValue,
-		gate:          InitialCursorValue,
+		previous:      writerCursor.Load(), // show the Go runtime that the cursor is actually used
+		gate:          writerCursor.Load(), // and that it should not be optimized away
 		writerCursor:  writerCursor,
 		ringSize:      int64(ringSize),
 		readerBarrier: readerBarrier,
