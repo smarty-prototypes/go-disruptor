@@ -9,10 +9,8 @@ import (
 
 const Mod = 1000000 * 10 // 1 million * N
 
-func consume(writerBarrier disruptor.Barrier, writerCursor, readerCursor *disruptor.Cursor) {
+func consume(reader *disruptor.Reader) {
 	// runtime.LockOSThread()
-
-	reader := disruptor.NewReader(writerBarrier, writerCursor, readerCursor)
 	started := time.Now()
 
 	for {

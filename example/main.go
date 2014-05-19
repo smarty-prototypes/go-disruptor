@@ -28,7 +28,8 @@ func startReaders(writerBarrier disruptor.Barrier, writerCursor *disruptor.Curso
 	for i := 0; i < MaxConsumers; i++ {
 		readerCursor := disruptor.NewCursor()
 		readerCursors = append(readerCursors, readerCursor)
-		go consume(writerBarrier, writerCursor, readerCursor)
+		reader := disruptor.NewReader(writerBarrier, writerCursor, readerCursor)
+		go consume(reader)
 	}
 
 	return readerCursors
