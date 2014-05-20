@@ -24,6 +24,8 @@ func (this *ExampleConsumerHandler) Consume(sequence, remaining int64) {
 
 	if sequence != ringBuffer[sequence&RingMask] {
 		message := ringBuffer[sequence&RingMask]
-		panic(fmt.Sprintf("Sequence: %d, Message %d\n", sequence, message))
+		alert := fmt.Sprintf("Race Condition::Sequence: %d, Message %d\n", sequence, message)
+		fmt.Print(alert)
+		panic(alert)
 	}
 }
