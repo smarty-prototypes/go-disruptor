@@ -6,10 +6,11 @@ import (
 	"github.com/smartystreets/go-disruptor"
 )
 
-const MaxConsumers = 1
+const MaxConsumers = 2
+const MaxConsumerLayers = 3
 
 func main() {
-	runtime.GOMAXPROCS(MaxConsumers + 3)
+	runtime.GOMAXPROCS(MaxConsumers*MaxConsumerLayers + 1)
 
 	writerCursor := disruptor.NewCursor()
 	writerBarrier := disruptor.NewBarrier(writerCursor)
