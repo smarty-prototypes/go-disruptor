@@ -6,29 +6,30 @@ import (
 	"github.com/smartystreets/go-disruptor"
 )
 
-const MaxConsumers = 2
-const MaxConsumerLayers = 3
+const MaxConsumersPerGroup = 1
+const MaxConsumerGroups = 1
 
 func main() {
-	runtime.GOMAXPROCS(MaxConsumers*MaxConsumerLayers + 1)
+	runtime.GOMAXPROCS(MaxConsumerGroups*MaxConsumersPerGroup + 1)
 
 	writerCursor := disruptor.NewCursor()
 	writerBarrier := disruptor.NewBarrier(writerCursor)
-
-	readerCursors1 := startReaders(writerBarrier, writerCursor)
-	readerBarrier1 := disruptor.NewBarrier(readerCursors1...)
-
-	readerCursors2 := startReaders(readerBarrier1, writerCursor)
-	readerBarrier2 := disruptor.NewBarrier(readerCursors2...)
-
-	readerCursors3 := startReaders(readerBarrier2, writerCursor)
-	readerBarrier3 := disruptor.NewBarrier(readerCursors3...)
-
-	writer := disruptor.NewWriter(writerCursor, RingSize, readerBarrier3)
+	readerBarrier := startConsumerGroups(writerBarrier, writerCursor)
+	writer := disruptor.NewWriter(writerCursor, RingSize, readerBarrier)
 	publish(writer)
 }
-func startReaders(upstreamBarrier disruptor.Barrier, writerCursor *disruptor.Cursor) (readerCursors []*disruptor.Cursor) {
-	for i := 0; i < MaxConsumers; i++ {
+
+func startConsumerGroups(upstream disruptor.Barrier, writer *disruptor.Cursor) disruptor.Barrier {
+	for i := 0; i < MaxConsumerGroups; i++ {
+		upstream = startConsumerGroup(upstream, writer)
+	}
+
+	return upstream
+}
+func startConsumerGroup(upstreamBarrier disruptor.Barrier, writerCursor *disruptor.Cursor) disruptor.Barrier {
+	readerCursors := []*disruptor.Cursor{}
+
+	for i := 0; i < MaxConsumersPerGroup; i++ {
 		readerCursor := disruptor.NewCursor()
 		readerCursors = append(readerCursors, readerCursor)
 		reader := disruptor.NewReader(upstreamBarrier, writerCursor, readerCursor)
@@ -41,5 +42,5 @@ func startReaders(upstreamBarrier disruptor.Barrier, writerCursor *disruptor.Cur
 		// go easyConsume(disruptor.NewEasyReader(reader, NewExampleConsumerHandler()))
 	}
 
-	return readerCursors
+	return disruptor.NewBarrier(readerCursors...)
 }

@@ -34,6 +34,8 @@ func consume(reader *disruptor.Reader) {
 				sequence++
 			}
 			reader.Commit(sequence - 1)
+		} else {
+			time.Sleep(time.Nanosecond)
 		}
 	}
 }
