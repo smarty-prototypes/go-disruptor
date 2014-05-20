@@ -25,13 +25,15 @@ func consume(reader *disruptor.Reader) {
 
 				if sequence != ringBuffer[sequence&RingMask] {
 					message := ringBuffer[sequence&RingMask]
-					panic(fmt.Sprintf("Sequence: %d, Message %d\n", sequence, message))
+					alert := fmt.Sprintf("Race Condition::Sequence: %d, Message %d\n", sequence, message)
+					fmt.Print(alert)
+					panic(alert)
 				}
 
 				remaining--
 				sequence++
 			}
-			reader.Commit(sequence)
+			reader.Commit(sequence - 1)
 		}
 	}
 }

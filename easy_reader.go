@@ -19,7 +19,7 @@ func (this *EasyReader) Receive() int64 {
 			sequence++
 		}
 
-		this.reader.Commit(sequence)
+		this.reader.Commit(sequence - 1)
 		return sequence
 	} else {
 		return remaining // Idling, Gating
