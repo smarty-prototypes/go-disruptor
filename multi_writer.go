@@ -70,9 +70,12 @@ func (this *MultiWriter) Commit(lower, upper int64) {
 	}
 }
 
-func (this *MultiWriter) Claimed() *Cursor {
-	return this.claimed
-}
-func (this *MultiWriter) Buffer() []int32 {
-	return this.committed
+func (this *MultiWriter) LoadBarrier(lower, upper int64) int64 {
+	for mask := this.capacity - 1; lower <= upper; lower++ {
+		if this.committed[lower&mask] < int32(lower>>this.shift) {
+			return lower - 1
+		}
+	}
+
+	return upper
 }
