@@ -3,20 +3,20 @@ package disruptor
 type Writer struct {
 	previous      int64
 	gate          int64
-	ringSize      int64
+	capacity      int64
 	writerCursor  *Cursor
 	readerBarrier Barrier
 }
 
-func NewWriter(writerCursor *Cursor, ringSize int64, readerBarrier Barrier) *Writer {
-	if !isPowerOfTwo(ringSize) {
-		panic("The ring size must be a power of two, e.g. 2, 4, 8, 16, 32, 64, etc.")
+func NewWriter(writerCursor *Cursor, capacity int64, readerBarrier Barrier) *Writer {
+	if !isPowerOfTwo(capacity) {
+		panic("The ring capacity must be a power of two, e.g. 2, 4, 8, 16, 32, 64, etc.")
 	}
 
 	return &Writer{
 		previous:      writerCursor.Load(), // show the Go runtime that the cursor is actually used
 		gate:          writerCursor.Load(), // and that it should not be optimized away
-		ringSize:      ringSize,
+		capacity:      capacity,
 		writerCursor:  writerCursor,
 		readerBarrier: readerBarrier,
 	}
@@ -28,7 +28,7 @@ func isPowerOfTwo(value int64) bool {
 
 func (this *Writer) Reserve(items int64) int64 {
 	next := this.previous + items
-	wrap := next - this.ringSize
+	wrap := next - this.capacity
 
 	if wrap > this.gate {
 		min := this.readerBarrier.Load()
