@@ -9,9 +9,7 @@ type Writer struct {
 }
 
 func NewWriter(writerCursor *Cursor, capacity int64, readerBarrier Barrier) *Writer {
-	if !isPowerOfTwo(capacity) {
-		panic("The ring capacity must be a power of two, e.g. 2, 4, 8, 16, 32, 64, etc.")
-	}
+	assertPowerOfTwo(capacity)
 
 	return &Writer{
 		previous:      writerCursor.Load(), // show the Go runtime that the cursor is actually used
@@ -22,10 +20,14 @@ func NewWriter(writerCursor *Cursor, capacity int64, readerBarrier Barrier) *Wri
 	}
 }
 
-func isPowerOfTwo(value int64) bool {
-	return value > 0 && (value&(value-1)) == 0
+func assertPowerOfTwo(value int64) {
+	// http://en.wikipedia.org/wiki/Power_of_two#Fast_algorithm_to_check_if_a_positive_number_is_a_power_of_two
+	if value > 0 && (value&(value-1)) != 0 {
+		panic("The ring capacity must be a power of two, e.g. 2, 4, 8, 16, 32, 64, etc.")
+	}
 }
 
+// TODO: one reason to make this signature lower/upper across both writers is so that the Commit signature could look the same as well
 func (this *Writer) Reserve(items int64) int64 {
 	next := this.previous + items
 	wrap := next - this.capacity
