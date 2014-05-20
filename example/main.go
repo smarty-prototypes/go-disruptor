@@ -39,7 +39,7 @@ func startConsumerGroup(upstreamBarrier disruptor.Barrier, writerCursor *disrupt
 		go consume(reader)
 
 		// constant time regardless of the number of items
-		// go easyConsume(disruptor.NewEasyReader(reader, NewExampleConsumerHandler()))
+		// go easyConsume(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))
 	}
 
 	return disruptor.NewBarrier(readerCursors...)

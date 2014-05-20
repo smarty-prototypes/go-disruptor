@@ -1,15 +1,15 @@
 package disruptor
 
-type EasyReader struct {
+type SimpleReader struct {
 	reader   *Reader
 	consumer Consumer
 }
 
-func NewEasyReader(reader *Reader, consumer Consumer) *EasyReader {
-	return &EasyReader{reader: reader, consumer: consumer}
+func NewSimpleReader(reader *Reader, consumer Consumer) *SimpleReader {
+	return &SimpleReader{reader: reader, consumer: consumer}
 }
 
-func (this *EasyReader) Receive() int64 {
+func (this *SimpleReader) Receive() int64 {
 	sequence, remaining := this.reader.Receive()
 
 	if remaining >= 0 {

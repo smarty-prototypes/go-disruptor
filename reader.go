@@ -2,7 +2,7 @@ package disruptor
 
 const (
 	Gating = -2
-	Idle   = -3
+	Idling = -3
 )
 
 type Reader struct {
@@ -28,6 +28,6 @@ func (this *Reader) Receive() (int64, int64) {
 	} else if next <= this.writerCursor.Load() {
 		return next, Gating
 	} else {
-		return next, Idle
+		return next, Idling
 	}
 }

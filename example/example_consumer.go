@@ -39,7 +39,7 @@ func consume(reader *disruptor.Reader) {
 		}
 	}
 }
-func easyConsume(reader *disruptor.EasyReader) {
+func easyConsume(reader *disruptor.SimpleReader) {
 	for {
 		reader.Receive()
 	}
