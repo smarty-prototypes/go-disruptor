@@ -9,22 +9,25 @@ import (
 const MaxConsumers = 1
 
 func main() {
-	runtime.GOMAXPROCS(MaxConsumers + 1)
+	runtime.GOMAXPROCS(MaxConsumers + 2)
 
 	writerCursor := disruptor.NewCursor()
 	writerBarrier := disruptor.NewBarrier(writerCursor)
 
-	readerCursors := startReaders(writerBarrier, writerCursor)
-	readerBarrier := disruptor.NewBarrier(readerCursors...)
+	readerCursors1 := startReaders(writerBarrier, writerCursor)
+	readerBarrier1 := disruptor.NewBarrier(readerCursors1...)
 
-	writer := disruptor.NewWriter(writerCursor, RingSize, readerBarrier)
+	readerCursors2 := startReaders(readerBarrier1, writerCursor)
+	readerBarrier2 := disruptor.NewBarrier(readerCursors2...)
+
+	writer := disruptor.NewWriter(writerCursor, RingSize, readerBarrier2)
 	publish(writer)
 }
-func startReaders(writerBarrier disruptor.Barrier, writerCursor *disruptor.Cursor) (readerCursors []*disruptor.Cursor) {
+func startReaders(upstreamBarrier disruptor.Barrier, writerCursor *disruptor.Cursor) (readerCursors []*disruptor.Cursor) {
 	for i := 0; i < MaxConsumers; i++ {
 		readerCursor := disruptor.NewCursor()
 		readerCursors = append(readerCursors, readerCursor)
-		reader := disruptor.NewReader(writerBarrier, writerCursor, readerCursor)
+		reader := disruptor.NewReader(upstreamBarrier, writerCursor, readerCursor)
 
 		// wildly sporadic latency for single-item publish, e.g. 2 seconds, 65 ms, etc.
 		// faster for 2-3+ items per publish
