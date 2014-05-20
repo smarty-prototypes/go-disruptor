@@ -9,7 +9,7 @@ import (
 const MaxConsumers = 1
 
 func main() {
-	runtime.GOMAXPROCS(MaxConsumers + 2)
+	runtime.GOMAXPROCS(MaxConsumers + 1)
 
 	writerCursor := disruptor.NewCursor()
 	writerBarrier := disruptor.NewBarrier(writerCursor)
