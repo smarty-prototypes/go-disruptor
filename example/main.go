@@ -9,7 +9,7 @@ import (
 const MaxConsumers = 1
 
 func main() {
-	runtime.GOMAXPROCS(MaxConsumers + 1)
+	runtime.GOMAXPROCS(MaxConsumers + 2)
 
 	writerCursor := disruptor.NewCursor()
 	writerBarrier := disruptor.NewBarrier(writerCursor)
@@ -24,7 +24,10 @@ func startReaders(writerBarrier disruptor.Barrier, writerCursor *disruptor.Curso
 	for i := 0; i < MaxConsumers; i++ {
 		readerCursor := disruptor.NewCursor()
 		readerCursors = append(readerCursors, readerCursor)
-		go consume(writerBarrier, writerCursor, readerCursor)
+		reader := disruptor.NewReader(writerBarrier, writerCursor, readerCursor)
+
+		// go consume(reader)
+		go easyConsume(disruptor.NewEasyReader(reader, NewExampleConsumerHandler()))
 	}
 
 	return readerCursors

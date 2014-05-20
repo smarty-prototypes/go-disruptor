@@ -7,37 +7,27 @@ const (
 
 type Reader struct {
 	upstreamBarrier Barrier
-	callback        Consumer
 	writerCursor    *Cursor
 	readerCursor    *Cursor
 }
 
-func NewReader(upstreamBarrier Barrier, callback Consumer, writerCursor, readerCursor *Cursor) *Reader {
+func NewReader(upstreamBarrier Barrier, writerCursor, readerCursor *Cursor) *Reader {
 	return &Reader{
 		upstreamBarrier: upstreamBarrier,
-		callback:        callback,
 		writerCursor:    writerCursor,
 		readerCursor:    readerCursor,
 	}
 }
 
-// IDEA: Read returns remaining and consumer calls Commit(seq) once they're done reading
-func (this *Reader) Process() int64 {
+func (this *Reader) Receive() (int64, int64) {
 	next := this.readerCursor.Load() + 1
 	ready := this.upstreamBarrier.Load()
 
 	if next <= ready {
-		for next <= ready {
-			this.callback.Consume(next, ready-next)
-			next++
-		}
-
-		next--
-		this.readerCursor.Store(next)
-		return next
+		return next, ready - next
 	} else if next <= this.writerCursor.Load() {
-		return Gating
+		return next, Gating
 	} else {
-		return Idle
+		return next, Idle
 	}
 }

@@ -9,24 +9,34 @@ import (
 
 const Mod = 1000000 * 10 // 1 million * N
 
-func consume(writerBarrier disruptor.Barrier, writerCursor, readerCursor *disruptor.Cursor) {
-	reader := disruptor.NewReader(writerBarrier, &ConsumerHandler{time.Now()}, writerCursor, readerCursor)
+func consume(reader *disruptor.Reader) {
+	started := time.Now()
 
 	for {
-		reader.Process()
+		sequence, remaining := reader.Receive()
+		if remaining >= 0 {
+			for remaining >= 0 {
+
+				if sequence%Mod == 0 {
+					finished := time.Now()
+					fmt.Println(sequence, finished.Sub(started))
+					started = time.Now()
+				}
+
+				if sequence != ringBuffer[sequence&RingMask] {
+					message := ringBuffer[sequence&RingMask]
+					panic(fmt.Sprintf("Sequence: %d, Message %d\n", sequence, message))
+				}
+
+				remaining--
+				sequence++
+			}
+			reader.Commit(sequence)
+		}
 	}
 }
-func (this *ConsumerHandler) Consume(sequence, remaining int64) {
-	if sequence%Mod == 0 {
-		finished := time.Now()
-		fmt.Println(sequence, finished.Sub(this.started))
-		this.started = time.Now()
-	}
-
-	if sequence != ringBuffer[sequence&RingMask] {
-		message := ringBuffer[sequence&RingMask]
-		panic(fmt.Sprintf("Race condition--Cursor: %d, Message: %d\n", sequence, message))
+func easyConsume(reader *disruptor.EasyReader) {
+	for {
+		reader.Receive()
 	}
 }
-
-type ConsumerHandler struct{ started time.Time }
