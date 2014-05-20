@@ -15,8 +15,8 @@ func BenchmarkReader(b *testing.B) {
 	writerCursor.Store(1)
 
 	for i := int64(0); i < iterations; i++ {
-		readerCursor.Store(0)
 		sequence, _ := reader.Receive()
 		reader.Commit(sequence)
+		readerCursor.Store(0)
 	}
 }
