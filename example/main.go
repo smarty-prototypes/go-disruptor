@@ -28,10 +28,10 @@ func startReaders(writerBarrier disruptor.Barrier, writerCursor *disruptor.Curso
 
 		// wildly sporadic latency for single-item publish, e.g. 2 seconds, 65 ms, etc.
 		// faster for 2-3+ items per publish
-		// go consume(reader)
+		go consume(reader)
 
 		// constant time regardless of the number of items
-		go easyConsume(disruptor.NewEasyReader(reader, NewExampleConsumerHandler()))
+		// go easyConsume(disruptor.NewEasyReader(reader, NewExampleConsumerHandler()))
 	}
 
 	return readerCursors
