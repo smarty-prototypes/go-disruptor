@@ -17,6 +17,8 @@ TODO:
    e.g. utilizing two int32s? This would allow us to remove the atomic statements surrounding
    i386 and ARM architecutes, but may be more effort than it's worth for our particular
    use case...
+- Understand why "slower" consumer code is faster and more consistent when performing single-item
+	publishes
 
 - I need to get some help doing some low-level profiling the application to find out where
   the bottlenecks are and determining how the Go scheduler is hindering performance, if at all.

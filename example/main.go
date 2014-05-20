@@ -26,7 +26,11 @@ func startReaders(writerBarrier disruptor.Barrier, writerCursor *disruptor.Curso
 		readerCursors = append(readerCursors, readerCursor)
 		reader := disruptor.NewReader(writerBarrier, writerCursor, readerCursor)
 
+		// wildly sporadic times for single-item publish, e.g. 2 seconds, 65 ms, etc.
+		// faster for 2-3+ items per publish
 		// go consume(reader)
+
+		// constant time regardless of the number of items
 		go easyConsume(disruptor.NewEasyReader(reader, NewExampleConsumerHandler()))
 	}
 
