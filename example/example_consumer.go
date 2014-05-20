@@ -10,33 +10,48 @@ import (
 const Mod = 1000000 * 10 // 1 million * N
 
 func consume(reader *disruptor.Reader) {
-	// runtime.LockOSThread()
-	started := time.Now()
+	easyReader := disruptor.NewEasyReader(reader, NewSampleConsumer())
 
 	for {
-		sequence, remaining := reader.Receive()
-		if remaining >= 0 {
-			for remaining >= 0 {
+		easyReader.Receive()
+	}
 
-				if sequence%Mod == 0 {
-					finished := time.Now()
-					fmt.Println(sequence, finished.Sub(started))
-					started = time.Now()
-				}
+	// started := time.Now()
+	// consumer := &MyConsumer{started}
 
-				if sequence != ringBuffer[sequence&RingMask] {
-					message := ringBuffer[sequence&RingMask]
-					panic(fmt.Sprintf("Sequence: %d, Message %d\n", sequence, message))
-				}
+	// for {
+	// 	sequence, remaining := reader.Receive()
+	// 	if remaining >= 0 {
+	// 		for remaining >= 0 {
+	// 			consumer.Consume(sequence, remaining)
+	// 			remaining--
+	// 			sequence++
+	// 		}
 
-				remaining--
-				sequence++
-			}
+	// 		reader.Commit(sequence)
 
-			reader.Commit(sequence)
+	// 	} else {
+	// 	}
+	// }
+}
 
-		} else {
+type SampleConsumer struct {
+	started time.Time
+}
 
-		}
+func NewSampleConsumer() disruptor.Consumer {
+	return &SampleConsumer{started: time.Now()}
+}
+
+func (this *SampleConsumer) Consume(sequence, remaining int64) {
+	if sequence%Mod == 0 {
+		finished := time.Now()
+		fmt.Println(sequence, finished.Sub(this.started))
+		this.started = time.Now()
+	}
+
+	if sequence != ringBuffer[sequence&RingMask] {
+		message := ringBuffer[sequence&RingMask]
+		panic(fmt.Sprintf("Sequence: %d, Message %d\n", sequence, message))
 	}
 }

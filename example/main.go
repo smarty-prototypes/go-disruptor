@@ -14,10 +14,6 @@ func main() {
 	writerCursor := disruptor.NewCursor()
 	writerBarrier := disruptor.NewBarrier(writerCursor)
 
-	// writerCursor.Store(disruptor.MaxSequenceValue)
-	// startReaders(writerBarrier, writerCursor)
-	// time.Sleep(time.Second * 10)
-
 	readerCursors := startReaders(writerBarrier, writerCursor)
 	readerBarrier := disruptor.NewBarrier(readerCursors...)
 
