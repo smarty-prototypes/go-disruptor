@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-go build -o go-disruptor && ./go-disruptor
+go install && example
