@@ -1,7 +1,7 @@
 package main
 
 const (
-	RingSize = 1024 * 1024
+	RingSize = 1024 * 16
 	RingMask = RingSize - 1
 )
 

@@ -25,7 +25,9 @@ func startReaders(writerBarrier disruptor.Barrier, writerCursor *disruptor.Curso
 		readerCursor := disruptor.NewCursor()
 		readerCursors = append(readerCursors, readerCursor)
 		reader := disruptor.NewReader(writerBarrier, writerCursor, readerCursor)
+
 		go consume(reader)
+		// go easyConsume(disruptor.NewEasyReader(reader, NewExampleConsumerHandler()))
 	}
 
 	return readerCursors
