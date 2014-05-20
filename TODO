@@ -22,6 +22,17 @@ TODO:
 - I need to get some help doing some low-level profiling the application to find out where
   the bottlenecks are and determining how the Go scheduler is hindering performance, if at all.
 
+- More assertive tests on CPU ordering, e.g. claim a slot which has multiple values
+  perform a computation on the sequence in some deterministic way and store each computation
+  as one of the values. Then on the reader side assert that the struct values are correct
+  for that given sequence.
+
+- Integration suite that can exercise the Disruptor code on:
+  1. Multiple Go runtime versions, e.g. (1.1, 1.2, 1.3, etc.) (plus point releases and the latest tip)
+  2. Multiple CPU architectures: ARM, i386, AMD64
+  3. Multiple operation systems: Linux, OSX, Windows, etc.
+  Ideally each of the above combinations would be an individual exercise
+
 - contributors
 - license
 - readme (Github markdown?)
