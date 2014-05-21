@@ -6,33 +6,33 @@ import (
 )
 
 type MultiWriter struct {
-	capacity  int64
-	gate      int64
-	shift     uint8
-	committed []int32
-	upstream  Barrier
-	claimed   *Cursor
+	capacity           int64
+	gate               int64
+	shift              uint8
+	committedSequences []int32
+	readerBarrier      Barrier
+	writerCursor       *Cursor
 }
 
-func NewMultiWriter(claimed *Cursor, capacity int64, upstream Barrier) *MultiWriter {
+func NewMultiWriter(writerCursor *Cursor, capacity int64, readerBarrier Barrier) *MultiWriter {
 	assertPowerOfTwo(capacity)
 
 	shift := uint8(math.Log2(float64(capacity)))
-	buffer := initializeCommitBuffer(capacity)
+	buffer := initializeCommittedSequences(capacity)
 
 	return &MultiWriter{
-		capacity:  capacity,
-		gate:      InitialSequenceValue,
-		shift:     shift,
-		committed: buffer,
-		upstream:  upstream,
-		claimed:   claimed,
+		capacity:           capacity,
+		gate:               InitialSequenceValue,
+		shift:              shift,
+		committedSequences: buffer,
+		readerBarrier:      readerBarrier,
+		writerCursor:       writerCursor,
 	}
 }
-func initializeCommitBuffer(capacity int64) []int32 {
+func initializeCommittedSequences(capacity int64) []int32 {
 	buffer := make([]int32, capacity)
-	for i := int64(0); i < capacity; i++ {
-		buffer[i] = -1
+	for i := range buffer {
+		buffer[i] = int32(InitialSequenceValue)
 	}
 	return buffer
 }
@@ -45,12 +45,12 @@ func (this *MultiWriter) Reserve(count int64) (int64, int64) {
 	}
 
 	for {
-		previous := this.claimed.Load()
+		previous := this.writerCursor.Load()
 		next := previous + count
 		wrap := next - this.capacity
 
 		if wrap > this.gate {
-			min := this.upstream.Load()
+			min := this.readerBarrier.Load()
 			if wrap > min {
 				return 0, Gating
 			}
@@ -58,7 +58,7 @@ func (this *MultiWriter) Reserve(count int64) (int64, int64) {
 			this.gate = min
 		}
 
-		if atomic.CompareAndSwapInt64(&this.claimed.value, previous, next) {
+		if atomic.CompareAndSwapInt64(&this.writerCursor.value, previous, next) {
 			return previous + 1, next
 		}
 	}
@@ -66,13 +66,13 @@ func (this *MultiWriter) Reserve(count int64) (int64, int64) {
 
 func (this *MultiWriter) Commit(lower, upper int64) {
 	for mask := this.capacity - 1; lower <= upper; lower++ {
-		this.committed[lower&mask] = int32(lower >> this.shift)
+		this.committedSequences[lower&mask] = int32(lower >> this.shift)
 	}
 }
 
 func (this *MultiWriter) LoadBarrier(lower, upper int64) int64 {
 	for mask := this.capacity - 1; lower <= upper; lower++ {
-		if this.committed[lower&mask] < int32(lower>>this.shift) {
+		if this.committedSequences[lower&mask] < int32(lower>>this.shift) {
 			return lower - 1
 		}
 	}
