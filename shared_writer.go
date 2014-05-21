@@ -70,10 +70,12 @@ func (this *SharedWriter) Commit(lower, upper int64) {
 	}
 }
 
-func (this *SharedWriter) LoadBarrier(lower, upper int64) int64 {
-	for mask := this.capacity - 1; lower <= upper; lower++ {
-		if this.committedSequences[lower&mask] < int32(lower>>this.shift) {
-			return lower - 1
+func (this *SharedWriter) Load() int64 {
+	upper := this.writerCursor.Load()
+
+	for mask := this.capacity - 1; upper >= 0; upper-- {
+		if this.committedSequences[upper&mask] == int32(upper>>this.shift) {
+			return upper
 		}
 	}
 
