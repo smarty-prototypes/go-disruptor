@@ -9,7 +9,12 @@ import (
 
 const Mod = 1000000 * 10 // 1 million * N
 
-func consume(reader *disruptor.Reader) {
+func consume0(reader *disruptor.SimpleReader) {
+	for {
+		reader.Receive()
+	}
+}
+func consume1(reader *disruptor.Reader) {
 	started := time.Now()
 
 	for {
@@ -30,17 +35,35 @@ func consume(reader *disruptor.Reader) {
 					panic(alert)
 				}
 
+				ringBuffer[sequence&RingMask] = sequence % 2
+
 				remaining--
 				sequence++
 			}
 			reader.Commit(sequence - 1)
 		} else {
-			time.Sleep(time.Nanosecond)
+			//time.Sleep(time.Nanosecond)
 		}
 	}
 }
-func easyConsume(reader *disruptor.SimpleReader) {
+
+func consume2(reader *disruptor.Reader) {
 	for {
-		reader.Receive()
+		sequence, remaining := reader.Receive()
+		if remaining >= 0 {
+			for remaining >= 0 {
+				index := sequence & RingMask
+				message := ringBuffer[index]
+				if message != sequence%2 {
+					panic("Race condition!")
+				}
+
+				remaining--
+				sequence++
+			}
+			reader.Commit(sequence - 1)
+		} else {
+			//time.Sleep(time.Nanosecond)
+		}
 	}
 }
