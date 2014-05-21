@@ -8,7 +8,7 @@ import (
 
 const (
 	MaxConsumersPerGroup = 1
-	MaxConsumerGroups    = 1
+	MaxConsumerGroups    = 2
 	ItemsToPublish       = 4
 	ReportingFrequency   = 1000000 * 10 // 1 million * N
 )
