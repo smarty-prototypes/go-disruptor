@@ -39,6 +39,8 @@ func startConsumerGroup(group int, upstreamBarrier disruptor.Barrier, writerCurs
 
 		// wildly sporadic latency for single-item publish, e.g. 2 seconds, 65 ms, etc.
 		// faster for 2-3+ items per publish
+		// go consume1(reader)
+
 		if group == 0 {
 			go consume1(reader)
 		} else if group == 1 {
