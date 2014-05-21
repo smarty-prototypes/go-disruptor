@@ -16,5 +16,3 @@ func publish(writer *disruptor.Writer) {
 		}
 	}
 }
-
-const ItemsToPublish = 4
