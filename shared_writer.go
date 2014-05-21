@@ -7,7 +7,7 @@ import (
 
 type SharedWriter struct {
 	capacity           int64
-	gate               int64
+	gate               int64 // TODO: this will most likely need to be a cursor
 	shift              uint8
 	committedSequences []int32
 	readerBarrier      Barrier
@@ -55,7 +55,7 @@ func (this *SharedWriter) Reserve(count int64) (int64, int64) {
 				return 0, Gating
 			}
 
-			this.gate = min
+			this.gate = min // doesn't matter which write wins, BUT will most likely need to be a Cursor
 		}
 
 		if atomic.CompareAndSwapInt64(&this.writerCursor.value, previous, next) {
