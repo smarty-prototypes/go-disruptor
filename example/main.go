@@ -10,7 +10,7 @@ const (
 	MaxConsumersPerGroup = 1
 	MaxConsumerGroups    = 1
 	ItemsToPublish       = 4
-	ReportingFrequency   = 1000000 * 100 // 1 million * N
+	ReportingFrequency   = 1000000 * 10 // 1 million * N
 )
 
 func main() {
