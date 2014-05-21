@@ -10,6 +10,6 @@ func NewBarrier(upstream ...*Cursor) Barrier {
 	} else if len(upstream) == 1 {
 		return upstream[0]
 	} else {
-		return NewCompositeBarrier(upstream)
+		return NewCompositeBarrier(upstream...)
 	}
 }

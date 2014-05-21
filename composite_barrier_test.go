@@ -2,8 +2,8 @@ package disruptor
 
 import "testing"
 
-func BenchmarkBarrierLoadSingle(b *testing.B) {
-	barrier := NewBarrier(NewCursor())
+func BenchmarkCompositeBarrierLoad(b *testing.B) {
+	barrier := NewCompositeBarrier(NewCursor(), NewCursor(), NewCursor(), NewCursor())
 
 	iterations := int64(b.N)
 	b.ReportAllocs()
