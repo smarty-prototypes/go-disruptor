@@ -6,9 +6,12 @@ import (
 	"github.com/smartystreets/go-disruptor"
 )
 
-const MaxConsumersPerGroup = 1
-const MaxConsumerGroups = 1
-const ItemsToPublish = 1
+const (
+	MaxConsumersPerGroup = 1
+	MaxConsumerGroups    = 1
+	ItemsToPublish       = 4
+	ReportingFrequency   = 1000000 * 100 // 1 million * N
+)
 
 func main() {
 	runtime.GOMAXPROCS(MaxConsumerGroups*MaxConsumersPerGroup + 1)
@@ -36,17 +39,19 @@ func startConsumerGroup(group int, upstreamBarrier disruptor.Barrier, writerCurs
 		reader := disruptor.NewReader(upstreamBarrier, writerCursor, readerCursor)
 
 		// constant time regardless of the number of items
-		go consume0(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))
+		//go consume0(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))
 
 		// wildly sporadic latency for single-item publish, e.g. 2 seconds, 65 ms, etc.
 		// faster for 2-3+ items per publish
-		//go consume1(reader)
+		// go consume1(reader)
 
-		// if group == 0 {
-		// 	go consume1(reader)
-		// } else if group == 1 {
-		// 	go consume2(reader)
-		// }
+		if group == 0 {
+			go consume1(reader)
+		} else if group == 1 {
+			go consume2(reader)
+		} else {
+			panic("only two consumer groups currently supported.")
+		}
 	}
 
 	return disruptor.NewBarrier(readerCursors...)

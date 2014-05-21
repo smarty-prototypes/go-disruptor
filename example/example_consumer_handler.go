@@ -16,7 +16,7 @@ func NewExampleConsumerHandler() disruptor.Consumer {
 }
 
 func (this *ExampleConsumerHandler) Consume(sequence, remaining int64) {
-	if sequence%Mod == 0 {
+	if sequence%ReportingFrequency == 0 {
 		finished := time.Now()
 		fmt.Println(sequence, finished.Sub(this.started))
 		this.started = time.Now()

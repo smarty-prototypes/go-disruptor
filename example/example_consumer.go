@@ -7,8 +7,6 @@ import (
 	"github.com/smartystreets/go-disruptor"
 )
 
-const Mod = 1000000 * 10 // 1 million * N
-
 func consume0(reader *disruptor.SimpleReader) {
 	for {
 		reader.Receive()
@@ -22,7 +20,7 @@ func consume1(reader *disruptor.Reader) {
 		if remaining >= 0 {
 			for remaining >= 0 {
 
-				if sequence%Mod == 0 {
+				if sequence%ReportingFrequency == 0 {
 					finished := time.Now()
 					fmt.Println(sequence, finished.Sub(started))
 					started = time.Now()
