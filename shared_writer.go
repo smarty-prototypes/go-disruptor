@@ -4,6 +4,7 @@ import "sync/atomic"
 
 type SharedWriter struct {
 	capacity    int64
+	mask        int64
 	gate        int64 // TODO: determine if this should be a *Cursor
 	shift       uint8
 	committed   []int32
@@ -14,6 +15,7 @@ type SharedWriter struct {
 func NewSharedWriter(shared *SharedWriterBarrier, upstream Barrier) *SharedWriter {
 	return &SharedWriter{
 		capacity:    shared.capacity,
+		mask:        shared.mask,
 		gate:        InitialSequenceValue,
 		shift:       shared.shift,
 		committed:   shared.committed,
@@ -22,7 +24,7 @@ func NewSharedWriter(shared *SharedWriterBarrier, upstream Barrier) *SharedWrite
 	}
 }
 
-func (this *SharedWriter) Reserve(count int64) (int64, int64) {
+func (this *SharedWriter) Reserve(count int64) int64 {
 	for {
 		previous := this.reservation.Load()
 		next := previous + count
@@ -31,20 +33,18 @@ func (this *SharedWriter) Reserve(count int64) (int64, int64) {
 		if wrap > this.gate {
 			min := this.upstream.Load()
 			if wrap > min {
-				return 0, Gating
+				return Gating
 			}
 
 			this.gate = min // doesn't matter which write wins, BUT will most likely need to be a Cursor
 		}
 
 		if atomic.CompareAndSwapInt64(&this.reservation.value, previous, next) {
-			return previous + 1, next
+			return next
 		}
 	}
 }
 
-func (this *SharedWriter) Commit(lower, upper int64) {
-	for mask := this.capacity - 1; lower <= upper; lower++ {
-		this.committed[lower&mask] = int32(lower >> this.shift)
-	}
+func (this *SharedWriter) Commit(sequence int64) {
+	this.committed[sequence&this.mask] = int32(sequence >> this.shift)
 }
