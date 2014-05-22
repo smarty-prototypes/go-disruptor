@@ -8,8 +8,8 @@ import (
 
 const (
 	MaxConsumersPerGroup = 1
-	MaxConsumerGroups    = 2
-	MaxProducers         = 1
+	MaxConsumerGroups    = 1
+	MaxProducers         = 2
 	ItemsToPublish       = 1
 	ReportingFrequency   = 1000000 * 10 // 1 million * N
 	RingSize             = 1024 * 16

@@ -15,6 +15,9 @@ func consume0(reader *disruptor.SimpleReader) {
 func consume1(reader *disruptor.Reader) {
 	started := time.Now()
 
+	debug := make([]int64, 5)
+	debug = debug[0:]
+
 	for {
 		sequence, remaining := reader.Receive()
 		if remaining >= 0 {
@@ -28,12 +31,17 @@ func consume1(reader *disruptor.Reader) {
 
 				message := ringBuffer[sequence&RingMask]
 				if sequence != message {
+					for i := sequence - 5; i <= sequence; i++ {
+						debug = append(debug, ringBuffer[i&RingMask])
+					}
+
 					alert := fmt.Sprintf("Race Condition::Sequence: %d, Message %d\n", sequence, message)
-					fmt.Print(alert)
+					fmt.Println(alert)
+					fmt.Println("Partial Ring Buffer Snapshot:", debug)
 					panic(alert)
 				}
 
-				ringBuffer[sequence&RingMask] = sequence % 2
+				//ringBuffer[sequence&RingMask] = sequence % 2
 
 				remaining--
 				sequence++
