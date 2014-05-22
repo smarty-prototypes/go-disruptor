@@ -40,7 +40,6 @@ func consume1(reader *disruptor.Reader) {
 			}
 			reader.Commit(sequence - 1)
 		} else {
-			//time.Sleep(time.Nanosecond)
 		}
 	}
 }
@@ -61,7 +60,6 @@ func consume2(reader *disruptor.Reader) {
 			}
 			reader.Commit(sequence - 1)
 		} else {
-			//time.Sleep(time.Nanosecond)
 		}
 	}
 }
