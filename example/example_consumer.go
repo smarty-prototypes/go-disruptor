@@ -26,8 +26,8 @@ func consume1(reader *disruptor.Reader) {
 					started = time.Now()
 				}
 
-				if sequence != ringBuffer[sequence&RingMask] {
-					message := ringBuffer[sequence&RingMask]
+				message := ringBuffer[sequence&RingMask]
+				if sequence != message {
 					alert := fmt.Sprintf("Race Condition::Sequence: %d, Message %d\n", sequence, message)
 					fmt.Print(alert)
 					panic(alert)
@@ -49,10 +49,11 @@ func consume2(reader *disruptor.Reader) {
 		sequence, remaining := reader.Receive()
 		if remaining >= 0 {
 			for remaining >= 0 {
-				index := sequence & RingMask
-				message := ringBuffer[index]
+				message := ringBuffer[sequence&RingMask]
 				if message != sequence%2 {
-					panic("Race condition at second layer!")
+					alert := fmt.Sprintf("Race Condition (Layer 2)::Sequence: %d, Message %d\n", sequence, message)
+					fmt.Print(alert)
+					panic(alert)
 				}
 
 				remaining--
