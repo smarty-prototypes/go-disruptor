@@ -9,7 +9,8 @@ import (
 const (
 	MaxConsumersPerGroup = 1
 	MaxConsumerGroups    = 2
-	ItemsToPublish       = 4
+	MaxProducers         = 1
+	ItemsToPublish       = 1
 	ReportingFrequency   = 1000000 * 10 // 1 million * N
 	RingSize             = 1024 * 16
 	RingMask             = RingSize - 1
@@ -18,12 +19,20 @@ const (
 var ringBuffer [RingSize]int64
 
 func main() {
-	runtime.GOMAXPROCS(MaxConsumerGroups*MaxConsumersPerGroup + 1)
+	runtime.GOMAXPROCS(MaxConsumerGroups*MaxConsumersPerGroup + MaxProducers)
 
 	writerCursor := disruptor.NewCursor()
 	writerBarrier := disruptor.NewSharedWriterBarrier(writerCursor, RingSize)
 	readerBarrier := startConsumerGroups(writerBarrier, writerCursor)
 	writer := disruptor.NewSharedWriter(writerBarrier, readerBarrier)
+
+	startProducers(writer)
+}
+func startProducers(writer *disruptor.SharedWriter) {
+	for i := 0; i < MaxProducers-1; i++ {
+		go publish(writer)
+	}
+
 	publish(writer)
 }
 
