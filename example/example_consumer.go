@@ -52,7 +52,7 @@ func consume2(reader *disruptor.Reader) {
 				index := sequence & RingMask
 				message := ringBuffer[index]
 				if message != sequence%2 {
-					panic("Race condition!")
+					panic("Race condition at second layer!")
 				}
 
 				remaining--
