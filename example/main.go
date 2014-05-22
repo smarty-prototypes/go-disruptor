@@ -10,7 +10,7 @@ const (
 	MaxConsumersPerGroup = 1
 	MaxConsumerGroups    = 2
 	ItemsToPublish       = 4
-	ReportingFrequency   = 1000000 * 10 // 1 million * N
+	ReportingFrequency   = 1000000 * 1 // 1 million * N
 	RingSize             = 1024 * 16
 	RingMask             = RingSize - 1
 )
@@ -21,9 +21,9 @@ func main() {
 	runtime.GOMAXPROCS(MaxConsumerGroups*MaxConsumersPerGroup + 1)
 
 	writerCursor := disruptor.NewCursor()
-	writerBarrier := disruptor.NewBarrier(writerCursor)
+	writerBarrier := disruptor.NewSharedWriterBarrier(writerCursor, RingSize)
 	readerBarrier := startConsumerGroups(writerBarrier, writerCursor)
-	writer := disruptor.NewWriter(writerCursor, RingSize, readerBarrier)
+	writer := disruptor.NewSharedWriter(writerBarrier, readerBarrier)
 	publish(writer)
 }
 
