@@ -11,7 +11,11 @@ const (
 	MaxConsumerGroups    = 2
 	ItemsToPublish       = 4
 	ReportingFrequency   = 1000000 * 10 // 1 million * N
+	RingSize             = 1024 * 16
+	RingMask             = RingSize - 1
 )
+
+var ringBuffer [RingSize]int64
 
 func main() {
 	runtime.GOMAXPROCS(MaxConsumerGroups*MaxConsumersPerGroup + 1)
