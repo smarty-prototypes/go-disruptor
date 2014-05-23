@@ -8,18 +8,18 @@ type SharedWriter struct {
 	mask      int64
 	shift     uint8
 	committed []int32
-	read      Barrier
+	upstream  Barrier
 	written   *Cursor
 }
 
-func NewSharedWriter(write *SharedWriterBarrier, read Barrier) *SharedWriter {
+func NewSharedWriter(write *SharedWriterBarrier, upstream Barrier) *SharedWriter {
 	return &SharedWriter{
 		capacity:  write.capacity,
 		gate:      InitialSequenceValue,
 		mask:      write.mask,
 		shift:     write.shift,
 		committed: write.committed,
-		read:      read,
+		upstream:  upstream,
 		written:   write.written,
 	}
 }
@@ -31,7 +31,7 @@ func (this *SharedWriter) Reserve(count int64) (int64, int64) {
 		wrap := upper - this.capacity
 
 		if wrap > this.gate {
-			min := this.read.LoadBarrier(0)
+			min := this.upstream.LoadBarrier(0)
 			if wrap > min {
 				return InitialSequenceValue, Gating
 			}

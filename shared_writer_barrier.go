@@ -32,6 +32,7 @@ func prepareCommitBuffer(capacity int64) []int32 {
 func (this *SharedWriterBarrier) LoadBarrier(lower int64) int64 {
 	shift, mask := this.shift, this.mask
 	upper := this.written.Load()
+
 	for ; lower <= upper; lower++ {
 		if this.committed[lower&mask] != int32(lower>>shift) {
 			return lower - 1
