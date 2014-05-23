@@ -14,8 +14,8 @@ func BenchmarkReader(b *testing.B) {
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		lower, upper := reader.Receive()
-		reader.Commit(lower, upper)
+		_, upper := reader.Receive()
+		reader.Commit(upper)
 		read.Store(0)
 	}
 }
