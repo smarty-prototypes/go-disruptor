@@ -7,12 +7,12 @@ import (
 	"github.com/smartystreets/go-disruptor"
 )
 
-const RingSize = 1024 * 16
+const singleWriterRingBufferSize = 1024 * 16
 
 func BenchmarkSingleWriter(b *testing.B) {
 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
 	reader := disruptor.NewReader(read, written, written)
-	writer := disruptor.NewWriter(written, read, RingSize)
+	writer := disruptor.NewWriter(written, read, singleWriterRingBufferSize)
 
 	iterations := int64(b.N)
 	b.ReportAllocs()
