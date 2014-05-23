@@ -1,5 +1,5 @@
 package disruptor
 
-func (this *Reader) Commit(lower, upper int64) {
-	this.read.sequence = upper
+func (this *Reader) Commit(sequence int64) {
+	this.read.sequence = sequence
 }

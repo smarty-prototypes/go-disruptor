@@ -8,9 +8,9 @@ import (
 
 const (
 	MaxConsumersPerGroup = 1
-	MaxConsumerGroups    = 2
-	MaxProducers         = 2
-	ItemsToPublish       = 2
+	MaxConsumerGroups    = 1
+	MaxProducers         = 1
+	ItemsToPublish       = 1
 	ReportingFrequency   = 1000000 * 10 // 1 million * N
 	RingSize             = 1024 * 16
 	RingMask             = RingSize - 1
@@ -22,25 +22,28 @@ func main() {
 	runtime.GOMAXPROCS(MaxConsumerGroups*MaxConsumersPerGroup + MaxProducers)
 
 	written := disruptor.NewCursor()
-	shared := disruptor.NewSharedWriterBarrier(written, RingSize)
-	upstream := startConsumerGroups(shared, written)
-	writer := disruptor.NewSharedWriter(shared, upstream)
-	// writer := disruptor.NewWriter(written, upstream, RingSize)
-	// startExclusiveProducer(writer)
-	startSharedProducers(writer)
+	upstream := startConsumerGroups(written, written)
+	writer := disruptor.NewWriter(written, upstream, RingSize)
+	startExclusiveProducer(writer)
+
+	// written := disruptor.NewCursor()
+	// shared := disruptor.NewSharedWriterBarrier(written, RingSize)
+	// upstream := startConsumerGroups(shared, written)
+	// writer := disruptor.NewSharedWriter(shared, upstream)
+	// startSharedProducers(writer)
 }
 
-// func startExclusiveProducer(writer *disruptor.Writer) {
-//publish(writer)
-// }
-
-func startSharedProducers(writer *disruptor.SharedWriter) {
-	for i := 0; i < MaxProducers-1; i++ {
-		go publish(writer)
-	}
-
+func startExclusiveProducer(writer *disruptor.Writer) {
 	publish(writer)
 }
+
+// func startSharedProducers(writer *disruptor.SharedWriter) {
+// 	for i := 0; i < MaxProducers-1; i++ {
+// 		go publish(writer)
+// 	}
+
+// 	publish(writer)
+// }
 
 func startConsumerGroups(upstream disruptor.Barrier, written *disruptor.Cursor) disruptor.Barrier {
 	for i := 0; i < MaxConsumerGroups; i++ {
@@ -58,19 +61,19 @@ func startConsumerGroup(group int, upstream disruptor.Barrier, written *disrupto
 		reader := disruptor.NewReader(read, written, upstream)
 
 		// constant time regardless of the number of items
-		// go consume0(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))
+		go consume0(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))
 
 		// TODO: wildly sporadic latency for single-item publish, e.g. 2 seconds, 65 ms, etc.
 		// faster for 2-3+ items per publish
 		// go consume1(reader)
 
-		if group == 0 {
-			go consume1(reader)
-		} else if group == 1 {
-			go consume2(reader)
-		} else {
-			panic("only two consumer groups currently supported.")
-		}
+		// if group == 0 {
+		// 	go consume1(reader)
+		// } else if group == 1 {
+		// 	go consume2(reader)
+		// } else {
+		// 	panic("only two consumer groups currently supported.")
+		// }
 	}
 
 	return disruptor.NewCompositeBarrier(cursors...)

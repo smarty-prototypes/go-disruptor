@@ -8,17 +8,21 @@ import (
 )
 
 func consume0(reader *disruptor.SimpleReader) {
+	sequence := int64(0)
 	for {
-		reader.Receive()
+		if upper := reader.Receive(sequence); upper > sequence {
+			sequence = upper
+		}
 	}
 }
 func consume1(reader *disruptor.Reader) {
 	started := time.Now()
+	sequence := int64(0)
 
 	for {
-		lower, upper := reader.Receive()
-		if lower <= upper {
-			for sequence := lower; sequence <= upper; sequence++ {
+		upper := reader.Receive(sequence)
+		if sequence <= upper {
+			for ; sequence <= upper; sequence++ {
 				if sequence%ReportingFrequency == 0 {
 					finished := time.Now()
 					fmt.Println(sequence, finished.Sub(started))
@@ -32,20 +36,21 @@ func consume1(reader *disruptor.Reader) {
 					panic(alert)
 				}
 
-				ringBuffer[sequence&RingMask] = sequence % 2
+				// ringBuffer[sequence&RingMask] = sequence % 2
 			}
 
-			reader.Commit(lower, upper)
+			reader.Commit(upper)
 		}
 	}
 }
 
 func consume2(reader *disruptor.Reader) {
+	sequence := int64(0)
 	for {
-		lower, upper := reader.Receive()
+		upper := reader.Receive(sequence)
 
-		if lower <= upper {
-			for sequence := lower; sequence <= upper; sequence++ {
+		if sequence <= upper {
+			for ; sequence <= upper; sequence++ {
 				message := ringBuffer[sequence&RingMask]
 				if message != sequence%2 {
 					alert := fmt.Sprintf("Race Condition (Layer 2)::Sequence: %d, Message %d\n", sequence, message)
@@ -53,7 +58,7 @@ func consume2(reader *disruptor.Reader) {
 					panic(alert)
 				}
 			}
-			reader.Commit(lower, upper)
+			reader.Commit(upper)
 		}
 	}
 }

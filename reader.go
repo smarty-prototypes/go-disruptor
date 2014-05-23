@@ -14,15 +14,14 @@ func NewReader(read, written *Cursor, upstream Barrier) *Reader {
 	}
 }
 
-func (this *Reader) Receive() (int64, int64) {
-	lower := this.read.Load() + 1
+func (this *Reader) Receive(lower int64) int64 {
 	upper := this.upstream.LoadBarrier(lower)
 
 	if lower <= upper {
-		return lower, upper
+		return upper
 	} else if gate := this.written.Load(); lower <= gate {
-		return InitialSequenceValue, Gating
+		return Gating
 	} else {
-		return InitialSequenceValue, Idling
+		return Idling
 	}
 }
