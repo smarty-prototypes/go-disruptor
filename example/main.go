@@ -23,9 +23,9 @@ func main() {
 
 	written := disruptor.NewCursor()
 	// writeBarrier := disruptor.NewSharedWriterBarrier(written, RingSize)
-	readBarrier := startConsumerGroups(written, written)
-	// writer := disruptor.NewSharedWriter(writeBarrier, readBarrier)
-	writer := disruptor.NewWriter(written, RingSize, readBarrier)
+	upstream := startConsumerGroups(written, written)
+	// writer := disruptor.NewSharedWriter(writeBarrier, upstream)
+	writer := disruptor.NewWriter(written, upstream, RingSize)
 
 	startExclusiveProducer(writer)
 }
@@ -54,7 +54,7 @@ func startConsumerGroup(group int, upstream disruptor.Barrier, written *disrupto
 	for i := 0; i < MaxConsumersPerGroup; i++ {
 		read := disruptor.NewCursor()
 		cursors = append(cursors, read)
-		reader := disruptor.NewReader(upstream, written, read)
+		reader := disruptor.NewReader(read, written, upstream)
 
 		// constant time regardless of the number of items
 		//go consume0(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))

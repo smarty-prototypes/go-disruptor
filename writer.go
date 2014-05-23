@@ -1,22 +1,22 @@
 package disruptor
 
 type Writer struct {
+	written  *Cursor
+	upstream Barrier
 	previous int64
 	gate     int64
 	capacity int64
-	written  *Cursor
-	upstream Barrier
 }
 
-func NewWriter(written *Cursor, capacity int64, upstream Barrier) *Writer {
+func NewWriter(written *Cursor, upstream Barrier, capacity int64) *Writer {
 	assertPowerOfTwo(capacity)
 
 	return &Writer{
+		upstream: upstream,
+		written:  written,
 		previous: InitialSequenceValue,
 		gate:     InitialSequenceValue,
 		capacity: capacity,
-		written:  written,
-		upstream: upstream,
 	}
 }
 

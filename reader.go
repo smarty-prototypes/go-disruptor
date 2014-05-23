@@ -1,16 +1,16 @@
 package disruptor
 
 type Reader struct {
-	upstream Barrier
-	written  *Cursor
 	read     *Cursor
+	written  *Cursor
+	upstream Barrier
 }
 
-func NewReader(upstream Barrier, written, read *Cursor) *Reader {
+func NewReader(read, written *Cursor, upstream Barrier) *Reader {
 	return &Reader{
-		upstream: upstream,
-		written:  written,
 		read:     read,
+		written:  written,
+		upstream: upstream,
 	}
 }
 
