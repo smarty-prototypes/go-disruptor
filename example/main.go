@@ -8,7 +8,7 @@ import (
 
 const (
 	MaxConsumersPerGroup = 1
-	MaxConsumerGroups    = 1
+	MaxConsumerGroups    = 2
 	MaxProducers         = 1
 	ItemsToPublish       = 4
 	ReportingFrequency   = 1000000 * 10 // 1 million * N
@@ -57,7 +57,7 @@ func startConsumerGroup(group int, upstream disruptor.Barrier, written *disrupto
 		reader := disruptor.NewReader(read, written, upstream)
 
 		// constant time regardless of the number of items
-		//go consume0(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))
+		// go consume0(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))
 
 		// TODO: wildly sporadic latency for single-item publish, e.g. 2 seconds, 65 ms, etc.
 		// faster for 2-3+ items per publish
