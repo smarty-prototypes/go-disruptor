@@ -8,7 +8,7 @@ import (
 
 const (
 	MaxConsumersPerGroup = 1
-	MaxConsumerGroups    = 2
+	MaxConsumerGroups    = 1
 	MaxProducers         = 1
 	ItemsToPublish       = 4
 	ReportingFrequency   = 1000000 * 10 // 1 million * N
@@ -22,24 +22,26 @@ func main() {
 	runtime.GOMAXPROCS(MaxConsumerGroups*MaxConsumersPerGroup + MaxProducers)
 
 	written := disruptor.NewCursor()
-	// writeBarrier := disruptor.NewSharedWriterBarrier(written, RingSize)
+	shared := disruptor.NewSharedWriterBarrier(written, RingSize)
 	upstream := startConsumerGroups(written, written)
-	// writer := disruptor.NewSharedWriter(writeBarrier, upstream)
-	writer := disruptor.NewWriter(written, upstream, RingSize)
+	writer := disruptor.NewSharedWriter(shared, upstream)
+	// writer := disruptor.NewWriter(written, upstream, RingSize)
 
-	startExclusiveProducer(writer)
+	// startExclusiveProducer(writer)
+	startSharedProducers(writer)
 }
-func startExclusiveProducer(writer *disruptor.Writer) {
+
+// func startExclusiveProducer(writer *disruptor.Writer) {
+//publish(writer)
+// }
+
+func startSharedProducers(writer *disruptor.SharedWriter) {
+	for i := 0; i < MaxProducers-1; i++ {
+		go publish(writer)
+	}
+
 	publish(writer)
 }
-
-// func startSharedProducers(writer *disruptor.SharedWriter) {
-// 	for i := 0; i < MaxProducers-1; i++ {
-// 		go publish(writer)
-// 	}
-
-// 	publish(writer)
-// }
 
 func startConsumerGroups(upstream disruptor.Barrier, writer *disruptor.Cursor) disruptor.Barrier {
 	for i := 0; i < MaxConsumerGroups; i++ {

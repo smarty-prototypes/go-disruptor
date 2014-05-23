@@ -27,12 +27,12 @@ func consume1(reader *disruptor.Reader) {
 
 				message := ringBuffer[sequence&RingMask]
 				if sequence != message {
-					alert := fmt.Sprintf("***Race Condition***::Sequence: %d, Message %d\n", sequence, message)
+					alert := fmt.Sprintf("***Race Condition***\tSequence: %d, Message %d\n", sequence, message)
 					fmt.Println(alert)
 					panic(alert)
 				}
 
-				ringBuffer[sequence&RingMask] = sequence % 2
+				// ringBuffer[sequence&RingMask] = sequence % 2
 			}
 
 			reader.Commit(lower, upper)
