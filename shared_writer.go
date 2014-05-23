@@ -24,7 +24,6 @@ func NewSharedWriter(shared *SharedWriterBarrier, upstream Barrier) *SharedWrite
 	}
 }
 
-// TODO: look at returning a "Ticket/Claim/Receipt" upon which "Commit" can be called
 func (this *SharedWriter) Reserve(count int64) (int64, int64) {
 	for {
 		previous := this.reservation.Load()

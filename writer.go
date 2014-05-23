@@ -27,7 +27,6 @@ func assertPowerOfTwo(value int64) {
 	}
 }
 
-// TODO: look at returning a "Ticket/Claim/Receipt" upon which "Commit" can be called
 func (this *Writer) Reserve(count int64) (int64, int64) {
 	upper := this.previous + count
 	wrap := upper - this.capacity

@@ -19,7 +19,6 @@ func NewReader(upstreamBarrier Barrier, writerCursor, readerCursor *Cursor) *Rea
 	}
 }
 
-// TODO: look at returning a "Ticket/Claim/Receipt" upon which "Commit" can be called
 func (this *Reader) Receive() (int64, int64) {
 	lower := this.readerCursor.Load() + 1
 	upper := this.upstreamBarrier.LoadBarrier(lower)
