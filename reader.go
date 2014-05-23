@@ -1,10 +1,5 @@
 package disruptor
 
-const (
-	Gating = -2
-	Idling = -3
-)
-
 type Reader struct {
 	upstreamBarrier Barrier
 	writerCursor    *Cursor

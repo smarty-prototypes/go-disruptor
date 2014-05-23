@@ -4,6 +4,8 @@ const (
 	InitialSequenceValue int64 = -1
 	MaxSequenceValue     int64 = (1 << 63) - 1
 	cpuCacheLinePadding        = 7
+	Gating                     = InitialSequenceValue - 1
+	Idling                     = Gating - 1
 )
 
 // TODO: aligned read/write: https://groups.google.com/forum/#!topic/golang-nuts/XDfQUn4U_g8
