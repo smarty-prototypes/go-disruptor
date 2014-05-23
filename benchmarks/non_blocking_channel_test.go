@@ -6,6 +6,8 @@ const nonBlockingChannelBufferSize = 1024 * 1024
 
 func BenchmarkNonBlockingChannel(b *testing.B) {
 	iterations := int64(b.N)
+	b.ReportAllocs()
+	b.ResetTimer()
 
 	channel := make(chan int64, nonBlockingChannelBufferSize)
 	go func() {
