@@ -5,6 +5,10 @@ type CompositeBarrier struct {
 }
 
 func NewCompositeBarrier(upstream ...*Cursor) *CompositeBarrier {
+	if len(upstream) == 0 {
+		panic("At least one upstream cursor is required.")
+	}
+
 	cursors := make([]*Cursor, len(upstream))
 	copy(cursors, upstream)
 	return &CompositeBarrier{cursors}

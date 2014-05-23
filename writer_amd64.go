@@ -1,5 +1,5 @@
 package disruptor
 
 func (this *Writer) Commit(lower, upper int64) {
-	this.writerCursor.value = upper
+	this.written.sequence = upper
 }

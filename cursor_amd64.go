@@ -1,11 +1,11 @@
 package disruptor
 
-func (this *Cursor) Store(value int64) {
-	this.value = value
+func (this *Cursor) Store(sequence int64) {
+	this.sequence = sequence
 }
 func (this *Cursor) Load() int64 {
-	return this.value
+	return this.sequence
 }
-func (this *Cursor) LoadBarrier(current int64) int64 {
-	return this.value
+func (this *Cursor) LoadBarrier(next int64) int64 {
+	return this.sequence
 }

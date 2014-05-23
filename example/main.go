@@ -21,12 +21,11 @@ var ringBuffer [RingSize]int64
 func main() {
 	runtime.GOMAXPROCS(MaxConsumerGroups*MaxConsumersPerGroup + MaxProducers)
 
-	writerCursor := disruptor.NewCursor()
-	writerBarrier := disruptor.NewBarrier(writerCursor)
-	// writerBarrier := disruptor.NewSharedWriterBarrier(writerCursor, RingSize)
-	readerBarrier := startConsumerGroups(writerBarrier, writerCursor)
-	// writer := disruptor.NewSharedWriter(writerBarrier, readerBarrier)
-	writer := disruptor.NewWriter(writerCursor, RingSize, readerBarrier)
+	written := disruptor.NewCursor()
+	// writeBarrier := disruptor.NewSharedWriterBarrier(written, RingSize)
+	readBarrier := startConsumerGroups(written, written)
+	// writer := disruptor.NewSharedWriter(writeBarrier, readBarrier)
+	writer := disruptor.NewWriter(written, RingSize, readBarrier)
 
 	startExclusiveProducer(writer)
 }
@@ -49,13 +48,13 @@ func startConsumerGroups(upstream disruptor.Barrier, writer *disruptor.Cursor) d
 
 	return upstream
 }
-func startConsumerGroup(group int, upstreamBarrier disruptor.Barrier, writerCursor *disruptor.Cursor) disruptor.Barrier {
-	readerCursors := []*disruptor.Cursor{}
+func startConsumerGroup(group int, upstream disruptor.Barrier, written *disruptor.Cursor) disruptor.Barrier {
+	cursors := []*disruptor.Cursor{}
 
 	for i := 0; i < MaxConsumersPerGroup; i++ {
-		readerCursor := disruptor.NewCursor()
-		readerCursors = append(readerCursors, readerCursor)
-		reader := disruptor.NewReader(upstreamBarrier, writerCursor, readerCursor)
+		read := disruptor.NewCursor()
+		cursors = append(cursors, read)
+		reader := disruptor.NewReader(upstream, written, read)
 
 		// constant time regardless of the number of items
 		//go consume0(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))
@@ -73,5 +72,5 @@ func startConsumerGroup(group int, upstreamBarrier disruptor.Barrier, writerCurs
 		}
 	}
 
-	return disruptor.NewBarrier(readerCursors...)
+	return disruptor.NewCompositeBarrier(cursors...)
 }

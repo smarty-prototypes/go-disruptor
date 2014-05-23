@@ -1,26 +1,26 @@
 package disruptor
 
 type Reader struct {
-	upstreamBarrier Barrier
-	writerCursor    *Cursor
-	readerCursor    *Cursor
+	upstream Barrier
+	written  *Cursor
+	read     *Cursor
 }
 
-func NewReader(upstreamBarrier Barrier, writerCursor, readerCursor *Cursor) *Reader {
+func NewReader(upstream Barrier, written, read *Cursor) *Reader {
 	return &Reader{
-		upstreamBarrier: upstreamBarrier,
-		writerCursor:    writerCursor,
-		readerCursor:    readerCursor,
+		upstream: upstream,
+		written:  written,
+		read:     read,
 	}
 }
 
 func (this *Reader) Receive() (int64, int64) {
-	lower := this.readerCursor.Load() + 1
-	upper := this.upstreamBarrier.LoadBarrier(lower)
+	lower := this.read.Load() + 1
+	upper := this.upstream.LoadBarrier(lower)
 
 	if lower <= upper {
 		return lower, upper
-	} else if gate := this.writerCursor.Load(); lower <= gate {
+	} else if gate := this.written.Load(); lower <= gate {
 		return InitialSequenceValue, Gating
 	} else {
 		return InitialSequenceValue, Idling

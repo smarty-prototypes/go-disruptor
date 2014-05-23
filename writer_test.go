@@ -14,32 +14,30 @@ func BenchmarkWriterCommit(b *testing.B) {
 }
 
 func BenchmarkWriterReserve(b *testing.B) {
-	readerCursor := NewCursor()
-	writerCursor := NewCursor()
-	readerBarrier := NewBarrier(readerCursor)
+	read := NewCursor()
+	written := NewCursor()
 
-	writer := NewWriter(writerCursor, 1024, readerBarrier)
+	writer := NewWriter(written, 1024, read)
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
 		claimed, _ := writer.Reserve(1)
-		readerCursor.Store(claimed)
+		read.Store(claimed)
 	}
 }
 
 func BenchmarkWriterNextWrapPoint(b *testing.B) {
-	readerCursor := NewCursor()
-	writerCursor := NewCursor()
-	readerBarrier := NewBarrier(readerCursor)
+	read := NewCursor()
+	written := NewCursor()
 
-	writer := NewWriter(writerCursor, 1024, readerBarrier)
+	writer := NewWriter(written, 1024, read)
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	readerCursor.Store(MaxSequenceValue)
+	read.Store(MaxSequenceValue)
 	for i := int64(0); i < iterations; i++ {
 		writer.Reserve(1)
 	}

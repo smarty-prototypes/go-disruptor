@@ -1,22 +1,22 @@
 package disruptor
 
 type Writer struct {
-	previous      int64
-	gate          int64
-	capacity      int64
-	writerCursor  *Cursor
-	readerBarrier Barrier
+	previous int64
+	gate     int64
+	capacity int64
+	written  *Cursor
+	upstream Barrier
 }
 
-func NewWriter(writerCursor *Cursor, capacity int64, readerBarrier Barrier) *Writer {
+func NewWriter(written *Cursor, capacity int64, upstream Barrier) *Writer {
 	assertPowerOfTwo(capacity)
 
 	return &Writer{
-		previous:      InitialSequenceValue,
-		gate:          InitialSequenceValue,
-		capacity:      capacity,
-		writerCursor:  writerCursor,
-		readerBarrier: readerBarrier,
+		previous: InitialSequenceValue,
+		gate:     InitialSequenceValue,
+		capacity: capacity,
+		written:  written,
+		upstream: upstream,
 	}
 }
 
@@ -32,7 +32,7 @@ func (this *Writer) Reserve(count int64) (int64, int64) {
 	wrap := upper - this.capacity
 
 	if wrap > this.gate {
-		min := this.readerBarrier.LoadBarrier(0)
+		min := this.upstream.LoadBarrier(0)
 		if wrap > min {
 			return InitialSequenceValue, Gating
 		}
