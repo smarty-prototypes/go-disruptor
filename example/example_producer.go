@@ -14,4 +14,5 @@ func publish(writer *disruptor.SharedWriter) {
 			}
 			writer.Commit(sequence-ItemsToPublish+1, sequence)
 		}
+	}
 }
