@@ -54,7 +54,7 @@ func startConsumerGroup(group int, upstreamBarrier disruptor.Barrier, writerCurs
 		// constant time regardless of the number of items
 		//go consume0(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))
 
-		// wildly sporadic latency for single-item publish, e.g. 2 seconds, 65 ms, etc.
+		// TODO: wildly sporadic latency for single-item publish, e.g. 2 seconds, 65 ms, etc.
 		// faster for 2-3+ items per publish
 		// go consume1(reader)
 
