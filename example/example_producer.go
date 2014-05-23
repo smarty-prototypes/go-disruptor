@@ -6,11 +6,9 @@ func publish(writer *disruptor.Writer) {
 
 	for {
 		if lower, upper := writer.Reserve(ItemsToPublish); upper != disruptor.Gating {
-
-			ringBuffer[lower&RingMask] = lower
-			// for sequence := lower; sequence <= upper; sequence++ {
-			// 	ringBuffer[sequence&RingMask] = sequence
-			// }
+			for sequence := lower; sequence <= upper; sequence++ {
+				ringBuffer[sequence&RingMask] = sequence
+			}
 			writer.Commit(lower, upper)
 		}
 	}

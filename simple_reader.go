@@ -9,8 +9,8 @@ func NewSimpleReader(reader *Reader, callback Consumer) *SimpleReader {
 	return &SimpleReader{reader: reader, callback: callback}
 }
 
-func (this *SimpleReader) Receive(lower int64) int64 {
-	upper := this.reader.Receive(lower)
+func (this *SimpleReader) Receive() (int64, int64) {
+	lower, upper := this.reader.Receive()
 
 	if lower <= upper {
 		for sequence := lower; sequence <= upper; sequence++ {
@@ -20,5 +20,5 @@ func (this *SimpleReader) Receive(lower int64) int64 {
 		this.reader.Commit(upper)
 	}
 
-	return upper
+	return lower, upper
 }

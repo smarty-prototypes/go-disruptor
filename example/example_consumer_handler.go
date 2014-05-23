@@ -22,10 +22,10 @@ func (this *ExampleConsumerHandler) Consume(sequence, remaining int64) {
 		this.started = time.Now()
 	}
 
-	// if sequence != ringBuffer[sequence&RingMask] {
-	// 	message := ringBuffer[sequence&RingMask]
-	// 	alert := fmt.Sprintf("Race Condition::Sequence: %d, Message %d\n", sequence, message)
-	// 	fmt.Print(alert)
-	// 	panic(alert)
-	// }
+	if sequence != ringBuffer[sequence&RingMask] {
+		message := ringBuffer[sequence&RingMask]
+		alert := fmt.Sprintf("Race Condition::Sequence: %d, Message %d\n", sequence, message)
+		fmt.Print(alert)
+		panic(alert)
+	}
 }
