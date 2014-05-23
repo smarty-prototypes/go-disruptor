@@ -9,10 +9,10 @@ import (
 const (
 	MaxConsumersPerGroup = 1
 	MaxConsumerGroups    = 1
-	MaxProducers         = 1
-	ItemsToPublish       = 1
-	ReportingFrequency   = 1024 //1000000 * 10 // 1 million * N
-	RingSize             = 2
+	MaxProducers         = 2
+	ItemsToPublish       = 4
+	ReportingFrequency   = 1000000 * 10 // 1 million * N
+	RingSize             = 1024 * 16
 	RingMask             = RingSize - 1
 )
 
@@ -23,7 +23,7 @@ func main() {
 
 	written := disruptor.NewCursor()
 	shared := disruptor.NewSharedWriterBarrier(written, RingSize)
-	upstream := startConsumerGroups(written, written)
+	upstream := startConsumerGroups(shared, written)
 	writer := disruptor.NewSharedWriter(shared, upstream)
 	// writer := disruptor.NewWriter(written, upstream, RingSize)
 	// startExclusiveProducer(writer)
@@ -42,9 +42,9 @@ func startSharedProducers(writer *disruptor.SharedWriter) {
 	publish(writer)
 }
 
-func startConsumerGroups(upstream disruptor.Barrier, writer *disruptor.Cursor) disruptor.Barrier {
+func startConsumerGroups(upstream disruptor.Barrier, written *disruptor.Cursor) disruptor.Barrier {
 	for i := 0; i < MaxConsumerGroups; i++ {
-		upstream = startConsumerGroup(i, upstream, writer)
+		upstream = startConsumerGroup(i, upstream, written)
 	}
 
 	return upstream
