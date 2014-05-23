@@ -32,7 +32,7 @@ func consume1(reader *disruptor.Reader) {
 					panic(alert)
 				}
 
-				ringBuffer[sequence&RingMask] = sequence % 2
+				// ringBuffer[sequence&RingMask] = sequence % 2
 			}
 
 			reader.Commit(lower, upper)
