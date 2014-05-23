@@ -12,8 +12,6 @@ func publish(writer *disruptor.SharedWriter) {
 				lower++
 				ringBuffer[(lower)&RingMask] = lower
 			}
-			// ringBuffer[sequence&RingMask] = sequence
 			writer.Commit(sequence-ItemsToPublish+1, sequence)
 		}
-	}
 }

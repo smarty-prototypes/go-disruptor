@@ -27,6 +27,7 @@ func assertPowerOfTwo(value int64) {
 	}
 }
 
+// TODO: return lower, upper instead of upper
 func (this *Writer) Reserve(count int64) int64 {
 	next := this.previous + count
 	wrap := next - this.capacity

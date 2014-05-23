@@ -24,6 +24,7 @@ func NewSharedWriter(shared *SharedWriterBarrier, upstream Barrier) *SharedWrite
 	}
 }
 
+// TODO: return lower, upper instead of upper
 func (this *SharedWriter) Reserve(count int64) int64 {
 	for {
 		previous := this.reservation.Load()

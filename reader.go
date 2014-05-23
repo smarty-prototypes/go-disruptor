@@ -21,6 +21,7 @@ func NewReader(upstreamBarrier Barrier, writerCursor, readerCursor *Cursor) *Rea
 
 // TODO: performance when current (or next?) sequence is received as a parameter to Receive
 // instead of reading the cursor...
+// TODO: signature: lower, upper instead of lower, count
 func (this *Reader) Receive() (int64, int64) {
 	next := this.readerCursor.Load() + 1
 	ready := this.upstreamBarrier.LoadBarrier(next)
