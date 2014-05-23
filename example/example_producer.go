@@ -8,8 +8,12 @@ func publish(writer *disruptor.SharedWriter) {
 		// TODO: return lower, upper instead? or some kind of struct "Reservation"
 		// upon which commit can be invoked?
 		if sequence := writer.Reserve(ItemsToPublish); sequence != disruptor.Gating {
-			ringBuffer[sequence&RingMask] = sequence
-			writer.Commit(sequence, sequence+ItemsToPublish-1)
+			for lower := sequence - ItemsToPublish; lower < sequence; {
+				lower++
+				ringBuffer[(lower)&RingMask] = lower
+			}
+			// ringBuffer[sequence&RingMask] = sequence
+			writer.Commit(sequence-ItemsToPublish+1, sequence)
 		}
 	}
 }
