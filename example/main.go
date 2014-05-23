@@ -10,7 +10,7 @@ const (
 	MaxConsumersPerGroup = 1
 	MaxConsumerGroups    = 1
 	MaxProducers         = 2
-	ItemsToPublish       = 2
+	ItemsToPublish       = 1
 	ReportingFrequency   = 10000 //1000000 * 10 // 1 million * N
 	RingSize             = 2
 	RingMask             = RingSize - 1

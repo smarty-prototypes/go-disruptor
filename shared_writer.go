@@ -1,9 +1,6 @@
 package disruptor
 
-import (
-	"fmt"
-	"sync/atomic"
-)
+import "sync/atomic"
 
 type SharedWriter struct {
 	capacity    int64
@@ -33,26 +30,26 @@ func (this *SharedWriter) Reserve(id int, count int64) int64 {
 		next := previous + count
 		wrap := next - this.capacity
 
-		fmt.Printf("[WRITER %d] Previous: %d, Next: %d, Wrap: %d\n", id, previous, next, wrap)
+		// fmt.Printf("[WRITER %d] Previous: %d, Next: %d, Wrap: %d\n", id, previous, next, wrap)
 
 		if wrap > this.gate {
-			fmt.Printf("[WRITER %d] Previous gate: %d\n", id, this.gate)
+			// fmt.Printf("[WRITER %d] Previous gate: %d\n", id, this.gate)
 			min := this.upstream.Load()
 			if wrap > min {
-				fmt.Printf("[WRITER %d] New gate (need to wait more): %d\n", id, min)
+				// fmt.Printf("[WRITER %d] New gate (waiting for consumers): %d\n", id, min)
 				return Gating
 			}
 
-			fmt.Printf("[WRITER %d] New gate (accepted): %d\n", id, min)
+			// fmt.Printf("[WRITER %d] New gate found: %d\n", id, min)
 			this.gate = min // doesn't matter which write wins, BUT will most likely need to be a Cursor
 		}
 
-		fmt.Printf("[WRITER %d] Updating reservation. Previous: %d, Next: %d\n", id, previous, next)
+		// fmt.Printf("[WRITER %d] Updating reservation. Previous: %d, Next: %d\n", id, previous, next)
 		if atomic.CompareAndSwapInt64(&this.reservation.value, previous, next) {
-			fmt.Printf("[WRITER %d] CAS accepted\n", id)
+			// fmt.Printf("[WRITER %d] Reservation updated\n", id)
 			return next
-		} else {
-			fmt.Printf("[WRITER] CAS failed, retrying\n", id)
+			// } else {
+			// 	fmt.Printf("[WRITER %d] Reservation rejected, retrying\n", id)
 		}
 	}
 }
