@@ -23,7 +23,7 @@ func NewReader(upstreamBarrier Barrier, writerCursor, readerCursor *Cursor) *Rea
 // instead of reading the cursor...
 func (this *Reader) Receive() (int64, int64) {
 	next := this.readerCursor.Load() + 1
-	ready := this.upstreamBarrier.Load()
+	ready := this.upstreamBarrier.LoadBarrier(next)
 	// fmt.Printf("\t\t\t\t\t[READER] Next: %d, Ready: %d\n", next, ready)
 
 	if next <= ready {

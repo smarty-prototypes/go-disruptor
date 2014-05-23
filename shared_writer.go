@@ -34,7 +34,7 @@ func (this *SharedWriter) Reserve(id int, count int64) int64 {
 
 		if wrap > this.gate {
 			// fmt.Printf("[WRITER %d] Previous gate: %d\n", id, this.gate)
-			min := this.upstream.Load()
+			min := this.upstream.LoadBarrier(0)
 			if wrap > min {
 				// fmt.Printf("[WRITER %d] New gate (waiting for consumers): %d\n", id, min)
 				return Gating
@@ -54,6 +54,10 @@ func (this *SharedWriter) Reserve(id int, count int64) int64 {
 	}
 }
 
-func (this *SharedWriter) Commit(sequence int64) {
-	this.committed[sequence&this.mask] = int32(sequence >> this.shift)
+func (this *SharedWriter) Commit(lower, upper int64) {
+	// fmt.Printf("[PRODUCER] Committing Reservation. Lower: %d, Upper: %d\n", lower, upper)
+
+	for shift, mask := this.shift, this.mask; lower <= upper; lower++ {
+		this.committed[lower&mask] = int32(lower >> shift)
+	}
 }

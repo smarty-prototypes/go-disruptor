@@ -6,3 +6,6 @@ func (this *Cursor) Store(value int64) {
 func (this *Cursor) Load() int64 {
 	return this.value
 }
+func (this *Cursor) LoadBarrier(current int64) int64 {
+	return this.value
+}

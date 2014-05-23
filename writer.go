@@ -32,7 +32,7 @@ func (this *Writer) Reserve(count int64) int64 {
 	wrap := next - this.capacity
 
 	if wrap > this.gate {
-		min := this.readerBarrier.Load()
+		min := this.readerBarrier.LoadBarrier(0)
 		if wrap > min {
 			return Gating
 		}

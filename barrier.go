@@ -1,7 +1,7 @@
 package disruptor
 
 type Barrier interface {
-	Load() int64
+	LoadBarrier(int64) int64
 }
 
 func NewBarrier(upstream ...*Cursor) Barrier {

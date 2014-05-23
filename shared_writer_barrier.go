@@ -29,15 +29,19 @@ func prepareCommitBuffer(capacity int64) []int32 {
 	return buffer
 }
 
-func (this *SharedWriterBarrier) Load() int64 {
-
-	for sequence := this.reservation.Load(); sequence >= 0; sequence-- {
-		if this.committed[sequence&this.mask] == int32(sequence>>this.shift) {
-			// fmt.Printf("\t\t\t\t\t[SHARED-WRITER-BARRIER] Barrier Sequence: %d\n", sequence)
-			return sequence
+func (this *SharedWriterBarrier) LoadBarrier(lower int64) int64 {
+	shift, mask := this.shift, this.mask
+	upper := this.reservation.Load()
+	// fmt.Printf("\t\t\t\t\t[BARRIER] Next (lower): %d, Reservation (upper): %d\n", lower, upper)
+	// fmt.Println("\t\t\t\t\t[BARRIER] Committed:", this.committed)
+	for ; lower <= upper; lower++ {
+		// fmt.Printf("\t\t\t\t\t[BARRIER] Inside Loop. Index: %d, Value: %d\n", sequence&mask, sequence>>shift)
+		if this.committed[lower&mask] != int32(lower>>shift) {
+			// fmt.Println("\t\t\t\t\t[BARRIER] Upstream Barrier:", sequence-1, this.committed)
+			return lower - 1
 		}
 	}
 
-	// fmt.Printf("\t\t\t\t\t[SHARED-WRITER-BARRIER] Barrier Sequence: -1\n")
-	return InitialSequenceValue
+	// fmt.Println("\t\t\t\t\t[BARRIER] Upstream Barrier (default):", lower)
+	return upper
 }

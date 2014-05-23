@@ -51,7 +51,7 @@ func consume1(reader *disruptor.Reader) {
 			// 	} else if remaining == disruptor.Idling {
 			// 		fmt.Println("\t\t\t\t\t[CONSUMER] Consumer idling at sequence", sequence)
 			// 	}
-			// 	//time.Sleep(time.Millisecond * 10)
+			// 	time.Sleep(time.Millisecond * 10)
 		}
 	}
 }

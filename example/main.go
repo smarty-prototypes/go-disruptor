@@ -11,8 +11,8 @@ const (
 	MaxConsumerGroups    = 1
 	MaxProducers         = 2
 	ItemsToPublish       = 1
-	ReportingFrequency   = 10000 //1000000 * 10 // 1 million * N
-	RingSize             = 2
+	ReportingFrequency   = 1000000 * 10 // 1 million * N
+	RingSize             = 1024 * 16
 	RingMask             = RingSize - 1
 )
 

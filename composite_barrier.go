@@ -10,9 +10,8 @@ func NewCompositeBarrier(upstream ...*Cursor) *CompositeBarrier {
 	return &CompositeBarrier{cursors}
 }
 
-func (this *CompositeBarrier) Load() int64 {
+func (this *CompositeBarrier) LoadBarrier(current int64) int64 {
 	minimum := MaxSequenceValue
-
 	for _, item := range this.cursors {
 		sequence := item.Load()
 		if sequence < minimum {
