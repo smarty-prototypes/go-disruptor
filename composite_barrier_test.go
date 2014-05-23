@@ -10,6 +10,6 @@ func BenchmarkCompositeBarrierLoad(b *testing.B) {
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		barrier.Load()
+		barrier.LoadBarrier(0)
 	}
 }
