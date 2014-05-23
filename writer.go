@@ -12,8 +12,8 @@ func NewWriter(writerCursor *Cursor, capacity int64, readerBarrier Barrier) *Wri
 	assertPowerOfTwo(capacity)
 
 	return &Writer{
-		previous:      writerCursor.Load(), // show the Go runtime that the cursor is actually used
-		gate:          writerCursor.Load(), // and that it should not be optimized away
+		previous:      InitialSequenceValue,
+		gate:          InitialSequenceValue,
 		capacity:      capacity,
 		writerCursor:  writerCursor,
 		readerBarrier: readerBarrier,
