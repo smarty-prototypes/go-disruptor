@@ -5,14 +5,11 @@ import "github.com/smartystreets/go-disruptor"
 func publish(writer *disruptor.SharedWriter) {
 
 	for {
-		// TODO: return lower, upper instead? or some kind of struct "Reservation"
-		// upon which commit can be invoked?
-		if sequence := writer.Reserve(ItemsToPublish); sequence != disruptor.Gating {
-			for lower := sequence - ItemsToPublish; lower < sequence; {
-				lower++
-				ringBuffer[(lower)&RingMask] = lower
+		if lower, upper := writer.Reserve(ItemsToPublish); upper != disruptor.Gating {
+			for sequence := lower; sequence <= upper; sequence++ {
+				ringBuffer[sequence&RingMask] = sequence
 			}
-			writer.Commit(sequence-ItemsToPublish+1, sequence)
+			writer.Commit(lower, upper)
 		}
 	}
 }

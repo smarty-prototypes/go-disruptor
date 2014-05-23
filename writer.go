@@ -27,20 +27,20 @@ func assertPowerOfTwo(value int64) {
 	}
 }
 
-// TODO: return lower, upper instead of upper
-func (this *Writer) Reserve(count int64) int64 {
-	next := this.previous + count
-	wrap := next - this.capacity
+// TODO: look at returning a "Ticket/Claim/Receipt" upon which "Commit" can be called
+func (this *Writer) Reserve(count int64) (int64, int64) {
+	upper := this.previous + count
+	wrap := upper - this.capacity
 
 	if wrap > this.gate {
 		min := this.readerBarrier.LoadBarrier(0)
 		if wrap > min {
-			return Gating
+			return InitialSequenceValue, Gating
 		}
 
 		this.gate = min
 	}
 
-	this.previous = next
-	return next
+	this.previous = upper
+	return upper - count + 1, upper
 }

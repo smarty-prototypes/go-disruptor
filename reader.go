@@ -19,18 +19,16 @@ func NewReader(upstreamBarrier Barrier, writerCursor, readerCursor *Cursor) *Rea
 	}
 }
 
-// TODO: performance when current (or next?) sequence is received as a parameter to Receive
-// instead of reading the cursor...
-// TODO: signature: lower, upper instead of lower, count
+// TODO: look at returning a "Ticket/Claim/Receipt" upon which "Commit" can be called
 func (this *Reader) Receive() (int64, int64) {
-	next := this.readerCursor.Load() + 1
-	ready := this.upstreamBarrier.LoadBarrier(next)
+	lower := this.readerCursor.Load() + 1
+	upper := this.upstreamBarrier.LoadBarrier(lower)
 
-	if next <= ready {
-		return next, ready - next
-	} else if gate := this.writerCursor.Load(); next <= gate {
-		return next, Gating
+	if lower <= upper {
+		return lower, upper
+	} else if gate := this.writerCursor.Load(); lower <= gate {
+		return InitialSequenceValue, Gating
 	} else {
-		return next, Idling
+		return InitialSequenceValue, Idling
 	}
 }

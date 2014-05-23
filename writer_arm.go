@@ -1,5 +1,5 @@
 package disruptor
 
-func (this *Writer) Commit(sequence int64) {
-	this.writerCursor.Store(sequence)
+func (this *Writer) Commit(lower, upper int64) {
+	this.writerCursor.Store(upper)
 }

@@ -9,7 +9,7 @@ func BenchmarkWriterCommit(b *testing.B) {
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		writer.Commit(i)
+		writer.Commit(i, i)
 	}
 }
 
@@ -24,7 +24,7 @@ func BenchmarkWriterReserve(b *testing.B) {
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		claimed := writer.Reserve(1)
+		claimed, _ := writer.Reserve(1)
 		readerCursor.Store(claimed)
 	}
 }

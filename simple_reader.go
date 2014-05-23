@@ -9,19 +9,17 @@ func NewSimpleReader(reader *Reader, consumer Consumer) *SimpleReader {
 	return &SimpleReader{reader: reader, consumer: consumer}
 }
 
-func (this *SimpleReader) Receive() int64 {
-	sequence, remaining := this.reader.Receive()
+func (this *SimpleReader) Receive() (int64, int64) {
+	lower, upper := this.reader.Receive()
 
-	if remaining >= 0 {
-		for remaining >= 0 {
-			this.consumer.Consume(sequence, remaining)
-			remaining--
-			sequence++
+	if lower <= upper {
+		for sequence := lower; sequence <= upper; sequence++ {
+			this.consumer.Consume(sequence, upper-sequence)
 		}
 
-		this.reader.Commit(sequence - 1)
-		return sequence
+		this.reader.Commit(lower, upper)
+		return lower, upper
 	} else {
-		return remaining // Idling, Gating
+		return InitialSequenceValue, upper // Idling, Gating
 	}
 }

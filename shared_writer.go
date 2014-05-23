@@ -24,24 +24,24 @@ func NewSharedWriter(shared *SharedWriterBarrier, upstream Barrier) *SharedWrite
 	}
 }
 
-// TODO: return lower, upper instead of upper
-func (this *SharedWriter) Reserve(count int64) int64 {
+// TODO: look at returning a "Ticket/Claim/Receipt" upon which "Commit" can be called
+func (this *SharedWriter) Reserve(count int64) (int64, int64) {
 	for {
 		previous := this.reservation.Load()
-		next := previous + count
-		wrap := next - this.capacity
+		upper := previous + count
+		wrap := upper - this.capacity
 
 		if wrap > this.gate {
 			min := this.upstream.LoadBarrier(0)
 			if wrap > min {
-				return Gating
+				return InitialSequenceValue, Gating
 			}
 
 			this.gate = min // doesn't matter which write wins, BUT will most likely need to be a Cursor
 		}
 
-		if atomic.CompareAndSwapInt64(&this.reservation.value, previous, next) {
-			return next
+		if atomic.CompareAndSwapInt64(&this.reservation.value, previous, upper) {
+			return previous + 1, upper
 		}
 	}
 }
