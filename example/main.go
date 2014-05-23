@@ -30,10 +30,10 @@ func main() {
 }
 func startProducers(writer *disruptor.SharedWriter) {
 	for i := 0; i < MaxProducers-1; i++ {
-		go publish(i, writer)
+		go publish(writer)
 	}
 
-	publish(MaxProducers-1, writer)
+	publish(writer)
 }
 
 func startConsumerGroups(upstream disruptor.Barrier, writer *disruptor.Cursor) disruptor.Barrier {
