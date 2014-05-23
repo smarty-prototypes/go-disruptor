@@ -1,5 +1,7 @@
 package disruptor
 
+import "fmt"
+
 const (
 	Gating = -2
 	Idling = -3
@@ -24,12 +26,16 @@ func NewReader(upstreamBarrier Barrier, writerCursor, readerCursor *Cursor) *Rea
 func (this *Reader) Receive() (int64, int64) {
 	next := this.readerCursor.Load() + 1
 	ready := this.upstreamBarrier.Load()
+	fmt.Printf("\t\t\t\t\t[READER] Next: %d, Ready: %d\n", next, ready)
 
 	if next <= ready {
+		fmt.Printf("\t\t\t\t\t[READER] Next Sequence: %d, Remaining: %d\n", next, ready-next)
 		return next, ready - next
-	} else if next <= this.writerCursor.Load() {
+	} else if gate := this.writerCursor.Load(); next <= gate {
+		fmt.Println("\t\t\t\t\t[READER] Gating at sequence:", gate)
 		return next, Gating
 	} else {
+		fmt.Println("\t\t\t\t\t[READER] Gating")
 		return next, Idling
 	}
 }

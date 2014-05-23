@@ -1,18 +1,24 @@
 package main
 
-import "github.com/smartystreets/go-disruptor"
+import (
+	"fmt"
 
-func publish(writer *disruptor.SharedWriter) {
+	"github.com/smartystreets/go-disruptor"
+)
+
+func publish(id int, writer *disruptor.SharedWriter) {
+
+	fmt.Printf("[PRODUCER %d] Starting producer...\n", id)
+
 	for {
-		sequence := writer.Reserve(ItemsToPublish)
-
-		if sequence != disruptor.Gating {
-			for lower := sequence - ItemsToPublish; lower < sequence; {
-				lower++
-				ringBuffer[(lower)&RingMask] = lower
-			}
-
+		if sequence := writer.Reserve(id, ItemsToPublish); sequence != disruptor.Gating {
+			fmt.Printf("[PRODUCER %d] Writing %d to slot %d\n", id, sequence, sequence)
+			ringBuffer[sequence&RingMask] = sequence
+			fmt.Printf("[PRODUCER %d] Committing sequence %d\n", id, sequence)
 			writer.Commit(sequence)
+		} else {
+			// fmt.Println("[PRODUCER] Gating")
+			//time.Sleep(time.Millisecond)
 		}
 	}
 }

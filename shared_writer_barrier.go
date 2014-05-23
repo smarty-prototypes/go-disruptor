@@ -1,6 +1,9 @@
 package disruptor
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 type SharedWriterBarrier struct {
 	committed   []int32
@@ -30,11 +33,14 @@ func prepareCommitBuffer(capacity int64) []int32 {
 }
 
 func (this *SharedWriterBarrier) Load() int64 {
+
 	for sequence := this.reservation.Load(); sequence >= 0; sequence-- {
 		if this.committed[sequence&this.mask] == int32(sequence>>this.shift) {
+			fmt.Printf("[SHARED-WRITER-BARRIER] Barrier Sequence: %d\n", sequence)
 			return sequence
 		}
 	}
 
+	fmt.Printf("[SHARED-WRITER-BARRIER] Barrier Sequence: -1\n")
 	return InitialSequenceValue
 }

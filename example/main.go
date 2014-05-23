@@ -10,9 +10,9 @@ const (
 	MaxConsumersPerGroup = 1
 	MaxConsumerGroups    = 1
 	MaxProducers         = 2
-	ItemsToPublish       = 1
-	ReportingFrequency   = 1000000 * 10 // 1 million * N
-	RingSize             = 1024 * 16
+	ItemsToPublish       = 2
+	ReportingFrequency   = 10000 //1000000 * 10 // 1 million * N
+	RingSize             = 2
 	RingMask             = RingSize - 1
 )
 
@@ -30,10 +30,10 @@ func main() {
 }
 func startProducers(writer *disruptor.SharedWriter) {
 	for i := 0; i < MaxProducers-1; i++ {
-		go publish(writer)
+		go publish(i, writer)
 	}
 
-	publish(writer)
+	publish(MaxProducers-1, writer)
 }
 
 func startConsumerGroups(upstream disruptor.Barrier, writer *disruptor.Cursor) disruptor.Barrier {
