@@ -4,7 +4,7 @@ import "sync/atomic"
 
 type SharedWriter struct {
 	capacity  int64
-	gate      int64 // TODO: determine if this should be a *Cursor
+	gate      *Cursor
 	mask      int64
 	shift     uint8
 	committed []int32
@@ -15,7 +15,7 @@ type SharedWriter struct {
 func NewSharedWriter(write *SharedWriterBarrier, upstream Barrier) *SharedWriter {
 	return &SharedWriter{
 		capacity:  write.capacity,
-		gate:      InitialSequenceValue,
+		gate:      NewCursor(),
 		mask:      write.mask,
 		shift:     write.shift,
 		committed: write.committed,
@@ -30,13 +30,13 @@ func (this *SharedWriter) Reserve(count int64) (int64, int64) {
 		upper := previous + count
 		wrap := upper - this.capacity
 
-		if wrap > this.gate {
+		if wrap > this.gate.Load() {
 			min := this.upstream.LoadBarrier(0)
 			if wrap > min {
 				return InitialSequenceValue, Gating
 			}
 
-			this.gate = min // doesn't matter which write wins, BUT will most likely need to be a Cursor
+			this.gate.Store(min)
 		}
 
 		if atomic.CompareAndSwapInt64(&this.written.sequence, previous, upper) {
