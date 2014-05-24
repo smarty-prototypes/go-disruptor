@@ -9,6 +9,7 @@ Once initialized and running, one of the preeminent design considerations of the
 
 Benchmarks
 ----------------------------
+(all tests run with GOMAXPROCS=2)
 
 Scenario | Per Operation Time
 -------- | ------------------ 
