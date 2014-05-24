@@ -7,6 +7,19 @@ On my MacBook Pro (Intel Core i7 3740QM @ 2.7 Ghz) using Go 1.2.1, I was able to
 
 Once initialized and running, one of the preeminent design considerations of the Disruptor is to produce no garbage thus avoiding the need for GC altogether and to avoid locks at all costs. The current channel implementation maintains a big, fat lock around enqueue/dequeue operations and maxes out on the aforementioned hardware at about 25M messages per second for uncontended access-—more than an order of magnitude slower when compared to the Disruptor.  The same channel, when contended between OS threads (GOMAXPROCS=2 or more) only pushes about 7 million messages per second.
 
+Benchmarks
+----------------------------
+
+Scenario | Per Operation Time
+-------- | ------------------ 
+Channel: Non-blocking | 681 ns/op
+Channel: Blocking | 86.6 ns/op|
+Disruptor: SharedWriter (single claim)	| 55.2 ns/op
+Disruptor: SharedWriter (multi claim)	| 2.59 ns/op
+Disruptor: Writer (single claim) | 18.6 ns/op
+Disruptor: Writer (multi claim) | 1.12 ns/op
+
+
 When In Doubt, Use Channels
 ----------------------------
 Despite Go's channels being significantly slower than the Disruptor, channels should still be considered the best and most desirable choice for the vast majority of all use cases. The Disruptor's target use case is ultra-low latency environments where application response times are measured in nanoseconds and where stable, consistent latency is paramount.

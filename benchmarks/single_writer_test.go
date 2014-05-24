@@ -11,7 +11,7 @@ import (
 const singleWriterRingBufferSize = 1024 * 16
 const singleWriterRingBufferMask = singleWriterRingBufferSize - 1
 
-func BenchmarkDisruptorWriterSingleClaim(b *testing.B) {
+func BenchmarkDisruptorWriterClaimSingle(b *testing.B) {
 	benchmarkSingleWriter(b, 1)
 }
 func BenchmarkDisruptorWriterClaimMultiple(b *testing.B) {
