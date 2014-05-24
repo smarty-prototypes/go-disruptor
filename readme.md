@@ -1,15 +1,18 @@
 Notes
 =====
 
-This is a port of the LMAX Disruptor into the Go programming language. It retains the essence and spirit of the Disruptor and utilizes a lot of the same abstractions and concepts, but does not maintain the same API.
+Disruptor Overview
+----------------------------
+
+This is a port of the [LMAX Disruptor](https://github.com/LMAX-Exchange/disruptor) into the Go programming language. It retains the essence and spirit of the Disruptor and utilizes a lot of the same abstractions and concepts, but does not maintain the same API.
 
 On my MacBook Pro (Intel Core i7 3740QM @ 2.7 Ghz) using Go 1.2.1, I was able to push over **700 million messages per second** (yes, you read that right) from one goroutine to another goroutine. The message being transferred between the two CPU cores was simply the incrementing sequence number, but literally could be anything. Note that your mileage may vary and that different operating systems can introduce significant “jitter” into the application by taking control of the CPU. Linux and Windows have the ability to assign a given process to specific CPU cores which reduces jitter significantly.  Parenthetically, when the Disruptor code is compiled and run on a Nexus 5, it can push about 15-20 million messages per second.
 
-Once initialized and running, one of the preeminent design considerations of the Disruptor is to produce no garbage thus avoiding the need for GC altogether and to avoid locks at all costs. The current channel implementation maintains a big, fat lock around enqueue/dequeue operations and maxes out on the aforementioned hardware at about 25M messages per second for uncontended access-—more than an order of magnitude slower when compared to the Disruptor.  The same channel, when contended between OS threads (GOMAXPROCS=2 or more) only pushes about 7 million messages per second.
+Once initialized and running, one of the preeminent design considerations of the Disruptor is to produce no garbage thus avoiding the need for GC altogether and to avoid locks at all costs. The current channel implementation maintains a big, fat lock around enqueue/dequeue operations and maxes out on the aforementioned hardware at about 25M messages per second for uncontended access-—more than an order of magnitude slower when compared to the Disruptor.  The same channel, when contended between OS threads (`GOMAXPROCS=2` or more) only pushes about 7 million messages per second.
 
 Benchmarks
 ----------------------------
-(all tests run with GOMAXPROCS=2)
+Each of the following benchmark tests sends an incrementing sequence message from one goroutine to another. The receiving goroutine asserts that the message is received is the expected incrementing sequence value. Any failures cause a panic. All tests were run using `GOMAXPROCS=2`.
 
 Scenario | Per Operation Time
 -------- | ------------------ 
@@ -23,7 +26,7 @@ Disruptor: Writer (multi claim) | 1.12 ns/op
 
 When In Doubt, Use Channels
 ----------------------------
-Despite Go's channels being significantly slower than the Disruptor, channels should still be considered the best and most desirable choice for the vast majority of all use cases. The Disruptor's target use case is ultra-low latency environments where application response times are measured in nanoseconds and where stable, consistent latency is paramount.
+Despite Go channels being significantly slower than the Disruptor, channels should still be considered the best and most desirable choice for the vast majority of all use cases. The Disruptor's target use case is ultra-low latency environments where application response times are measured in nanoseconds and where stable, consistent latency is paramount.
 
 Pre-Alpha
 ---------
