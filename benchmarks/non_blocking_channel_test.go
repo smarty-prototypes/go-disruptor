@@ -2,14 +2,12 @@ package benchmarks
 
 import "testing"
 
-const nonBlockingChannelBufferSize = 1024 * 1024
-
 func BenchmarkNonBlockingChannel(b *testing.B) {
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	channel := make(chan int64, nonBlockingChannelBufferSize)
+	channel := make(chan int64, 1024*16)
 	go func() {
 		for i := int64(0); i < iterations; {
 			select {
@@ -21,10 +19,14 @@ func BenchmarkNonBlockingChannel(b *testing.B) {
 		}
 	}()
 
-	for i := int64(0); i < iterations; i++ {
+	for i := int64(0); i < iterations; {
 		select {
-		case <-channel:
-			i++
+		case msg := <-channel:
+			if msg != i {
+				panic("Out of sequence")
+			} else {
+				i++
+			}
 		default:
 			continue
 		}
