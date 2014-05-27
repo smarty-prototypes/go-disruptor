@@ -46,6 +46,9 @@ func (this *SharedWriter) Reserve(count int64) (int64, int64) {
 }
 
 func (this *SharedWriter) Commit(lower, upper int64) {
+	// POTENTIAL TODO: start from upper and work toward lower
+	// this may have the effect of keeping a batch together which
+	// might otherwise be split up...
 	for shift, mask := this.shift, this.mask; lower <= upper; lower++ {
 		this.committed[lower&mask] = int32(lower >> shift)
 	}
