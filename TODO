@@ -16,6 +16,10 @@
 - Understand why "slower" consumer code is faster and more consistent when performing single-item
 	publishes
 
+- Cursors should probably all be created at the same time to keep them as close together as possible:
+  https://news.ycombinator.com/item?id=7800825
+
+
 - I need to get some help doing some low-level profiling the application to find out where
   the bottlenecks are and determining how the Go scheduler is hindering performance, if at all.
 
