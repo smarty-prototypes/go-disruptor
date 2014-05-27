@@ -1,5 +1,5 @@
 package disruptor
 
-func (this *Reader) Commit(upper int64) {
-	this.read.Store(upper)
+func (this *Reader) Commit(sequence int64) {
+	this.read.Store(sequence)
 }
