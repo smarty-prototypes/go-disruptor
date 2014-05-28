@@ -1,5 +1,5 @@
 package disruptor
 
 type Consumer interface {
-	Consume(sequence, remaining int64)
+	Consume(lower, upper int64)
 }

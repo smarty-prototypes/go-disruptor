@@ -7,11 +7,11 @@ import (
 	"github.com/smartystreets/go-disruptor"
 )
 
-func consume0(reader *disruptor.SimpleReader) {
-	for {
-		reader.Receive()
-	}
-}
+// func consume0(reader *disruptor.SimpleReader) {
+// 	for {
+// 		reader.Receive()
+// 	}
+// }
 func consume1(reader *disruptor.Reader) {
 	started := time.Now()
 
