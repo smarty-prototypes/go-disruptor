@@ -53,6 +53,8 @@ func publish(written, read *disruptor.Cursor) {
 func consume(written, read *disruptor.Cursor) {
 	sleeps := 0
 
+	consumer := SampleConsumer{}
+
 	previous := int64(-1)
 	gate := int64(-1)
 	for previous < Iterations {
@@ -62,11 +64,15 @@ func consume(written, read *disruptor.Cursor) {
 		if current <= gate {
 
 			for current < gate {
-				if ringBuffer[current&BufferMask] > 0 {
-				}
-
-				current++
+				current += consumer.Consume(current, gate)
 			}
+			// for current <= gate {
+
+			// 	if ringBuffer[current&BufferMask] > 0 {
+			// 	}
+
+			// 	current++
+			// }
 
 			previous = gate
 			read.Sequence = gate
@@ -92,4 +98,17 @@ func consume(written, read *disruptor.Cursor) {
 
 	// 	// read.Sequence = sequence
 	// }
+}
+
+type Consumer interface {
+	Consume(lower, upper int64)
+}
+
+type SampleConsumer struct{}
+
+func (this SampleConsumer) Consume(current, gate int64) int64 {
+	if ringBuffer[current&BufferMask] > 0 {
+	}
+
+	return 1
 }
