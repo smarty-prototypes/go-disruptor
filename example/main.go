@@ -11,7 +11,7 @@ import (
 const (
 	BufferSize = 1024 * 64
 	BufferMask = BufferSize - 1
-	Iterations = 1000000 * 1000
+	Iterations = 1000000 * 100
 )
 
 var ringBuffer = [BufferSize]int64{}
@@ -41,48 +41,16 @@ func publish(written, read *disruptor.Cursor) {
 			gate = read.Sequence
 		}
 
-		previous = next
-
 		ringBuffer[next&BufferMask] = next
-
 		written.Sequence = next
+		previous = next
 	}
-
-	// next := this.previous + 1
-	// wrap := next - this.capacity
-
-	// for wrap > this.gate {
-	// 	this.gate = this.upstream.Read(next)
-	// }
-
-	// this.previous = next
-	// return next
-
-	// // gates := 0
-	// sequence := disruptor.InitialSequenceValue
-	// for sequence <= Iterations {
-	// 	sequence = writer.Reserve()
-	// 	written.Sequence = sequence
-	// 	// writer.Commit(sequence)
-	// 	// reservation := writer.Reserve()
-	// 	// if reservation >= 0 {
-	// 	// 	// TODO: publish messages here
-	// 	// 	writer.Commit(reservation)
-	// 	// 	sequence = reservation
-	// 	// } else {
-	// 	// 	gates++
-	// 	// }
-	// }
-
-	// fmt.Println("Write gates", gates)
 }
 func consume(written, read *disruptor.Cursor) {
-	// gates := 0
 	sequence := int64(0)
 	for sequence < Iterations {
 		maximum := written.Sequence
 		for maximum <= sequence {
-			// gates++
 			maximum = written.Sequence
 			time.Sleep(time.Microsecond)
 		}
@@ -96,6 +64,4 @@ func consume(written, read *disruptor.Cursor) {
 		read.Sequence = maximum
 		sequence = maximum + 1
 	}
-
-	// fmt.Println("Total Read gates", gates)
 }
