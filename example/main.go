@@ -39,6 +39,9 @@ func publish(written, read *disruptor.Cursor) {
 
 		for wrap > gate {
 			gate = read.Sequence
+			// if wrap > gate {
+			// 	time.Sleep(time.Microsecond)
+			// }
 		}
 
 		ringBuffer[next&BufferMask] = next
@@ -47,21 +50,17 @@ func publish(written, read *disruptor.Cursor) {
 	}
 }
 func consume(written, read *disruptor.Cursor) {
-	sequence := int64(0)
-	for sequence < Iterations {
-		maximum := written.Sequence
-		for maximum <= sequence {
-			maximum = written.Sequence
-			time.Sleep(time.Microsecond)
-		}
-
-		for sequence < maximum {
-			if ringBuffer[sequence&BufferMask] > 0 {
+	for sequence, gate := int64(0), int64(0); sequence < Iterations; sequence++ {
+		for gate <= sequence {
+			gate = written.Sequence
+			if gate <= sequence {
+				time.Sleep(time.Microsecond)
 			}
-			sequence++
 		}
 
-		read.Sequence = maximum
-		sequence = maximum + 1
+		if ringBuffer[sequence&BufferMask] > 0 {
+		}
+
+		read.Sequence = sequence
 	}
 }
