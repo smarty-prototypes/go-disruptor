@@ -35,3 +35,7 @@ func (this *Reader) Receive(next int64) int64 {
 		return Stopped
 	}
 }
+
+func (this *Reader) Commit(sequence int64) {
+	this.read.sequence = sequence
+}
