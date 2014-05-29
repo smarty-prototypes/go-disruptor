@@ -40,6 +40,7 @@ func publish(written, read *disruptor.Cursor) {
 		for wrap > gate {
 			gate = read.Sequence
 			// if wrap > gate {
+			// 	// time.Sleep(time.Nanosecond)
 			// 	time.Sleep(time.Microsecond)
 			// }
 		}
@@ -50,17 +51,45 @@ func publish(written, read *disruptor.Cursor) {
 	}
 }
 func consume(written, read *disruptor.Cursor) {
-	for sequence, gate := int64(0), int64(0); sequence < Iterations; sequence++ {
-		for gate <= sequence {
-			gate = written.Sequence
-			if gate <= sequence {
-				time.Sleep(time.Microsecond)
+	sleeps := 0
+
+	previous := int64(-1)
+	gate := int64(-1)
+	for previous < Iterations {
+		current := previous + 1
+		gate = written.Sequence
+
+		if current <= gate {
+
+			for current < gate {
+				if ringBuffer[current&BufferMask] > 0 {
+				}
+
+				current++
 			}
-		}
 
-		if ringBuffer[sequence&BufferMask] > 0 {
+			previous = gate
+			read.Sequence = gate
+		} else {
+			sleeps++
+			time.Sleep(time.Microsecond)
 		}
-
-		read.Sequence = sequence
 	}
+
+	fmt.Println("Consumer sleeps:", sleeps)
+
+	// for sequence, gate := int64(0), int64(0); sequence < Iterations; sequence++ {
+
+	// 	// for gate <= sequence {
+	// 	// 	gate = written.Sequence
+	// 	// 	if gate <= sequence {
+	// 	// 		time.Sleep(time.Microsecond)
+	// 	// 	}
+	// 	// }
+
+	// 	// if ringBuffer[sequence&BufferMask] > 0 {
+	// 	// }
+
+	// 	// read.Sequence = sequence
+	// }
 }
