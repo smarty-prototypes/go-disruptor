@@ -31,14 +31,8 @@ func (this *Writer) Reserve() int64 {
 	next := this.previous + 1
 	wrap := next - this.capacity
 
-	if wrap > this.gate {
-		// this.gate = this.upstream.WaitFor(next) // investigate...
-		min := this.upstream.Read(next)
-		if wrap > min {
-			return Gating
-		}
-
-		this.gate = min
+	for wrap > this.gate {
+		this.gate = this.upstream.Read(next)
 	}
 
 	this.previous = next
@@ -46,5 +40,5 @@ func (this *Writer) Reserve() int64 {
 }
 
 func (this *Writer) Commit(sequence int64) {
-	this.written.sequence = sequence
+	this.written.Sequence = sequence
 }

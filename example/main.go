@@ -11,48 +11,91 @@ import (
 const (
 	BufferSize = 1024 * 64
 	BufferMask = BufferSize - 1
-	Iterations = 1000000 * 100 // 1 million * N
+	Iterations = 1000000 * 1000
 )
 
-// var ringBuffer = [BufferSize]int64{}
+var ringBuffer = [BufferSize]int64{}
 
 func main() {
 	runtime.GOMAXPROCS(2)
 
 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
-	reader := disruptor.NewReader(read, written, written)
-	writer := disruptor.NewWriter(written, read, BufferSize)
-
 	started := time.Now()
 
-	go publish(writer)
-	consume(reader)
+	go publish(written, read)
+	consume(written, read)
 
 	finished := time.Now()
 	fmt.Println(Iterations, finished.Sub(started))
 }
 
-func publish(writer *disruptor.Writer) {
-	sequence := disruptor.InitialSequenceValue
-	for sequence <= Iterations {
-		reservation := writer.Reserve()
-		if reservation >= 0 {
-			// TODO: publish messages here
-			writer.Commit(reservation)
-			sequence = reservation
+func publish(written, read *disruptor.Cursor) {
+	previous := disruptor.InitialSequenceValue
+	gate := disruptor.InitialSequenceValue
+
+	for previous <= Iterations {
+		next := previous + 1
+		wrap := next - BufferSize
+
+		for wrap > gate {
+			gate = read.Sequence
 		}
+
+		previous = next
+
+		ringBuffer[next&BufferMask] = next
+
+		written.Sequence = next
 	}
+
+	// next := this.previous + 1
+	// wrap := next - this.capacity
+
+	// for wrap > this.gate {
+	// 	this.gate = this.upstream.Read(next)
+	// }
+
+	// this.previous = next
+	// return next
+
+	// // gates := 0
+	// sequence := disruptor.InitialSequenceValue
+	// for sequence <= Iterations {
+	// 	sequence = writer.Reserve()
+	// 	written.Sequence = sequence
+	// 	// writer.Commit(sequence)
+	// 	// reservation := writer.Reserve()
+	// 	// if reservation >= 0 {
+	// 	// 	// TODO: publish messages here
+	// 	// 	writer.Commit(reservation)
+	// 	// 	sequence = reservation
+	// 	// } else {
+	// 	// 	gates++
+	// 	// }
+	// }
+
+	// fmt.Println("Write gates", gates)
 }
-func consume(reader *disruptor.Reader) {
+func consume(written, read *disruptor.Cursor) {
+	// gates := 0
 	sequence := int64(0)
 	for sequence < Iterations {
-		received := reader.Receive(sequence)
-		if received >= 0 {
-			// TODO: handle messages here
-			sequence = received
-			reader.Commit(sequence)
-		} else {
+		maximum := written.Sequence
+		for maximum <= sequence {
+			// gates++
+			maximum = written.Sequence
 			time.Sleep(time.Microsecond)
 		}
+
+		for sequence < maximum {
+			if ringBuffer[sequence&BufferMask] > 0 {
+			}
+			sequence++
+		}
+
+		read.Sequence = maximum
+		sequence = maximum + 1
 	}
+
+	// fmt.Println("Total Read gates", gates)
 }

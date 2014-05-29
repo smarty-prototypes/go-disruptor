@@ -27,7 +27,7 @@ func (this *Reader) Receive(next int64) int64 {
 
 	if next <= maximum {
 		return maximum
-	} else if maximum = this.written.sequence; next <= maximum {
+	} else if maximum = this.written.Load(); next <= maximum {
 		return Gating
 	} else if this.ready {
 		return Idling
@@ -37,5 +37,5 @@ func (this *Reader) Receive(next int64) int64 {
 }
 
 func (this *Reader) Commit(sequence int64) {
-	this.read.sequence = sequence
+	this.read.Store(sequence)
 }
