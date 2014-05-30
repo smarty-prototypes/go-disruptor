@@ -20,13 +20,12 @@ func main() {
 	runtime.GOMAXPROCS(2)
 
 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
-	writer := disruptor.NewWriter(written, read, BufferSize)
 	reader := disruptor.NewReader(read, written, written, SampleConsumer{})
 
 	started := time.Now()
 	reader.Start()
-	publish(writer)
 	// publish(written, read)
+	publish(disruptor.NewWriter(written, read, BufferSize))
 	reader.Stop()
 	finished := time.Now()
 	fmt.Println(Iterations, finished.Sub(started))
