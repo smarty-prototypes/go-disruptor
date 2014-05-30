@@ -24,48 +24,48 @@ func main() {
 
 	started := time.Now()
 	reader.Start()
-	publish(written, read)
-	// publish(disruptor.NewWriter(written, read, BufferSize))
+	// publish(written, read)
+	publish(disruptor.NewWriter(written, read, BufferSize))
 	reader.Stop()
 	finished := time.Now()
 	fmt.Println(Iterations, finished.Sub(started))
 }
 
-// func publish(writer *disruptor.Writer) {
-// 	for sequence := disruptor.InitialSequenceValue; sequence <= Iterations; {
-// 		sequence = writer.Reserve()
-// 		// ringBuffer[sequence&BufferMask] = sequence
-// 		writer.Commit(sequence)
-// 	}
-// }
-
-func publish(written, read *disruptor.Cursor) {
-	previous := disruptor.InitialSequenceValue
-	gate := disruptor.InitialSequenceValue
-
-	for previous <= Iterations {
-		next := previous + 1
-		wrap := next - BufferSize
-
-		for wrap > gate {
-			gate = read.Sequence
-		}
-
-		// ringBuffer[next&BufferMask] = next
-		written.Sequence = next
-		previous = next
+func publish(writer *disruptor.Writer) {
+	for sequence := disruptor.InitialSequenceValue; sequence <= Iterations; {
+		sequence = writer.Reserve()
+		ringBuffer[sequence&BufferMask] = sequence
+		writer.Commit(sequence)
 	}
 }
+
+// func publish(written, read *disruptor.Cursor) {
+// 	previous := disruptor.InitialSequenceValue
+// 	gate := disruptor.InitialSequenceValue
+
+// 	for previous <= Iterations {
+// 		next := previous + 1
+// 		wrap := next - BufferSize
+
+// 		for wrap > gate {
+// 			gate = read.Sequence
+// 		}
+
+// 		ringBuffer[next&BufferMask] = next
+// 		written.Sequence = next
+// 		previous = next
+// 	}
+// }
 
 type SampleConsumer struct{}
 
 func (this SampleConsumer) Consume(lower, upper int64) {
 	for lower <= upper {
-		// message := ringBuffer[lower&BufferMask]
-		// if message != lower {
-		// 	fmt.Println("Race condition", message, lower)
-		// 	panic("Race condition")
-		// }
+		message := ringBuffer[lower&BufferMask]
+		if message != lower {
+			fmt.Println("Race condition", message, lower)
+			panic("Race condition")
+		}
 		lower++
 	}
 }
