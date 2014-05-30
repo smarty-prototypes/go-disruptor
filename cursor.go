@@ -5,12 +5,6 @@ const (
 	cpuCacheLinePadding        = 7
 )
 
-const (
-	Gating  = -2
-	Idling  = -3
-	Stopped = -4
-)
-
 type Cursor struct {
 	Sequence int64
 	padding  [cpuCacheLinePadding]int64
@@ -20,6 +14,7 @@ func NewCursor() *Cursor {
 	return &Cursor{Sequence: InitialSequenceValue}
 }
 
+// TODO: ARM, i386-specific methods
 func (this *Cursor) Read(minimum int64) int64 {
 	return this.Sequence
 }
