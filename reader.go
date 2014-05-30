@@ -52,6 +52,8 @@ func (this *Reader) receive() {
 			break
 		}
 
-		time.Sleep(time.Nanosecond) // TODO: research why this *improves* performance
+		// sleeping increases the batch size which reduces the number of read commits
+		// which drastically reduces the cost; longer sleeps = larger batches = less expensive commits
+		time.Sleep(time.Microsecond)
 	}
 }
