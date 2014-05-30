@@ -20,46 +20,23 @@ func main() {
 	runtime.GOMAXPROCS(2)
 
 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
+	writer := disruptor.NewWriter(written, read, BufferSize)
 	reader := disruptor.NewReader(read, written, written, SampleConsumer{})
 
 	started := time.Now()
 	reader.Start()
-	publish(written, read)
+	publish(writer)
 	reader.Stop()
 	finished := time.Now()
 	fmt.Println(Iterations, finished.Sub(started))
 }
 
-func publish(written, read *disruptor.Cursor) {
-	sequence := disruptor.InitialSequenceValue
-	writer := disruptor.NewWriter(written, read, BufferSize)
-
-	for sequence <= Iterations {
+func publish(writer *disruptor.Writer) {
+	for sequence := disruptor.InitialSequenceValue; sequence <= Iterations; {
 		sequence = writer.Reserve()
 		ringBuffer[sequence&BufferMask] = sequence
 		writer.Commit(sequence)
 	}
-
-	// gating := 0
-
-	// previous := disruptor.InitialSequenceValue
-	// gate := disruptor.InitialSequenceValue
-
-	// for previous <= Iterations {
-	// 	next := previous + 1
-	// 	wrap := next - BufferSize
-
-	// 	for wrap > gate {
-	// 		gate = read.Sequence
-	// 		gating++
-	// 	}
-
-	// 	ringBuffer[next&BufferMask] = next
-	// 	written.Sequence = next
-	// 	previous = next
-	// }
-
-	// fmt.Println("Gating", gating)
 }
 
 type SampleConsumer struct{}
