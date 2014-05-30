@@ -30,8 +30,8 @@ func assertPowerOfTwo(value int64) {
 }
 
 func (this *Writer) Reserve() int64 {
-	next := this.previous + 1
-	wrap := next - this.capacity
+	// next := this.previous + 1
+	wrap := (this.previous + 1) - this.capacity // next - this.capacity
 
 	if wrap > this.gate {
 		min := this.upstream.Read(0) // interface call: 1.20ns per operation
@@ -42,8 +42,8 @@ func (this *Writer) Reserve() int64 {
 		this.gate = min // update stateful variable: 1.20ns per operation
 	}
 
-	this.previous = next // update stateful variable: 1.20ns per operation
-	return next
+	this.previous++      // this.previous = next
+	return this.previous // return next
 }
 
 func (this *Writer) Commit(sequence int64) {
