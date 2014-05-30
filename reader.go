@@ -52,6 +52,6 @@ func (this *Reader) receive() {
 			break
 		}
 
-		time.Sleep(time.Nanosecond)
+		time.Sleep(time.Nanosecond) // TODO: research why this *improves* performance
 	}
 }
