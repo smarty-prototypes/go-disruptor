@@ -28,52 +28,38 @@ func main() {
 	reader.Stop()
 	finished := time.Now()
 	fmt.Println(Iterations, finished.Sub(started))
-
-	time.Sleep(time.Millisecond * 10)
 }
 
 func publish(written, read *disruptor.Cursor) {
+	sequence := disruptor.InitialSequenceValue
+	writer := disruptor.NewWriter(written, read, BufferSize)
 
-	// sequence := disruptor.InitialSequenceValue
-	// writer := &disruptor.Writer2{}
-
-	// // writer := disruptor.NewWriter(written, read, BufferSize)
-	// for sequence < Iterations {
-	// 	sequence = writer.Reserve()
-	// }
-
-	// sequence := disruptor.InitialSequenceValue
-	// writer := disruptor.NewWriter(written, read, BufferSize)
-
-	// for sequence <= Iterations {
-	// 	sequence = writer.Reserve()
-	// 	ringBuffer[sequence&BufferMask] = sequence
-	// 	written.Sequence = sequence
-	// 	// writer.Commit(sequence)
-	// }
-
-	// fmt.Println(writer.Gating())
-
-	gating := 0
-
-	previous := disruptor.InitialSequenceValue
-	gate := disruptor.InitialSequenceValue
-
-	for previous <= Iterations {
-		next := previous + 1
-		wrap := next - BufferSize
-
-		for wrap > gate {
-			gate = read.Sequence
-			gating++
-		}
-
-		ringBuffer[next&BufferMask] = next
-		written.Sequence = next
-		previous = next
+	for sequence <= Iterations {
+		sequence = writer.Reserve()
+		ringBuffer[sequence&BufferMask] = sequence
+		writer.Commit(sequence)
 	}
 
-	fmt.Println("Gating", gating)
+	// gating := 0
+
+	// previous := disruptor.InitialSequenceValue
+	// gate := disruptor.InitialSequenceValue
+
+	// for previous <= Iterations {
+	// 	next := previous + 1
+	// 	wrap := next - BufferSize
+
+	// 	for wrap > gate {
+	// 		gate = read.Sequence
+	// 		gating++
+	// 	}
+
+	// 	ringBuffer[next&BufferMask] = next
+	// 	written.Sequence = next
+	// 	previous = next
+	// }
+
+	// fmt.Println("Gating", gating)
 }
 
 type SampleConsumer struct{}

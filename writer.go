@@ -6,7 +6,9 @@ type Writer struct {
 	capacity int64
 	previous int64
 	gate     int64
-} // TODO: padding?
+	pad1     int64
+	pad2     int64
+}
 
 func NewWriter(written *Cursor, upstream Barrier, capacity int64) *Writer {
 	assertPowerOfTwo(capacity)
@@ -31,11 +33,16 @@ func (this *Writer) Reserve() int64 {
 	next := this.previous + 1
 	wrap := next - this.capacity
 
-	for wrap > this.gate {
-		this.gate = this.upstream.Read(next)
+	if wrap > this.gate {
+		min := this.upstream.Read(0) // interface call: 1.20ns per operation
+		for wrap > min {
+			min = this.upstream.Read(0)
+		}
+
+		this.gate = min // update stateful variable: 1.20ns per operation
 	}
 
-	this.previous = next
+	this.previous = next // update stateful variable: 1.20ns per operation
 	return next
 }
 
