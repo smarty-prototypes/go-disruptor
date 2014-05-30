@@ -34,7 +34,7 @@ func main() {
 func publish(writer *disruptor.Writer) {
 	for sequence := disruptor.InitialSequenceValue; sequence <= Iterations; {
 		sequence = writer.Reserve()
-		ringBuffer[sequence&BufferMask] = sequence
+		// ringBuffer[sequence&BufferMask] = sequence
 		writer.Commit(sequence)
 	}
 }
@@ -61,11 +61,11 @@ type SampleConsumer struct{}
 
 func (this SampleConsumer) Consume(lower, upper int64) {
 	for lower <= upper {
-		message := ringBuffer[lower&BufferMask]
-		if message != lower {
-			fmt.Println("Race condition", message, lower)
-			panic("Race condition")
-		}
+		// message := ringBuffer[lower&BufferMask]
+		// if message != lower {
+		// 	fmt.Println("Race condition", message, lower)
+		// 	panic("Race condition")
+		// }
 		lower++
 	}
 }
