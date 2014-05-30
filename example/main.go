@@ -20,19 +20,15 @@ func main() {
 	runtime.GOMAXPROCS(2)
 
 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
-
-	// reader := disruptor.NewReader(read, written, written, SampleConsumer{})
-
 	started := time.Now()
 
-	// go reader.Start()
-	go consume(written, read)
+	go consume(written, read, SampleConsumer{})
 	publish(written, read)
-	// reader.Stop()
-	// consume(written, read)
 
 	finished := time.Now()
 	fmt.Println(Iterations, finished.Sub(started))
+
+	time.Sleep(time.Millisecond * 10)
 }
 
 func publish(written, read *disruptor.Cursor) {
@@ -45,10 +41,6 @@ func publish(written, read *disruptor.Cursor) {
 
 		for wrap > gate {
 			gate = read.Sequence
-			// if wrap > gate {
-			// 	// time.Sleep(time.Nanosecond)
-			// 	time.Sleep(time.Microsecond)
-			// }
 		}
 
 		ringBuffer[next&BufferMask] = next
@@ -57,11 +49,7 @@ func publish(written, read *disruptor.Cursor) {
 	}
 }
 
-// func consume(reader *disruptor.Reader) {
-func consume(written, read *disruptor.Cursor) {
-	sleeps := 0
-	consumer := SampleConsumer{}
-
+func consume(written, read *disruptor.Cursor, consumer disruptor.Consumer) {
 	previous := int64(-1)
 	gate := int64(-1)
 	for previous < Iterations {
@@ -69,52 +57,23 @@ func consume(written, read *disruptor.Cursor) {
 		gate = written.Sequence
 
 		if current <= gate {
-
-			for current < gate {
-				current += consumer.Consume(current, gate)
-			}
-			// for current <= gate {
-			// 	if ringBuffer[current&BufferMask] > 0 {
-			// 	}
-
-			// 	current++
-			// }
-
+			consumer.Consume(current, gate)
 			previous = gate
 			read.Sequence = gate
 		} else {
-			sleeps++
-			time.Sleep(time.Microsecond)
+			// TODO: wait strategy
 		}
+
+		time.Sleep(time.Nanosecond)
 	}
-
-	fmt.Println("Consumer sleeps:", sleeps)
-
-	// 	// for sequence, gate := int64(0), int64(0); sequence < Iterations; sequence++ {
-
-	// 	// 	// for gate <= sequence {
-	// 	// 	// 	gate = written.Sequence
-	// 	// 	// 	if gate <= sequence {
-	// 	// 	// 		time.Sleep(time.Microsecond)
-	// 	// 	// 	}
-	// 	// 	// }
-
-	// 	// 	// if ringBuffer[sequence&BufferMask] > 0 {
-	// 	// 	// }
-
-	// 	// 	// read.Sequence = sequence
-	// 	// }
 }
-
-// // type Consumer interface {
-// // 	Consume(lower, upper int64)
-// // }
 
 type SampleConsumer struct{}
 
-func (this SampleConsumer) Consume(current, gate int64) int64 {
-	if ringBuffer[current&BufferMask] > 0 {
+func (this SampleConsumer) Consume(lower, upper int64) {
+	for lower <= upper {
+		if ringBuffer[lower&BufferMask] > 0 {
+		}
+		lower++
 	}
-
-	return 1
 }

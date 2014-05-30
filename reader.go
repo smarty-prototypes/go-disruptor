@@ -34,9 +34,9 @@ func (this *Reader) receive() {
 		gate := this.upstream.Read(current)
 
 		if current <= gate {
-			for current < gate {
-				current += this.consumer.Consume(current, gate)
-			}
+			// for current < gate {
+			// 	current += this.consumer.Consume(current, gate)
+			// }
 			this.read.Store(current)
 			current++
 		} else if gate = this.written.Load(); current <= gate {
