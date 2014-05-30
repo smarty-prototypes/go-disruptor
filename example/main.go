@@ -26,6 +26,7 @@ func main() {
 	started := time.Now()
 	reader.Start()
 	publish(writer)
+	// publish(written, read)
 	reader.Stop()
 	finished := time.Now()
 	fmt.Println(Iterations, finished.Sub(started))
@@ -38,6 +39,24 @@ func publish(writer *disruptor.Writer) {
 		writer.Commit(sequence)
 	}
 }
+
+// func publish(written, read *disruptor.Cursor) {
+// 	previous := disruptor.InitialSequenceValue
+// 	gate := disruptor.InitialSequenceValue
+
+// 	for previous <= Iterations {
+// 		next := previous + 1
+// 		wrap := next - BufferSize
+
+// 		for wrap > gate {
+// 			gate = read.Sequence
+// 		}
+
+// 		ringBuffer[next&BufferMask] = next
+// 		written.Sequence = next
+// 		previous = next
+// 	}
+// }
 
 type SampleConsumer struct{}
 
