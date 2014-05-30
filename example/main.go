@@ -79,7 +79,10 @@ type SampleConsumer struct{}
 
 func (this SampleConsumer) Consume(lower, upper int64) {
 	for lower <= upper {
-		if ringBuffer[lower&BufferMask] > 0 {
+		message := ringBuffer[lower&BufferMask]
+		if message != lower {
+			fmt.Println("Race condition", message, lower)
+			panic("Race condition")
 		}
 		lower++
 	}
