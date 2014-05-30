@@ -29,7 +29,7 @@ func (this *Reader) Stop() {
 }
 
 func (this *Reader) receive() {
-	previous := this.read.Sequence // TODO: this.read.Load()
+	previous := this.read.Load()
 	idling, gating := 0, 0
 
 	for {
@@ -38,7 +38,7 @@ func (this *Reader) receive() {
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)
-			this.read.Sequence = upper // TODO: this.read.Commit()
+			this.read.Store(upper)
 			previous = upper
 		} else if upper = this.written.Load(); lower <= upper {
 			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
@@ -52,8 +52,8 @@ func (this *Reader) receive() {
 			break
 		}
 
-		// sleeping increases the batch size which reduces the number of read commits
-		// which drastically reduces the cost; longer sleeps = larger batches = less expensive commits
+		// sleeping increases the batch size which reduces number of writes required to store the sequence
+		// reducing the number of writes allows the CPU to optimize the pipeline without prediction failures
 		time.Sleep(time.Microsecond)
 	}
 }
