@@ -20,11 +20,12 @@ func main() {
 	runtime.GOMAXPROCS(2)
 
 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
+	reader := disruptor.NewReader(read, written, written, SampleConsumer{})
+
 	started := time.Now()
-
-	go consume(written, read, SampleConsumer{})
+	reader.Start()
 	publish(written, read)
-
+	reader.Stop()
 	finished := time.Now()
 	fmt.Println(Iterations, finished.Sub(started))
 
@@ -47,55 +48,6 @@ func publish(written, read *disruptor.Cursor) {
 		written.Sequence = next
 		previous = next
 	}
-}
-
-func consume(written, read *disruptor.Cursor, consumer disruptor.Consumer) {
-	previous := int64(-1)
-	upstream := disruptor.Barrier(written)
-	idling, gating := 0, 0
-
-	for {
-		lower := previous + 1
-		upper := upstream.Read(lower)
-
-		if lower <= upper {
-			consumer.Consume(lower, upper)
-			read.Sequence = upper
-			previous = upper
-		} else if upper = written.Load(); lower <= upper {
-			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
-			gating++
-			idling = 0
-		} else if previous < Iterations {
-			// Idling--TODO: wait strategy (provide idling count to wait strategy for phased backoff)
-			idling++
-			gating = 0
-		} else {
-			break
-		}
-
-		time.Sleep(time.Nanosecond)
-	}
-
-	// for previous < Iterations {
-	// 	lower := previous + 1
-	// 	upper := upstream.Read(lower)
-
-	// 	if lower <= upper {
-	// 		consumer.Consume(lower, upper)
-	// 		read.Sequence = upper
-	// 		previous = upper
-	// 	} else if upper = written.Sequence; lower <= upper {
-	// 		// TODO: gating strategy
-	// 	} else {
-	// 		// TODO: idling strategy
-	// 		idling++
-	// 	}
-
-	// 	time.Sleep(time.Nanosecond)
-	// }
-
-	fmt.Println("Consumer idling/gating", idling, gating)
 }
 
 type SampleConsumer struct{}

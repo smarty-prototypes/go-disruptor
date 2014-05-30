@@ -29,28 +29,29 @@ func (this *Reader) Stop() {
 }
 
 func (this *Reader) receive() {
-	current := this.read.Sequence + 1
-	for {
-		gate := this.upstream.Read(current)
+	previous := this.read.Sequence
+	idling, gating := 0, 0
 
-		if current <= gate {
-			// for current < gate {
-			// 	current += this.consumer.Consume(current, gate)
-			// }
-			this.read.Store(current)
-			current++
-		} else if gate = this.written.Load(); current <= gate {
+	for {
+		lower := previous + 1
+		upper := this.upstream.Read(lower)
+
+		if lower <= upper {
+			this.consumer.Consume(lower, upper)
+			this.read.Sequence = upper
+			previous = upper
+		} else if upper = this.written.Load(); lower <= upper {
 			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
-			// gating++
-			// idling = 0
-			time.Sleep(time.Microsecond)
+			gating++
+			idling = 0
 		} else if this.ready {
 			// Idling--TODO: wait strategy (provide idling count to wait strategy for phased backoff)
-			// idling++
-			// gating = 0
-			time.Sleep(time.Microsecond)
+			idling++
+			gating = 0
 		} else {
 			break
 		}
+
+		time.Sleep(time.Nanosecond)
 	}
 }
