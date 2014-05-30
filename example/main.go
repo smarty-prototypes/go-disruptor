@@ -51,21 +51,28 @@ func publish(written, read *disruptor.Cursor) {
 
 func consume(written, read *disruptor.Cursor, consumer disruptor.Consumer) {
 	previous := int64(-1)
-	gate := int64(-1)
-	for previous < Iterations {
-		current := previous + 1
-		gate = written.Sequence
+	upstream := disruptor.Barrier(written)
+	idling := 0
 
-		if current <= gate {
-			consumer.Consume(current, gate)
-			previous = gate
-			read.Sequence = gate
+	for previous < Iterations {
+		lower := previous + 1
+		upper := upstream.Read(lower)
+
+		if lower <= upper {
+			consumer.Consume(lower, upper)
+			read.Sequence = upper
+			previous = upper
+		} else if upper = written.Sequence; lower <= upper {
+			// TODO: gating strategy
 		} else {
-			// TODO: wait strategy
+			// TODO: idling strategy
+			idling++
 		}
 
 		time.Sleep(time.Nanosecond)
 	}
+
+	fmt.Println("Consumer idling", idling)
 }
 
 type SampleConsumer struct{}
