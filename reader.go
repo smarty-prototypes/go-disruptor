@@ -29,7 +29,7 @@ func (this *Reader) Stop() {
 }
 
 func (this *Reader) receive() {
-	previous := this.read.Sequence
+	previous := this.read.Sequence // TODO: this.read.Load()
 	idling, gating := 0, 0
 
 	for {
@@ -38,7 +38,7 @@ func (this *Reader) receive() {
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)
-			this.read.Sequence = upper
+			this.read.Sequence = upper // TODO: this.read.Commit()
 			previous = upper
 		} else if upper = this.written.Load(); lower <= upper {
 			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
