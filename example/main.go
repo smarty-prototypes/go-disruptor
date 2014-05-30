@@ -33,6 +33,29 @@ func main() {
 }
 
 func publish(written, read *disruptor.Cursor) {
+
+	// sequence := disruptor.InitialSequenceValue
+	// writer := &disruptor.Writer2{}
+
+	// // writer := disruptor.NewWriter(written, read, BufferSize)
+	// for sequence < Iterations {
+	// 	sequence = writer.Reserve()
+	// }
+
+	// sequence := disruptor.InitialSequenceValue
+	// writer := disruptor.NewWriter(written, read, BufferSize)
+
+	// for sequence <= Iterations {
+	// 	sequence = writer.Reserve()
+	// 	ringBuffer[sequence&BufferMask] = sequence
+	// 	written.Sequence = sequence
+	// 	// writer.Commit(sequence)
+	// }
+
+	// fmt.Println(writer.Gating())
+
+	gating := 0
+
 	previous := disruptor.InitialSequenceValue
 	gate := disruptor.InitialSequenceValue
 
@@ -42,12 +65,15 @@ func publish(written, read *disruptor.Cursor) {
 
 		for wrap > gate {
 			gate = read.Sequence
+			gating++
 		}
 
 		ringBuffer[next&BufferMask] = next
 		written.Sequence = next
 		previous = next
 	}
+
+	fmt.Println("Gating", gating)
 }
 
 type SampleConsumer struct{}
