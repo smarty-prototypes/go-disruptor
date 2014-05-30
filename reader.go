@@ -38,7 +38,7 @@ func (this *Reader) receive() {
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)
-			this.read.Store(upper)
+			this.read.Store(upper) // TODO: make this cheaper if possible, e.g. LazyStore?
 			previous = upper
 		} else if upper = this.written.Load(); lower <= upper {
 			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
