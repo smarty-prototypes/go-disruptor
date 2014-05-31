@@ -25,13 +25,13 @@ func main() {
 	started := time.Now()
 	reader.Start()
 	publish(written, read)
-	// publish(disruptor.NewWriter(written, read, BufferSize))
 	reader.Stop()
 	finished := time.Now()
 	fmt.Println(Iterations, finished.Sub(started))
 }
 
-// func publish(writer *disruptor.Writer) {
+// func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
+// 	writer := disruptor.NewWriter(written, upstream, BufferSize)
 // 	for sequence := disruptor.InitialSequenceValue; sequence <= Iterations; {
 // 		sequence = writer.Reserve()
 // 		ringBuffer[sequence&BufferMask] = sequence
