@@ -50,5 +50,5 @@ func (this *Writer) Reserve() int64 {
 }
 
 func (this *Writer) Commit(sequence int64) {
-	this.written.Sequence = sequence
+	this.written.sequence = sequence
 }

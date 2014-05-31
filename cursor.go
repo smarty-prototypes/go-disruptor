@@ -6,22 +6,22 @@ const (
 )
 
 type Cursor struct {
-	Sequence int64
+	sequence int64
 	padding  [cpuCacheLinePadding]int64
 }
 
 func NewCursor() *Cursor {
-	return &Cursor{Sequence: InitialSequenceValue}
+	return &Cursor{sequence: InitialSequenceValue}
 }
 
 // TODO: ARM, i386-specific methods
 func (this *Cursor) Read(minimum int64) int64 {
-	return this.Sequence
+	return this.sequence
 }
 
 func (this *Cursor) Load() int64 {
-	return this.Sequence
+	return this.sequence
 }
 func (this *Cursor) Store(sequence int64) {
-	this.Sequence = sequence
+	this.sequence = sequence
 }
