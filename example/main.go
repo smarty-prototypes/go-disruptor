@@ -45,9 +45,8 @@ func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
 
 	for previous <= Iterations {
 		next := previous + 1
-		wrap := next - BufferSize
 
-		for wrap > gate {
+		for next-BufferSize > gate {
 			gate = upstream.Read(next)
 		}
 
