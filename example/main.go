@@ -30,6 +30,7 @@ func main() {
 	fmt.Println(Iterations, finished.Sub(started))
 }
 
+// TODO: experiment with: sequence, gate = writer.Reserve(sequence, gate)
 // func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
 // 	sequence := disruptor.InitialSequenceValue
 // 	writer := disruptor.NewWriter(written, upstream, BufferSize)
