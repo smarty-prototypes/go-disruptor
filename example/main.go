@@ -35,7 +35,7 @@ func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
 	sequence := disruptor.InitialSequenceValue
 	writer := disruptor.NewWriter(written, upstream, BufferSize)
 	for sequence <= Iterations {
-		sequence = writer.Reserve()
+		sequence = writer.Reserve(1)
 		ringBuffer[sequence&BufferMask] = sequence
 		writer.Commit(sequence)
 	}

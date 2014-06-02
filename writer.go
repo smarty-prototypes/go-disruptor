@@ -29,8 +29,8 @@ func assertPowerOfTwo(value int64) {
 	}
 }
 
-func (this *Writer) Reserve() int64 {
-	next := this.previous + 1
+func (this *Writer) Reserve(count int64) int64 {
+	next := this.previous + count
 
 	for next-this.capacity > this.gate {
 		this.gate = this.upstream.Read(0)
