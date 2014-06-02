@@ -31,32 +31,32 @@ func main() {
 }
 
 // TODO: experiment with: sequence, gate = writer.Reserve(sequence, gate)
-// func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
-// 	sequence := disruptor.InitialSequenceValue
-// 	writer := disruptor.NewWriter(written, upstream, BufferSize)
-// 	for sequence <= Iterations {
-// 		sequence = writer.Reserve()
-// 		ringBuffer[sequence&BufferMask] = sequence
-// 		writer.Commit(sequence)
-// 	}
-// }
-
 func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
-	previous := disruptor.InitialSequenceValue
-	gate := disruptor.InitialSequenceValue
-
-	for previous <= Iterations {
-		next := previous + 1
-
-		for next-BufferSize > gate {
-			gate = upstream.Read(next)
-		}
-
-		ringBuffer[next&BufferMask] = next
-		written.Store(next)
-		previous = next
+	sequence := disruptor.InitialSequenceValue
+	writer := disruptor.NewWriter(written, upstream, BufferSize)
+	for sequence <= Iterations {
+		sequence = writer.Reserve()
+		ringBuffer[sequence&BufferMask] = sequence
+		writer.Commit(sequence)
 	}
 }
+
+// func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
+// 	previous := disruptor.InitialSequenceValue
+// 	gate := disruptor.InitialSequenceValue
+
+// 	for previous <= Iterations {
+// 		next := previous + 1
+
+// 		for next-BufferSize > gate {
+// 			gate = upstream.Read(next)
+// 		}
+
+// 		ringBuffer[next&BufferMask] = next
+// 		written.Store(next)
+// 		previous = next
+// 	}
+// }
 
 type SampleConsumer struct{}
 
