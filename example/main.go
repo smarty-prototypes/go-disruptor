@@ -30,13 +30,20 @@ func main() {
 	fmt.Println(Iterations, finished.Sub(started))
 }
 
-// TODO: experiment with: sequence, gate = writer.Reserve(sequence, gate)
+const Reservations = 1
+const ReservationMask = -Reservations + 1
+
 func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
 	sequence := disruptor.InitialSequenceValue
 	writer := disruptor.NewWriter(written, upstream, BufferSize)
 	for sequence <= Iterations {
-		sequence = writer.Reserve(1)
-		ringBuffer[sequence&BufferMask] = sequence
+		sequence = writer.Reserve(Reservations)
+
+		for i := sequence + ReservationMask; i <= sequence; i++ {
+			ringBuffer[i&BufferMask] = i
+		}
+
+		// ringBuffer[sequence&BufferMask] = sequence
 		writer.Commit(sequence)
 	}
 }
