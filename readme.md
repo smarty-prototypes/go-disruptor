@@ -26,7 +26,7 @@ Disruptor: Writer, Reserve One | 4.3 ns/op
 Disruptor: Writer, Reserve Many | 1.1 ns/op
 Disruptor: Writer, Await One | 3.5 ns/op
 Disruptor: Writer, Await Many | 1.0 ns/op
-Disruptor: SharedWriter, Reserve One | 15.4 ns/op
+Disruptor: SharedWriter, Reserve One | 14.5 ns/op
 Disruptor: SharedWriter, Reserve Many | 2.5 ns/op
 Disruptor: SharedWriter, Reserve One, Contended Write | nn.n ns/op
 Disruptor: SharedWriter, Reserve Many, Contended Write | nn.n ns/op
