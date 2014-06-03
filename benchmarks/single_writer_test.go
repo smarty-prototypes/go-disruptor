@@ -61,10 +61,6 @@ func BenchmarkDisruptorWriterReserveMultiple(b *testing.B) {
 	reader.Stop()
 }
 
-func benchmarkSingleWriter(b *testing.B, maxClaim int64) {
-
-}
-
 type singleWriterConsumer struct {
 	ringBuffer *[singleWriterRingBufferSize]int64
 }
