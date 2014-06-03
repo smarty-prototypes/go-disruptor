@@ -32,18 +32,26 @@ func main() {
 
 const Reservations = 1
 
-// const ReservationMask = -Reservations + 1
-
 func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
 	sequence := disruptor.InitialSequenceValue
 	writer := disruptor.NewWriter(written, upstream, BufferSize)
 	for sequence <= Iterations {
 		sequence += Reservations
-		writer.Reserve(sequence)
+		writer.Await(sequence)
 		ringBuffer[sequence&BufferMask] = sequence
 		writer.Commit(sequence)
 	}
 }
+
+// func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
+// 	sequence := disruptor.InitialSequenceValue
+// 	writer := disruptor.NewWriter(written, upstream, BufferSize)
+// 	for sequence <= Iterations {
+// 		sequence = writer.Reserve(Reservations)
+// 		ringBuffer[sequence&BufferMask] = sequence
+// 		writer.Commit(sequence)
+// 	}
+// }
 
 // func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
 // 	previous := disruptor.InitialSequenceValue

@@ -27,12 +27,19 @@ func assertPowerOfTwo(value int64) {
 	}
 }
 
-func (this *Writer) Reserve(next int64) {
+func (this *Writer) Reserve(count int64) int64 {
+	this.previous += count
+	for this.previous-this.capacity > this.gate {
+		this.gate = this.upstream.Read(0)
+	}
+	return this.previous
+}
+
+func (this *Writer) Await(next int64) {
 	for next-this.capacity > this.gate {
 		this.gate = this.upstream.Read(0)
 	}
 }
-
 func (this *Writer) Commit(sequence int64) {
 	this.written.sequence = sequence
 }
