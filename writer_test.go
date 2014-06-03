@@ -11,7 +11,7 @@ func BenchmarkWriterReserve(b *testing.B) {
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		writer.Reserve(1)
+		writer.Reserve(i)
 		read.sequence = i
 	}
 }
