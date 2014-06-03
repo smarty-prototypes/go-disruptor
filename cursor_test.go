@@ -39,7 +39,7 @@ func BenchmarkCursorRead(b *testing.B) {
 	}
 }
 
-func BenchmarkCursorAsBarrier(b *testing.B) {
+func BenchmarkCursorReadAsBarrier(b *testing.B) {
 	var barrier Barrier = NewCursor()
 
 	iterations := int64(b.N)
