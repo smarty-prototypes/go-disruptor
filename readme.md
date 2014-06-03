@@ -16,12 +16,12 @@ Each of the following benchmark tests sends an incrementing sequence message fro
 
 Scenario | Per Operation Time
 -------- | ------------------
-Channels: Blocking, GOMAXPROCS=1 | 58.6 ns/op
-Channels: Blocking, GOMAXPROCS=2 | 86.6 ns/op
-Channels: Blocking, GOMAXPROCS=3, Contended Write | 194 ns/op
-Channels: Non-blocking, GOMAXPROCS=1| 73.9 ns/op
-Channels: Non-blocking, GOMAXPROCS=2| 72.3 ns/op
-Channels: Non-blocking, GOMAXPROCS=3, Contended Write | 259 ns/op
+Channels: Buffered, Blocking, GOMAXPROCS=1 | 58.6 ns/op
+Channels: Buffered, Blocking, GOMAXPROCS=2 | 86.6 ns/op
+Channels: Buffered, Blocking, GOMAXPROCS=3, Contended Write | 194 ns/op
+Channels: Buffered, Non-blocking, GOMAXPROCS=1| 73.9 ns/op
+Channels: Buffered, Non-blocking, GOMAXPROCS=2| 72.3 ns/op
+Channels: Buffered, Non-blocking, GOMAXPROCS=3, Contended Write | 259 ns/op
 Disruptor: Writer, Reserve One | 4.3 ns/op
 Disruptor: Writer, Reserve Many | 1.1 ns/op
 Disruptor: Writer, Await One | 3.5 ns/op

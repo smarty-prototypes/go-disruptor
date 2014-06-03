@@ -10,7 +10,9 @@ func (this SampleConsumer) Consume(lower, upper int64) {
 	for lower <= upper {
 		message := this.ringBuffer[lower&RingBufferMask]
 		if message != lower {
-			panic(fmt.Sprintf("\nRace condition %d %d\n", lower, message))
+			warning := fmt.Sprintf("\nRace condition--Sequence: %d, Message: %d\n", lower, message)
+			fmt.Printf(warning)
+			panic(warning)
 		}
 		lower++
 	}
