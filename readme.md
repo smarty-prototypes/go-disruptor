@@ -15,19 +15,21 @@ Benchmarks
 Each of the following benchmark tests sends an incrementing sequence message from one goroutine to another. The receiving goroutine asserts that the message is received is the expected incrementing sequence value. Any failures cause a panic. All tests were run using `GOMAXPROCS=2`.
 
 Scenario | Per Operation Time
--------- | ------------------ 
+-------- | ------------------
 Channels: Blocking, GOMAXPROCS=1 | 58.6 ns/op
 Channels: Blocking, GOMAXPROCS=2 | 86.6 ns/op
 Channels: Blocking, GOMAXPROCS=3, Contended Write | 194 ns/op
 Channels: Non-blocking, GOMAXPROCS=1| 73.9 ns/op
 Channels: Non-blocking, GOMAXPROCS=2| 72.3 ns/op
 Channels: Non-blocking, GOMAXPROCS=3, Contended Write | 259 ns/op
-Disruptor: SharedWriter (Reserve One) | 15.4 ns/op
-Disruptor: SharedWriter (Reserve Many) | 2.5 ns/op
-Disruptor: Writer (Reserve One) | 4.3 ns/op
-Disruptor: Writer (Reserve Many) | 1.1 ns/op
-Disruptor: Writer (Await One) | 3.5 ns/op
-Disruptor: Writer (Await Many) | 1.0 ns/op
+Disruptor: Writer, Reserve One | 4.3 ns/op
+Disruptor: Writer, Reserve Many | 1.1 ns/op
+Disruptor: Writer, Await One | 3.5 ns/op
+Disruptor: Writer, Await Many | 1.0 ns/op
+Disruptor: SharedWriter, Reserve One | 15.4 ns/op
+Disruptor: SharedWriter, Reserve Many | 2.5 ns/op
+Disruptor: SharedWriter, Reserve One, Contended Write | nn.n ns/op
+Disruptor: SharedWriter, Reserve Many, Contended Write | nn.n ns/op
 
 When In Doubt, Use Channels
 ----------------------------
