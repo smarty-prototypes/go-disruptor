@@ -22,7 +22,7 @@ func BenchmarkWriterNextWrapPoint(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	read.Store(1<<63 - 1)
+	read.Store(MaxSequenceValue)
 	for i := int64(0); i < iterations; i++ {
 		writer.Reserve(1)
 	}

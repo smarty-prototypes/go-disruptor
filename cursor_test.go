@@ -38,3 +38,15 @@ func BenchmarkCursorRead(b *testing.B) {
 		cursor.Read(i)
 	}
 }
+
+func BenchmarkCursorAsBarrier(b *testing.B) {
+	var barrier Barrier = NewCursor()
+
+	iterations := int64(b.N)
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := int64(0); i < iterations; i++ {
+		barrier.Read(0)
+	}
+}

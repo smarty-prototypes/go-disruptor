@@ -1,6 +1,7 @@
 package disruptor
 
 const (
+	MaxSequenceValue     int64 = (1 << 63) - 1
 	InitialSequenceValue int64 = -1
 	cpuCacheLinePadding        = 7
 )
