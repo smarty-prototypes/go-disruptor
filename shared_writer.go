@@ -29,7 +29,7 @@ func (this *SharedWriter) Reserve(count int64) int64 {
 		previous := this.written.Load()
 		upper := previous + count
 
-		if previous-this.capacity > this.gate.Load() {
+		for upper-this.capacity > this.gate.Load() {
 			this.gate.Store(this.upstream.Read(0))
 		}
 
