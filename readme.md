@@ -16,12 +16,17 @@ Each of the following benchmark tests sends an incrementing sequence message fro
 
 Scenario | Per Operation Time
 -------- | ------------------ 
-Channel: Non-blocking | 681 ns/op
-Channel: Blocking | 86.6 ns/op|
-Disruptor: SharedWriter (single claim)	| nn.n ns/op
-Disruptor: SharedWriter (multi claim)	| nn.n ns/op
-Disruptor: Writer (single claim) | 4.3 ns/op
-Disruptor: Writer (multi claim) | 1.1 ns/op
+Channel (GOMAXPROCS=2): Non-blocking | 681 ns/op
+Channel (GOMAXPROCS=2): Blocking | 86.6 ns/op
+
+Disruptor: SharedWriter (Reserve One)	| 15.4 ns/op
+Disruptor: SharedWriter (Reserve Many)	| nn.n ns/op
+
+Disruptor: Writer (Reserve One) | 4.3 ns/op
+Disruptor: Writer (Reserve Many) | 1.1 ns/op
+
+Disruptor: Writer (Await One) | 3.5 ns/op
+Disruptor: Writer (Await Many) | 1.0 ns/op
 
 
 When In Doubt, Use Channels

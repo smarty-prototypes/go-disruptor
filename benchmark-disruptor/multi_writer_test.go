@@ -1,0 +1,55 @@
+package benchmarks
+
+import (
+	"testing"
+
+	"github.com/smartystreets/go-disruptor"
+)
+
+func BenchmarkDisruptorSharedWriterReserveOne(b *testing.B) {
+	ringBuffer := [RingBufferSize]int64{}
+	written, read := disruptor.NewCursor(), disruptor.NewCursor()
+	shared := disruptor.NewSharedWriterBarrier(written, RingBufferSize)
+	reader := disruptor.NewReader(read, written, shared, SampleConsumer{&ringBuffer})
+	writer := disruptor.NewSharedWriter(shared, read)
+	reader.Start()
+
+	iterations := int64(b.N)
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	sequence := disruptor.InitialSequenceValue
+	for sequence < iterations {
+		sequence = writer.Reserve(ReserveOne)
+		ringBuffer[sequence&RingBufferMask] = sequence
+		writer.Commit(sequence, sequence)
+	}
+
+	reader.Stop()
+}
+
+// func BenchmarkDisruptorSharedWriterReserveMany(b *testing.B) {
+// 	ringBuffer := [RingBufferSize]int64{}
+// 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
+// 	shared := disruptor.NewSharedWriterBarrier(written, RingBufferSize)
+// 	reader := disruptor.NewReader(read, written, shared, SampleConsumer{&ringBuffer})
+// 	writer := disruptor.NewSharedWriter(shared, read)
+// 	reader.Start()
+
+// 	iterations := int64(b.N)
+// 	b.ReportAllocs()
+// 	b.ResetTimer()
+
+// 	sequence := disruptor.InitialSequenceValue
+// 	for sequence < iterations {
+// 		sequence = writer.Reserve(ReserveMany)
+
+// 		for i := sequence - ReserveManyDelta; i <= sequence; i++ {
+// 			ringBuffer[i&RingBufferMask] = i
+// 		}
+
+// 		writer.Commit(sequence-ReserveMany, sequence)
+// 	}
+
+// 	reader.Stop()
+// }

@@ -1,16 +1,15 @@
 package benchmarks
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/smartystreets/go-disruptor"
 )
 
-func BenchmarkDisruptorWriterReserveSingle(b *testing.B) {
+func BenchmarkDisruptorWriterReserveOne(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
-	reader := disruptor.NewReader(read, written, written, Consumer{&ringBuffer})
+	reader := disruptor.NewReader(read, written, written, SampleConsumer{&ringBuffer})
 	writer := disruptor.NewWriter(written, read, RingBufferSize)
 	reader.Start()
 
@@ -27,10 +26,10 @@ func BenchmarkDisruptorWriterReserveSingle(b *testing.B) {
 
 	reader.Stop()
 }
-func BenchmarkDisruptorWriterReserveMultiple(b *testing.B) {
+func BenchmarkDisruptorWriterReserveMany(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
-	reader := disruptor.NewReader(read, written, written, Consumer{&ringBuffer})
+	reader := disruptor.NewReader(read, written, written, SampleConsumer{&ringBuffer})
 	writer := disruptor.NewWriter(written, read, RingBufferSize)
 	reader.Start()
 
@@ -50,18 +49,4 @@ func BenchmarkDisruptorWriterReserveMultiple(b *testing.B) {
 	}
 
 	reader.Stop()
-}
-
-type Consumer struct {
-	ringBuffer *[RingBufferSize]int64
-}
-
-func (this Consumer) Consume(lower, upper int64) {
-	for lower <= upper {
-		message := this.ringBuffer[lower&RingBufferMask]
-		if message != lower {
-			panic(fmt.Sprintf("\nRace condition %d %d\n", lower, message))
-		}
-		lower++
-	}
 }
