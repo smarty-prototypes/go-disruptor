@@ -6,7 +6,7 @@ import (
 	"github.com/smartystreets/go-disruptor"
 )
 
-func BenchmarkDisruptorWriterAwaitOne(b *testing.B) {
+func BenchmarkWriterAwaitOne(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
 	reader := disruptor.NewReader(read, written, written, SampleConsumer{&ringBuffer})
@@ -27,7 +27,7 @@ func BenchmarkDisruptorWriterAwaitOne(b *testing.B) {
 
 	reader.Stop()
 }
-func BenchmarkDisruptorWriterAwaitMany(b *testing.B) {
+func BenchmarkWriterAwaitMany(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
 	reader := disruptor.NewReader(read, written, written, SampleConsumer{&ringBuffer})

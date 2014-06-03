@@ -5,17 +5,17 @@ import (
 	"testing"
 )
 
-func BenchmarkNonBlockingChannelOneGoroutine(b *testing.B) {
-	benchmarkNonBlockingChannel(b)
+func BenchmarkNonBlockingOneGoroutine(b *testing.B) {
+	benchmarkNonBlocking(b)
 }
 
-func BenchmarkNonBlockingChannelTwoGoroutines(b *testing.B) {
+func BenchmarkNonBlockingTwoGoroutines(b *testing.B) {
 	runtime.GOMAXPROCS(2)
-	benchmarkNonBlockingChannel(b)
+	benchmarkNonBlocking(b)
 	runtime.GOMAXPROCS(1)
 }
 
-func benchmarkNonBlockingChannel(b *testing.B) {
+func benchmarkNonBlocking(b *testing.B) {
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
