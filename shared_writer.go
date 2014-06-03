@@ -40,11 +40,15 @@ func (this *SharedWriter) Reserve(count int64) int64 {
 }
 
 func (this *SharedWriter) Commit(lower, upper int64) {
-	// POTENTIAL TODO: start from upper and work toward lower
-	// this may have the effect of keeping a batch together which
-	// might otherwise be split up...
-	for lower <= upper {
-		this.committed[lower&this.mask] = int32(lower >> this.shift)
-		lower++
+	if lower == upper {
+		this.committed[upper&this.mask] = int32(upper >> this.shift)
+	} else {
+		// working down the array keeps all items in the commit together
+		// otherwise the reader(s) could split up the group
+		for upper >= lower {
+			this.committed[upper&this.mask] = int32(upper >> this.shift)
+			upper--
+		}
+
 	}
 }
