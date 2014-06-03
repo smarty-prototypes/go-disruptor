@@ -2,8 +2,6 @@
 
 - Rewrite all code test first (including diamond pattern)
 
-- Benchmark code (go test -bench=.) (with GOMAXPROCS=2 if env GOMAXPROCS=1)
-
 - Squeeze little bits of performance here and there by trying a few different things
 	e.g. pointers vs structs, padding, etc.
 

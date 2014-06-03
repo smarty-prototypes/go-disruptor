@@ -6,6 +6,7 @@ import (
 )
 
 func BenchmarkNonBlockingOneGoroutine(b *testing.B) {
+	runtime.GOMAXPROCS(1)
 	benchmarkNonBlocking(b, 1)
 }
 
