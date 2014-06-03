@@ -16,8 +16,11 @@ Each of the following benchmark tests sends an incrementing sequence message fro
 
 Scenario | Per Operation Time
 -------- | ------------------ 
-Channel (GOMAXPROCS=2): Non-blocking | 681 ns/op
-Channel (GOMAXPROCS=2): Blocking | 86.6 ns/op
+Channel (Uncontended@GOMAXPROCS=1): Blocking | 58.6 ns/op
+Channel (Contended@GOMAXPROCS=2): Blocking | 86.6 ns/op
+
+Channel (Uncontended@GOMAXPROCS=1): Non-blocking | 2652 ns/op
+Channel (Contended@GOMAXPROCS=2): Non-blocking | 426 ns/op
 
 Disruptor: SharedWriter (Reserve One)	| 15.4 ns/op
 Disruptor: SharedWriter (Reserve Many)	| 2.5 ns/op

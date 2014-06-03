@@ -1,8 +1,21 @@
 package benchmarks
 
-import "testing"
+import (
+	"runtime"
+	"testing"
+)
 
-func BenchmarkBlockingChannel(b *testing.B) {
+func BenchmarkBlockingChannelOneGoroutine(b *testing.B) {
+	benchmarkBlockingChannel(b)
+}
+
+func BenchmarkBlockingChannelTwoGoroutines(b *testing.B) {
+	runtime.GOMAXPROCS(2)
+	benchmarkBlockingChannel(b)
+	runtime.GOMAXPROCS(1)
+}
+
+func benchmarkBlockingChannel(b *testing.B) {
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
