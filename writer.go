@@ -6,8 +6,6 @@ type Writer struct {
 	capacity int64
 	previous int64
 	gate     int64
-	pad1     int64
-	pad2     int64
 }
 
 func NewWriter(written *Cursor, upstream Barrier, capacity int64) *Writer {

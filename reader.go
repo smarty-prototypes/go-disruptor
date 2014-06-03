@@ -8,7 +8,7 @@ type Reader struct {
 	upstream Barrier
 	consumer Consumer
 	ready    bool
-} // TODO: padding???
+}
 
 func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer) *Reader {
 	return &Reader{
