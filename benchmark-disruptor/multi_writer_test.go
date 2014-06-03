@@ -28,6 +28,7 @@ func BenchmarkDisruptorSharedWriterReserveOne(b *testing.B) {
 	reader.Stop()
 }
 
+// TODO: off by one
 // func BenchmarkDisruptorSharedWriterReserveMany(b *testing.B) {
 // 	ringBuffer := [RingBufferSize]int64{}
 // 	written, read := disruptor.NewCursor(), disruptor.NewCursor()
@@ -40,15 +41,16 @@ func BenchmarkDisruptorSharedWriterReserveOne(b *testing.B) {
 // 	b.ReportAllocs()
 // 	b.ResetTimer()
 
-// 	sequence := disruptor.InitialSequenceValue
-// 	for sequence < iterations {
-// 		sequence = writer.Reserve(ReserveMany)
+// 	previous, current := disruptor.InitialSequenceValue, disruptor.InitialSequenceValue
+// 	for current < iterations {
+// 		current = writer.Reserve(ReserveMany)
 
-// 		for i := sequence - ReserveManyDelta; i <= sequence; i++ {
+// 		for i := previous + 1; i <= current; i++ {
 // 			ringBuffer[i&RingBufferMask] = i
 // 		}
 
-// 		writer.Commit(sequence-ReserveMany, sequence)
+// 		writer.Commit(previous+1, current)
+// 		previous = current
 // 	}
 
 // 	reader.Stop()

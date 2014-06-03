@@ -20,7 +20,7 @@ Channel (GOMAXPROCS=2): Non-blocking | 681 ns/op
 Channel (GOMAXPROCS=2): Blocking | 86.6 ns/op
 
 Disruptor: SharedWriter (Reserve One)	| 15.4 ns/op
-Disruptor: SharedWriter (Reserve Many)	| nn.n ns/op
+Disruptor: SharedWriter (Reserve Many)	| 2.5 ns/op
 
 Disruptor: Writer (Reserve One) | 4.3 ns/op
 Disruptor: Writer (Reserve Many) | 1.1 ns/op
