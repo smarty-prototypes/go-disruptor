@@ -31,7 +31,8 @@ func main() {
 }
 
 const Reservations = 1
-const ReservationMask = -Reservations + 1
+
+// const ReservationMask = -Reservations + 1
 
 func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
 	sequence := disruptor.InitialSequenceValue
@@ -39,11 +40,11 @@ func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
 	for sequence <= Iterations {
 		sequence = writer.Reserve(Reservations)
 
-		for i := sequence + ReservationMask; i <= sequence; i++ {
-			ringBuffer[i&BufferMask] = i
-		}
+		// for i := sequence + ReservationMask; i <= sequence; i++ {
+		// 	ringBuffer[i&BufferMask] = i
+		// }
 
-		// ringBuffer[sequence&BufferMask] = sequence
+		ringBuffer[sequence&BufferMask] = sequence
 		writer.Commit(sequence)
 	}
 }
