@@ -2,9 +2,23 @@ package disruptor
 
 import "testing"
 
-func BenchmarkCursorLoad(b *testing.B) {
-	cursor := NewCursor()
+func BenchmarkCursorStore(b *testing.B) {
 	iterations := int64(b.N)
+
+	cursor := NewCursor()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := int64(0); i < iterations; i++ {
+		cursor.Store(i)
+	}
+}
+func BenchmarkCursorLoad(b *testing.B) {
+	iterations := int64(b.N)
+
+	cursor := NewCursor()
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
@@ -12,14 +26,27 @@ func BenchmarkCursorLoad(b *testing.B) {
 		cursor.Load()
 	}
 }
+func BenchmarkCursorRead(b *testing.B) {
+	iterations := int64(b.N)
 
-func BenchmarkCursorStore(b *testing.B) {
 	cursor := NewCursor()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := int64(0); i < iterations; i++ {
+		cursor.Read(i)
+	}
+}
+
+func BenchmarkCursorReadAsBarrier(b *testing.B) {
+	var barrier Barrier = NewCursor()
+
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		cursor.Store(i)
+		barrier.Read(0)
 	}
 }

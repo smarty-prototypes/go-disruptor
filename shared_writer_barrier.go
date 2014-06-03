@@ -3,22 +3,22 @@ package disruptor
 import "math"
 
 type SharedWriterBarrier struct {
+	written   *Cursor
+	committed []int32
 	capacity  int64
 	mask      int64
 	shift     uint8
-	committed []int32
-	written   *Cursor
 }
 
 func NewSharedWriterBarrier(written *Cursor, capacity int64) *SharedWriterBarrier {
 	assertPowerOfTwo(capacity)
 
 	return &SharedWriterBarrier{
+		written:   written,
+		committed: prepareCommitBuffer(capacity),
 		capacity:  capacity,
 		mask:      capacity - 1,
 		shift:     uint8(math.Log2(float64(capacity))),
-		committed: prepareCommitBuffer(capacity),
-		written:   written,
 	}
 }
 func prepareCommitBuffer(capacity int64) []int32 {
@@ -29,7 +29,7 @@ func prepareCommitBuffer(capacity int64) []int32 {
 	return buffer
 }
 
-func (this *SharedWriterBarrier) LoadBarrier(lower int64) int64 {
+func (this *SharedWriterBarrier) Read(lower int64) int64 {
 	shift, mask := this.shift, this.mask
 	upper := this.written.Load()
 

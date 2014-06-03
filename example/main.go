@@ -1,80 +1,84 @@
 package main
 
 import (
+	"fmt"
 	"runtime"
+	"time"
 
 	"github.com/smartystreets/go-disruptor"
 )
 
 const (
-	MaxConsumersPerGroup = 1
-	MaxConsumerGroups    = 2
-	MaxProducers         = 2
-	ItemsToPublish       = 4
-	ReportingFrequency   = 1000000 * 10 // 1 million * N
-	RingSize             = 1024 * 16
-	RingMask             = RingSize - 1
+	BufferSize = 1024 * 64
+	BufferMask = BufferSize - 1
+	Iterations = 1000000 * 100
 )
 
-var ringBuffer [RingSize]int64
+var ringBuffer = [BufferSize]int64{}
 
 func main() {
-	runtime.GOMAXPROCS(MaxConsumerGroups*MaxConsumersPerGroup + MaxProducers)
+	runtime.GOMAXPROCS(2)
 
-	// written := disruptor.NewCursor()
-	// upstream := startConsumerGroups(written, written)
-	// writer := disruptor.NewWriter(written, upstream, RingSize)
-	// startExclusiveProducer(writer)
+	written, read := disruptor.NewCursor(), disruptor.NewCursor()
+	reader := disruptor.NewReader(read, written, written, SampleConsumer{})
 
-	written := disruptor.NewCursor()
-	shared := disruptor.NewSharedWriterBarrier(written, RingSize)
-	upstream := startConsumerGroups(shared, written)
-	writer := disruptor.NewSharedWriter(shared, upstream)
-	startSharedProducers(writer)
+	started := time.Now()
+	reader.Start()
+	publish(written, read)
+	reader.Stop()
+	finished := time.Now()
+	fmt.Println(Iterations, finished.Sub(started))
 }
 
-// func startExclusiveProducer(writer *disruptor.Writer) {
-// 	publish(writer)
+const Reservations = 1
+
+func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
+	sequence := disruptor.InitialSequenceValue
+	writer := disruptor.NewWriter(written, upstream, BufferSize)
+	for sequence <= Iterations {
+		sequence += Reservations
+		writer.Await(sequence)
+		ringBuffer[sequence&BufferMask] = sequence
+		writer.Commit(sequence, sequence)
+	}
+}
+
+// func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
+// 	sequence := disruptor.InitialSequenceValue
+// 	writer := disruptor.NewWriter(written, upstream, BufferSize)
+// 	for sequence <= Iterations {
+// 		sequence = writer.Reserve(Reservations)
+// 		ringBuffer[sequence&BufferMask] = sequence
+// 		writer.Commit(sequence, sequence)
+// 	}
 // }
 
-func startSharedProducers(writer *disruptor.SharedWriter) {
-	for i := 0; i < MaxProducers-1; i++ {
-		go publish(writer)
-	}
+// func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
+// 	previous := disruptor.InitialSequenceValue
+// 	gate := disruptor.InitialSequenceValue
 
-	publish(writer)
-}
+// 	for previous <= Iterations {
+// 		next := previous + 1
 
-func startConsumerGroups(upstream disruptor.Barrier, written *disruptor.Cursor) disruptor.Barrier {
-	for i := 0; i < MaxConsumerGroups; i++ {
-		upstream = startConsumerGroup(i, upstream, written)
-	}
+// 		for next-BufferSize > gate {
+// 			gate = upstream.Read(next)
+// 		}
 
-	return upstream
-}
-func startConsumerGroup(group int, upstream disruptor.Barrier, written *disruptor.Cursor) disruptor.Barrier {
-	cursors := []*disruptor.Cursor{}
+// 		ringBuffer[next&BufferMask] = next
+// 		written.Store(next)
+// 		previous = next
+// 	}
+// }
 
-	for i := 0; i < MaxConsumersPerGroup; i++ {
-		read := disruptor.NewCursor()
-		cursors = append(cursors, read)
-		reader := disruptor.NewReader(read, written, upstream)
+type SampleConsumer struct{}
 
-		// constant time regardless of the number of items
-		// go consume0(disruptor.NewSimpleReader(reader, NewExampleConsumerHandler()))
-
-		// TODO: wildly sporadic latency for single-item publish, e.g. 2 seconds, 65 ms, etc.
-		// faster for 2-3+ items per publish
-		// go consume1(reader)
-
-		if group == 0 {
-			go consume1(reader)
-		} else if group == 1 {
-			go consume2(reader)
-		} else {
-			panic("only two consumer groups currently supported.")
+func (this SampleConsumer) Consume(lower, upper int64) {
+	for lower <= upper {
+		message := ringBuffer[lower&BufferMask]
+		if message != lower {
+			fmt.Println("Race condition", message, lower)
+			panic("Race condition")
 		}
+		lower++
 	}
-
-	return disruptor.NewCompositeBarrier(cursors...)
 }

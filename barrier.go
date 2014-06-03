@@ -1,5 +1,5 @@
 package disruptor
 
 type Barrier interface {
-	LoadBarrier(int64) int64
+	Read(int64) int64
 }

@@ -2,7 +2,7 @@ package disruptor
 
 import "testing"
 
-func BenchmarkCompositeBarrierLoad(b *testing.B) {
+func BenchmarkCompositeBarrierRead(b *testing.B) {
 	barrier := NewCompositeBarrier(NewCursor(), NewCursor(), NewCursor(), NewCursor())
 
 	iterations := int64(b.N)
@@ -10,6 +10,6 @@ func BenchmarkCompositeBarrierLoad(b *testing.B) {
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		barrier.LoadBarrier(0)
+		barrier.Read(0)
 	}
 }

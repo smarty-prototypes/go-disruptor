@@ -1,11 +1,9 @@
 package disruptor
 
 const (
-	cpuCacheLinePadding        = 7
-	InitialSequenceValue int64 = -1
 	MaxSequenceValue     int64 = (1 << 63) - 1
-	Gating                     = InitialSequenceValue - 1
-	Idling                     = Gating - 1
+	InitialSequenceValue int64 = -1
+	cpuCacheLinePadding        = 7
 )
 
 // TODO: research aligned read/write:
@@ -14,9 +12,10 @@ const (
 // https://gist.github.com/anachronistic/7495541
 // http://blog.chewxy.com/2013/12/10/pointer-tagging-in-go/
 // http://www.goinggo.net/2014/01/concurrency-goroutines-and-gomaxprocs.html
+
 type Cursor struct {
 	sequence int64
-	padding  [cpuCacheLinePadding]int64 // https://github.com/fmstephe/fatomic/blob/master/paddedint.go
+	padding  [cpuCacheLinePadding]int64
 }
 
 func NewCursor() *Cursor {
