@@ -13,15 +13,3 @@ type Cursor struct {
 func NewCursor() *Cursor {
 	return &Cursor{sequence: InitialSequenceValue}
 }
-
-// TODO: ARM, i386-specific methods
-func (this *Cursor) Read(minimum int64) int64 {
-	return this.sequence
-}
-
-func (this *Cursor) Load() int64 {
-	return this.sequence
-}
-func (this *Cursor) Store(sequence int64) {
-	this.sequence = sequence
-}

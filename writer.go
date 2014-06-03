@@ -40,6 +40,3 @@ func (this *Writer) Await(next int64) {
 		this.gate = this.upstream.Read(0)
 	}
 }
-func (this *Writer) Commit(lower, upper int64) {
-	this.written.sequence = upper
-}
