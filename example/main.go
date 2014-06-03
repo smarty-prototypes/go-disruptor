@@ -39,7 +39,7 @@ func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
 		sequence += Reservations
 		writer.Await(sequence)
 		ringBuffer[sequence&BufferMask] = sequence
-		writer.Commit(sequence)
+		writer.Commit(sequence, sequence)
 	}
 }
 
@@ -49,7 +49,7 @@ func publish(written *disruptor.Cursor, upstream disruptor.Barrier) {
 // 	for sequence <= Iterations {
 // 		sequence = writer.Reserve(Reservations)
 // 		ringBuffer[sequence&BufferMask] = sequence
-// 		writer.Commit(sequence)
+// 		writer.Commit(sequence, sequence)
 // 	}
 // }
 
