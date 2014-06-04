@@ -6,8 +6,6 @@ type Disruptor struct {
 }
 
 func NewDisruptor(builder Builder) Disruptor {
-	// TODO: Cursors should probably all be created at the same time in wireup to keep them as close together as possible:
-	// https://news.ycombinator.com/item?id=7800825
 	return Disruptor{}
 }
 
