@@ -13,6 +13,7 @@ func BenchmarkWriterReserveOne(b *testing.B) {
 		WithConsumerGroup(SampleConsumer{&ringBuffer}).
 		Build()
 	controller.Start()
+	defer controller.Stop()
 	writer := controller.Writer()
 
 	iterations := int64(b.N)
@@ -28,7 +29,6 @@ func BenchmarkWriterReserveOne(b *testing.B) {
 	}
 
 	b.StopTimer()
-	controller.Stop()
 }
 func BenchmarkWriterReserveMany(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
@@ -37,6 +37,7 @@ func BenchmarkWriterReserveMany(b *testing.B) {
 		WithConsumerGroup(SampleConsumer{&ringBuffer}).
 		Build()
 	controller.Start()
+	defer controller.Stop()
 	writer := controller.Writer()
 
 	iterations := int64(b.N)
@@ -56,5 +57,4 @@ func BenchmarkWriterReserveMany(b *testing.B) {
 	}
 
 	b.StopTimer()
-	controller.Stop()
 }

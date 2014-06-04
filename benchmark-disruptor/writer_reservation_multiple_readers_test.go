@@ -1,18 +1,22 @@
 package benchmarks
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/smartystreets/go-disruptor"
 )
 
 func BenchmarkWriterReserveOneMultipleReaders(b *testing.B) {
+	runtime.GOMAXPROCS(3)
+	defer runtime.GOMAXPROCS(2)
 	ringBuffer := [RingBufferSize]int64{}
 	controller := disruptor.
 		Configure(RingBufferSize).
 		WithConsumerGroup(SampleConsumer{&ringBuffer}, SampleConsumer{&ringBuffer}).
 		Build()
 	controller.Start()
+	defer controller.Stop()
 	writer := controller.Writer()
 
 	iterations := int64(b.N)
@@ -28,15 +32,18 @@ func BenchmarkWriterReserveOneMultipleReaders(b *testing.B) {
 	}
 
 	b.StopTimer()
-	controller.Stop()
 }
+
 func BenchmarkWriterReserveManyMultipleReaders(b *testing.B) {
+	runtime.GOMAXPROCS(3)
+	defer runtime.GOMAXPROCS(2)
 	ringBuffer := [RingBufferSize]int64{}
 	controller := disruptor.
 		Configure(RingBufferSize).
 		WithConsumerGroup(SampleConsumer{&ringBuffer}, SampleConsumer{&ringBuffer}).
 		Build()
 	controller.Start()
+	defer controller.Stop()
 	writer := controller.Writer()
 
 	iterations := int64(b.N)
@@ -56,5 +63,4 @@ func BenchmarkWriterReserveManyMultipleReaders(b *testing.B) {
 	}
 
 	b.StopTimer()
-	controller.Stop()
 }

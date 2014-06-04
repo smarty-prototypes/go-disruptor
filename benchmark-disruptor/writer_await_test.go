@@ -13,6 +13,7 @@ func BenchmarkWriterAwaitOne(b *testing.B) {
 		WithConsumerGroup(SampleConsumer{&ringBuffer}).
 		Build()
 	controller.Start()
+	defer controller.Stop()
 	writer := controller.Writer()
 
 	iterations := int64(b.N)
@@ -29,7 +30,6 @@ func BenchmarkWriterAwaitOne(b *testing.B) {
 	}
 
 	b.StopTimer()
-	controller.Stop()
 }
 func BenchmarkWriterAwaitMany(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
@@ -38,6 +38,7 @@ func BenchmarkWriterAwaitMany(b *testing.B) {
 		WithConsumerGroup(SampleConsumer{&ringBuffer}).
 		Build()
 	controller.Start()
+	defer controller.Stop()
 	writer := controller.Writer()
 
 	iterations := int64(b.N)
@@ -58,5 +59,4 @@ func BenchmarkWriterAwaitMany(b *testing.B) {
 	}
 
 	b.StopTimer()
-	controller.Stop()
 }
