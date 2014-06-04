@@ -5,10 +5,6 @@ type Disruptor struct {
 	readers []*Reader
 }
 
-func NewDisruptor(builder Builder) Disruptor {
-	return Disruptor{}
-}
-
 func (this Disruptor) Writer() *Writer {
 	return this.writer
 }
