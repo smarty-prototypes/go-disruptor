@@ -16,6 +16,11 @@ Benchmarks
 ----------------------------
 Each of the following benchmark tests sends an incrementing sequence message from one goroutine to another. The receiving goroutine asserts that the message is received is the expected incrementing sequence value. Any failures cause a panic. Unless otherwise noted, all tests were run using `GOMAXPROCS=2`.
 
+* CPU: `Intel Core i7 3740QM @ 2.7 Ghz`
+* Operation System: `OS X 10.9.2`
+* Go Runtime: `Go 1.3-beta2`
+* Go Architecture: `amd64`
+
 Scenario | Per Operation Time
 -------- | ------------------
 Channels: Buffered, Blocking, GOMAXPROCS=1 | 58.6 ns/op
