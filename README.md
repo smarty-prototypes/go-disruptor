@@ -35,8 +35,8 @@ Disruptor: Writer, Await One | 3.5 ns/op
 Disruptor: Writer, Await Many | 1.0 ns/op
 Disruptor: SharedWriter, Reserve One | 13.6 ns/op
 Disruptor: SharedWriter, Reserve Many | 2.5 ns/op
-Disruptor: SharedWriter, Reserve One, Contended Write | nn.n ns/op
-Disruptor: SharedWriter, Reserve Many, Contended Write | nn.n ns/op
+Disruptor: SharedWriter, Reserve One, Contended Write | 56.9 ns/op
+Disruptor: SharedWriter, Reserve Many, Contended Write | 3.5 ns/op
 
 When In Doubt, Use Channels
 ----------------------------
