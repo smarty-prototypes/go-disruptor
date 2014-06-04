@@ -8,35 +8,41 @@ import (
 
 func BenchmarkSharedWriterReserveOne(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
-	written, read := disruptor.NewCursor(), disruptor.NewCursor()
-	shared := disruptor.NewSharedWriterBarrier(written, RingBufferSize)
-	reader := disruptor.NewReader(read, written, shared, SampleConsumer{&ringBuffer})
-	writer := disruptor.NewSharedWriter(shared, read)
-	reader.Start()
+	controller := disruptor.
+		Configure(RingBufferSize).
+		WithConsumerGroup(SampleConsumer{&ringBuffer}).
+		BuildShared()
+	controller.Start()
+	defer controller.Stop()
+	writer := controller.Writer()
 
 	iterations := int64(b.N)
+	sequence := disruptor.InitialSequenceValue
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	sequence := disruptor.InitialSequenceValue
 	for sequence < iterations {
 		sequence = writer.Reserve(ReserveOne)
 		ringBuffer[sequence&RingBufferMask] = sequence
 		writer.Commit(sequence, sequence)
 	}
 
-	reader.Stop()
+	b.StopTimer()
 }
 
 func BenchmarkSharedWriterReserveMany(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
-	written, read := disruptor.NewCursor(), disruptor.NewCursor()
-	shared := disruptor.NewSharedWriterBarrier(written, RingBufferSize)
-	reader := disruptor.NewReader(read, written, shared, SampleConsumer{&ringBuffer})
-	writer := disruptor.NewSharedWriter(shared, read)
-	reader.Start()
+	controller := disruptor.
+		Configure(RingBufferSize).
+		WithConsumerGroup(SampleConsumer{&ringBuffer}).
+		BuildShared()
+	controller.Start()
+	defer controller.Stop()
+	writer := controller.Writer()
 
 	iterations := int64(b.N)
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
@@ -52,5 +58,5 @@ func BenchmarkSharedWriterReserveMany(b *testing.B) {
 		previous = current
 	}
 
-	reader.Stop()
+	b.StopTimer()
 }
