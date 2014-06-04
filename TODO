@@ -1,12 +1,7 @@
-- Wireup DSL
-
 - Rewrite all code test first (including diamond pattern)
 
 - Squeeze little bits of performance here and there by trying a few different things
 	e.g. pointers vs structs, padding, etc.
-
-- Cursors should probably all be created at the same time in wireup to keep them as close together as possible:
-  https://news.ycombinator.com/item?id=7800825
 
 - Integration suite that can exercise the Disruptor code on:
   1. Multiple Go runtime versions, e.g. (1.1, 1.2, 1.3, etc.) (plus point releases and the latest tip)
