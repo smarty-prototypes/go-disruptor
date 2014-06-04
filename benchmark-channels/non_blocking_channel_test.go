@@ -7,22 +7,24 @@ import (
 
 func BenchmarkNonBlockingOneGoroutine(b *testing.B) {
 	runtime.GOMAXPROCS(1)
+	defer runtime.GOMAXPROCS(1)
 	benchmarkNonBlocking(b, 1)
 }
 
 func BenchmarkNonBlockingTwoGoroutines(b *testing.B) {
 	runtime.GOMAXPROCS(2)
+	defer runtime.GOMAXPROCS(1)
 	benchmarkNonBlocking(b, 1)
-	runtime.GOMAXPROCS(1)
 }
 func BenchmarkNonBlockingThreeGoroutinesWithContendedWrite(b *testing.B) {
 	runtime.GOMAXPROCS(3)
+	defer runtime.GOMAXPROCS(1)
 	benchmarkNonBlocking(b, 2)
-	runtime.GOMAXPROCS(1)
 }
 
 func benchmarkNonBlocking(b *testing.B, writers int64) {
 	iterations := int64(b.N)
+	maxReads := iterations * writers
 	channel := make(chan int64, 1024*16)
 
 	b.ReportAllocs()
@@ -41,7 +43,7 @@ func benchmarkNonBlocking(b *testing.B, writers int64) {
 		}()
 	}
 
-	for i := int64(0); i < iterations*writers; i++ {
+	for i := int64(0); i < maxReads; i++ {
 		select {
 		case msg := <-channel:
 			if writers == 1 && msg != i {
@@ -51,4 +53,6 @@ func benchmarkNonBlocking(b *testing.B, writers int64) {
 			continue
 		}
 	}
+
+	b.StopTimer()
 }

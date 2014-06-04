@@ -7,19 +7,20 @@ import (
 
 func BenchmarkBlockingOneGoroutine(b *testing.B) {
 	runtime.GOMAXPROCS(1)
+	defer runtime.GOMAXPROCS(1)
 	benchmarkBlocking(b, 1)
 }
 
 func BenchmarkBlockingTwoGoroutines(b *testing.B) {
 	runtime.GOMAXPROCS(2)
+	defer runtime.GOMAXPROCS(1)
 	benchmarkBlocking(b, 1)
-	runtime.GOMAXPROCS(1)
 }
 
 func BenchmarkBlockingThreeGoroutinesWithContendedWrite(b *testing.B) {
 	runtime.GOMAXPROCS(3)
+	defer runtime.GOMAXPROCS(1)
 	benchmarkBlocking(b, 2)
-	runtime.GOMAXPROCS(1)
 }
 
 func benchmarkBlocking(b *testing.B, writers int64) {
@@ -43,4 +44,6 @@ func benchmarkBlocking(b *testing.B, writers int64) {
 			panic("Out of sequence")
 		}
 	}
+
+	b.StopTimer()
 }
