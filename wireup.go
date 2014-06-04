@@ -37,21 +37,19 @@ func (this Wireup) WithConsumerGroup(consumers ...Consumer) Wireup {
 func (this Wireup) Build() Disruptor {
 	allReaders := []*Reader{}
 	written := this.cursors[0]
-	barriers := []Barrier{written}
+	var upstream Barrier = this.cursors[0]
 	cursorIndex := 1 // 0 index is reserved for the writer Cursor
 
 	for groupIndex, group := range this.groups {
-		upstream := barriers[groupIndex]
-		groupReaders, barrier := this.buildReaders(groupIndex, cursorIndex, written, upstream)
+		groupReaders, groupBarrier := this.buildReaders(groupIndex, cursorIndex, written, upstream)
 		for _, item := range groupReaders {
 			allReaders = append(allReaders, item)
 		}
-		barriers = append(barriers, barrier)
+		upstream = groupBarrier
 		cursorIndex += len(group)
 	}
 
-	writerBarrier := barriers[len(barriers)-1]
-	writer := NewWriter(written, writerBarrier, this.capacity)
+	writer := NewWriter(written, upstream, this.capacity)
 	return Disruptor{writer: writer, readers: allReaders}
 }
 func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, upstream Barrier) ([]*Reader, Barrier) {
