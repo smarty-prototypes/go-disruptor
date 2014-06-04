@@ -12,9 +12,78 @@ Once initialized and running, one of the preeminent design considerations of the
 
 The current channel implementation maintains a big, fat lock around enqueue/dequeue operations and maxes out on the aforementioned hardware at about 25M messages per second for uncontended access-—more than an order of magnitude slower when compared to the Disruptor.  The same channel, when contended between OS threads (`GOMAXPROCS=2` or more) only pushes about 7 million messages per second.
 
+Example Usage
+-------------
+
+#### Wireup
+```
+runtime.GOMAXPROCS(2) // make sure we have enough cores available to execute
+
+const RingBufferCapacity = 1024 // must be a power of 2
+const RingBufferMask = RingBufferCapacity - 1
+
+// this instance will be shared among producers and consumers of this application
+ringBuffer := [RingBufferCapacity]*MyStruct{}
+
+// pre-populate the ring buffer to keep items in contiguous memory
+for i := range ringBuffer {
+	ringBuffer[i] = &MyStruct{}
+}
+
+myDisruptor := disruptor.
+	Configure(RingBufferCapacity).
+	WithConsumerGroup(MyConsumer{}). // we can have a set of concurrent consumers run first
+	// WithConsumerGroup(MyConsumer{}). // and then run this/these consumers after the first set of consumers
+	BuildShared() // Build() = single producer vs BuildShared() = multiple producers
+	
+myDisruptor.Start()
+defer myDisruptor.Stop() // clean shutdown which stops all idling consumers after all published items have been consumed
+
+// application code here, e.g. listen to HTTP, read from a network socket, etc.
+```
+
+####Producer
+```
+writer := myDisruptor.Writer()
+
+// for each item received from a network socket, e.g. UDP packets, HTTP request, etc. etc.
+sequence := writer.Reserve(1) // reserve 1 slot on the ring buffer and give me the upper-most sequence of the reservation
+
+// this could be written like this: ringBuffer[sequence%RingBufferCapacity] but the Mask and & operator is faster.
+ringBuffer[sequence&RingBufferMask].UpdateMyCustomStruct(/* incoming event data here */) // don't overwrite--update instead
+
+writer.Commit(sequence, sequence) // the item is ready to be consumed
+
+```
+
+####Consumer
+```
+type MyConsumer struct{}
+
+func (m MyConsumer) Consume(lowerSequence, upperSequence int64) {
+	for sequence := lowerSequence; sequence <= upperSequence; sequence++ {
+
+		message := ringBuffer[sequence&RingBufferMask] // see performance note on producer sample above
+		
+		// handle the incoming message with your application code
+	}
+}
+
+type MyCustomStruct{}
+
+func (m *MyCustomStruct) UpdateMyCustomStruct(/* data received from incoming network stream */) {
+	// m.ImportantData = ...
+}
+
+```
+
+Granted, this may look significantly more complex than a typical channel implementation--it definitely involves a few extra steps.  When removing all the comments and extra fluff to explain what's happening, the code is very concise.  In fact, a given "Publish" only takes three lines--`Reserve` a slot, update the ring buffer at that slot, and `Commit` the reserved sequence range.  On the consumer side, there's a `for`-loop to handle all incoming items into your application.  Again, not as short as a channel (nor as flexible as a channel), but much, much faster.
+
 Benchmarks
 ----------------------------
 Each of the following benchmark tests sends an incrementing sequence message from one goroutine to another. The receiving goroutine asserts that the message is received is the expected incrementing sequence value. Any failures cause a panic. Unless otherwise noted, all tests were run using `GOMAXPROCS=2`.
+
+##### MacBook Pro 15" Retina, Early 2013
 
 * CPU: `Intel Core i7 3740QM @ 2.7 Ghz`
 * Operation System: `OS X 10.9.2`
@@ -23,20 +92,32 @@ Each of the following benchmark tests sends an incrementing sequence message fro
 
 Scenario | Per Operation Time
 -------- | ------------------
-Channels: Buffered, Blocking, GOMAXPROCS=1 | 58.6 ns/op
-Channels: Buffered, Blocking, GOMAXPROCS=2 | 86.6 ns/op
-Channels: Buffered, Blocking, GOMAXPROCS=3, Contended Write | 194 ns/op
-Channels: Buffered, Non-blocking, GOMAXPROCS=1| 73.9 ns/op
-Channels: Buffered, Non-blocking, GOMAXPROCS=2| 72.3 ns/op
-Channels: Buffered, Non-blocking, GOMAXPROCS=3, Contended Write | 259 ns/op
-Disruptor: Writer, Reserve One | 4.3 ns/op
-Disruptor: Writer, Reserve Many | 1.1 ns/op
-Disruptor: Writer, Await One | 3.5 ns/op
-Disruptor: Writer, Await Many | 1.0 ns/op
-Disruptor: SharedWriter, Reserve One | 13.6 ns/op
-Disruptor: SharedWriter, Reserve Many | 2.5 ns/op
-Disruptor: SharedWriter, Reserve One, Contended Write | 56.9 ns/op
-Disruptor: SharedWriter, Reserve Many, Contended Write | 3.5 ns/op
+Channels: Buffered, Blocking, GOMAXPROCS=1 | 58.6 ns
+Channels: Buffered, Blocking, GOMAXPROCS=2 | 86.6 ns
+Channels: Buffered, Blocking, GOMAXPROCS=3, Contended Write | 194 ns
+Channels: Buffered, Non-blocking, GOMAXPROCS=1| 73.9 ns
+Channels: Buffered, Non-blocking, GOMAXPROCS=2| 72.3 ns
+Channels: Buffered, Non-blocking, GOMAXPROCS=3, Contended Write | 259 ns
+Disruptor: Writer, Reserve One | 4.3 ns
+Disruptor: Writer, Reserve Many | 1.1 ns
+Disruptor: Writer, Await One | 3.5 ns
+Disruptor: Writer, Await Many | 1.0 ns
+Disruptor: SharedWriter, Reserve One | 13.6 ns
+Disruptor: SharedWriter, Reserve Many | 2.5 ns
+Disruptor: SharedWriter, Reserve One, Contended Write | 56.9 ns
+Disruptor: SharedWriter, Reserve Many, Contended Write | 3.5 ns
+
+##### Nexus 5
+
+* CPU: `Quad-core 2.3 GHz Krait 400`
+* Operation System: `Android 4.4.2`
+* Go Runtime: `Go 1.2.2`
+* Go Architecture: `arm` v7
+
+Scenario | Per Operation Time
+-------- | ------------------
+Disruptor: Writer, Reserve One | 137 ns
+
 
 When In Doubt, Use Channels
 ----------------------------
