@@ -10,14 +10,12 @@ type (
 	}
 )
 
-func Configure(capacity int64, consumers ...Consumer) Wireup {
-	this := Wireup{
+func Configure(capacity int64) Wireup {
+	return Wireup{
 		capacity: capacity,
 		groups:   [][]Consumer{},
 		cursors:  []*Cursor{NewCursor()},
 	}
-
-	return this.WithConsumerGroup(consumers...)
 }
 
 func (this Wireup) WithConsumerGroup(consumers ...Consumer) Wireup {

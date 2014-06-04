@@ -20,7 +20,11 @@ var ring = [BufferSize]int64{}
 func main() {
 	runtime.GOMAXPROCS(2)
 
-	controller := disruptor.Configure(BufferSize, SampleConsumer{}).Build()
+	controller := disruptor.
+		Configure(BufferSize).
+		WithConsumerGroup(SampleConsumer{}).
+		Build()
+
 	controller.Start()
 
 	started := time.Now()
