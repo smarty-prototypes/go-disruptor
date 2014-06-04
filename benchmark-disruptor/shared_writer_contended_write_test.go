@@ -3,18 +3,19 @@ package benchmarks
 import (
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/smartystreets/go-disruptor"
 )
 
 func BenchmarkSharedWriterReserveOneContendedWrite(b *testing.B) {
+	defer time.Sleep(DisruptorCleanup)
 	runtime.GOMAXPROCS(3)
-	defer runtime.GOMAXPROCS(2)
+	defer runtime.GOMAXPROCS(1)
 
-	ringBuffer := [RingBufferSize]int64{}
 	controller := disruptor.
 		Configure(RingBufferSize).
-		WithConsumerGroup(SampleConsumer{&ringBuffer}).
+		WithConsumerGroup(SampleConsumer{}).
 		BuildShared()
 	controller.Start()
 	defer controller.Stop()
@@ -44,10 +45,10 @@ func BenchmarkSharedWriterReserveOneContendedWrite(b *testing.B) {
 }
 
 func BenchmarkSharedWriterReserveManyContendedWrite(b *testing.B) {
+	defer time.Sleep(DisruptorCleanup)
 	runtime.GOMAXPROCS(3)
-	defer runtime.GOMAXPROCS(2)
+	defer runtime.GOMAXPROCS(1)
 
-	ringBuffer := [RingBufferSize]int64{}
 	controller := disruptor.
 		Configure(RingBufferSize).
 		WithConsumerGroup(noopConsumer{}).

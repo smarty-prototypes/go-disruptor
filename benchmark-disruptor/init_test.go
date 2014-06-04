@@ -1,6 +1,6 @@
 package benchmarks
 
-import "runtime"
+import "time"
 
 const (
 	RingBufferSize   = 1024 * 64
@@ -8,8 +8,7 @@ const (
 	ReserveOne       = 1
 	ReserveMany      = 16
 	ReserveManyDelta = ReserveMany - 1
+	DisruptorCleanup = time.Millisecond * 10
 )
 
-func init() {
-	runtime.GOMAXPROCS(2)
-}
+var ringBuffer = [RingBufferSize]int64{}
