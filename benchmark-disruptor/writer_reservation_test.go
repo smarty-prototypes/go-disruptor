@@ -8,36 +8,43 @@ import (
 
 func BenchmarkWriterReserveOne(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
-	written, read := disruptor.NewCursor(), disruptor.NewCursor()
-	reader := disruptor.NewReader(read, written, written, SampleConsumer{&ringBuffer})
-	writer := disruptor.NewWriter(written, read, RingBufferSize)
-	reader.Start()
+	controller := disruptor.
+		Configure(RingBufferSize).
+		WithConsumerGroup(SampleConsumer{&ringBuffer}).
+		Build()
+	controller.Start()
+	writer := controller.Writer()
 
 	iterations := int64(b.N)
+	sequence := disruptor.InitialSequenceValue
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	sequence := disruptor.InitialSequenceValue
 	for sequence < iterations {
 		sequence = writer.Reserve(ReserveOne)
 		ringBuffer[sequence&RingBufferMask] = sequence
 		writer.Commit(sequence, sequence)
 	}
 
-	reader.Stop()
+	b.StopTimer()
+	controller.Stop()
 }
 func BenchmarkWriterReserveMany(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
-	written, read := disruptor.NewCursor(), disruptor.NewCursor()
-	reader := disruptor.NewReader(read, written, written, SampleConsumer{&ringBuffer})
-	writer := disruptor.NewWriter(written, read, RingBufferSize)
-	reader.Start()
+	controller := disruptor.
+		Configure(RingBufferSize).
+		WithConsumerGroup(SampleConsumer{&ringBuffer}).
+		Build()
+	controller.Start()
+	writer := controller.Writer()
 
 	iterations := int64(b.N)
+	sequence := disruptor.InitialSequenceValue
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	sequence := disruptor.InitialSequenceValue
 	for sequence < iterations {
 		sequence = writer.Reserve(ReserveMany)
 
@@ -48,5 +55,6 @@ func BenchmarkWriterReserveMany(b *testing.B) {
 		writer.Commit(sequence, sequence)
 	}
 
-	reader.Stop()
+	b.StopTimer()
+	controller.Stop()
 }

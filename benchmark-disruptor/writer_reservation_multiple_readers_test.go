@@ -8,45 +8,43 @@ import (
 
 func BenchmarkWriterReserveOneMultipleReaders(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
-	written, read1, read2 := disruptor.NewCursor(), disruptor.NewCursor(), disruptor.NewCursor()
-	reader1 := disruptor.NewReader(read1, written, written, SampleConsumer{&ringBuffer})
-	reader2 := disruptor.NewReader(read2, written, written, SampleConsumer{&ringBuffer})
-	barrier := disruptor.NewCompositeBarrier(read1, read2)
-	writer := disruptor.NewWriter(written, barrier, RingBufferSize)
-
-	reader1.Start()
-	reader2.Start()
+	controller := disruptor.
+		Configure(RingBufferSize).
+		WithConsumerGroup(SampleConsumer{&ringBuffer}, SampleConsumer{&ringBuffer}).
+		Build()
+	controller.Start()
+	writer := controller.Writer()
 
 	iterations := int64(b.N)
+	sequence := disruptor.InitialSequenceValue
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	sequence := disruptor.InitialSequenceValue
 	for sequence < iterations {
 		sequence = writer.Reserve(ReserveOne)
 		ringBuffer[sequence&RingBufferMask] = sequence
 		writer.Commit(sequence, sequence)
 	}
 
-	reader1.Stop()
-	reader2.Stop()
+	b.StopTimer()
+	controller.Stop()
 }
 func BenchmarkWriterReserveManyMultipleReaders(b *testing.B) {
 	ringBuffer := [RingBufferSize]int64{}
-	written, read1, read2 := disruptor.NewCursor(), disruptor.NewCursor(), disruptor.NewCursor()
-	reader1 := disruptor.NewReader(read1, written, written, SampleConsumer{&ringBuffer})
-	reader2 := disruptor.NewReader(read2, written, written, SampleConsumer{&ringBuffer})
-	barrier := disruptor.NewCompositeBarrier(read1, read2)
-	writer := disruptor.NewWriter(written, barrier, RingBufferSize)
-
-	reader1.Start()
-	reader2.Start()
+	controller := disruptor.
+		Configure(RingBufferSize).
+		WithConsumerGroup(SampleConsumer{&ringBuffer}, SampleConsumer{&ringBuffer}).
+		Build()
+	controller.Start()
+	writer := controller.Writer()
 
 	iterations := int64(b.N)
+	sequence := disruptor.InitialSequenceValue
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	sequence := disruptor.InitialSequenceValue
 	for sequence < iterations {
 		sequence = writer.Reserve(ReserveMany)
 
@@ -57,6 +55,6 @@ func BenchmarkWriterReserveManyMultipleReaders(b *testing.B) {
 		writer.Commit(sequence, sequence)
 	}
 
-	reader1.Stop()
-	reader2.Stop()
+	b.StopTimer()
+	controller.Stop()
 }
