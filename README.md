@@ -23,12 +23,7 @@ const RingBufferCapacity = 1024 // must be a power of 2
 const RingBufferMask = RingBufferCapacity - 1
 
 // this instance will be shared among producers and consumers of this application
-ringBuffer := [RingBufferCapacity]*MyStruct{}
-
-// pre-populate the ring buffer to keep items in contiguous memory
-for i := range ringBuffer {
-	ringBuffer[i] = &MyStruct{}
-}
+ringBuffer := [RingBufferCapacity]MyStruct{}
 
 myDisruptor := disruptor.
 	Configure(RingBufferCapacity).
@@ -50,7 +45,7 @@ writer := myDisruptor.Writer()
 sequence := writer.Reserve(1) // reserve 1 slot on the ring buffer and give me the upper-most sequence of the reservation
 
 // this could be written like this: ringBuffer[sequence%RingBufferCapacity] but the Mask and & operator is faster.
-ringBuffer[sequence&RingBufferMask].UpdateMyCustomStruct(/* incoming event data here */) // don't overwrite--update instead
+ringBuffer[sequence&RingBufferMask].MyImportStructData = ... // data from network stream
 
 writer.Commit(sequence, sequence) // the item is ready to be consumed
 
@@ -68,13 +63,6 @@ func (m MyConsumer) Consume(lowerSequence, upperSequence int64) {
 		// handle the incoming message with your application code
 	}
 }
-
-type MyCustomStruct{}
-
-func (m *MyCustomStruct) UpdateMyCustomStruct(/* data received from incoming network stream */) {
-	// m.ImportantData = ...
-}
-
 ```
 
 Granted, this may look significantly more complex than a typical channel implementation--it definitely involves a few extra steps.  When removing all the comments and extra fluff to explain what's happening, the code is very concise.  In fact, a given "Publish" only takes three lines--`Reserve` a slot, update the ring buffer at that slot, and `Commit` the reserved sequence range.  On the consumer side, there's a `for`-loop to handle all incoming items into your application.  Again, not as short as a channel (nor as flexible as a channel), but much, much faster.
