@@ -12,7 +12,7 @@ const (
 	BufferSize   = 1024 * 64
 	BufferMask   = BufferSize - 1
 	Iterations   = 1000000 * 100
-	Reservations = 1
+	Reservations = 16
 )
 
 var ring = [BufferSize]int64{}
@@ -39,18 +39,23 @@ func publish(writer *disruptor.Writer) {
 	sequence := disruptor.InitialSequenceValue
 	for sequence <= Iterations {
 		sequence = writer.Reserve(Reservations)
-		ring[sequence&BufferMask] = sequence
-		writer.Commit(sequence, sequence)
+		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {
+			ring[lower&BufferMask] = lower
+		}
+
+		writer.Commit(sequence-Reservations+1, sequence)
 	}
 }
 
 // func publish(writer *disruptor.Writer) {
 // 	sequence := disruptor.InitialSequenceValue
 // 	for sequence <= Iterations {
-// 		sequence += Reservations
+// 		sequence += Reservations // only an advantage at smaller reservations, e.g. 1-4?
 // 		writer.Await(sequence)
-// 		ring[sequence&BufferMask] = sequence
-// 		writer.Commit(sequence, sequence)
+// 		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {
+// 			ring[lower&BufferMask] = lower
+// 		}
+// 		writer.Commit(sequence-Reservations+1, sequence)
 // 	}
 // }
 
