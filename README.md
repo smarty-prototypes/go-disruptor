@@ -10,7 +10,7 @@ On my MacBook Pro (Intel Core i7 3740QM @ 2.7 Ghz) using Go 1.2.x and Go 1.3, I 
 
 Once initialized and running, one of the preeminent design considerations of the Disruptor is to process messages at a constant rate. It does this using two primary techniques. First, it avoids using locks at all costs which cause contention between CPU cores prevents true scalability. Secondly, it produces no garbage by allowing the application to preallocate sequential space on a ring buffer. By avoiding garbage, the need for a garbage collection and the stop-the-world application pauses introduced can be almost entirely avoided.
 
-The current channel implementation maintains a big, fat lock around enqueue/dequeue operations and maxes out on the aforementioned hardware at about 25M messages per second for uncontended access-—more than an order of magnitude slower when compared to the Disruptor.  The same channel, when contended between OS threads (`GOMAXPROCS=2` or more) only pushes about 7 million messages per second.
+The current channel implementation maintains a big, fat lock around enqueue/dequeue operations and maxes out on the aforementioned hardware at about 25M messages per second for uncontended access&mdash;more than an order of magnitude slower when compared to the Disruptor.  The same channel, when contended between OS threads (`GOMAXPROCS=2` or more) only pushes about 7 million messages per second.
 
 Example Usage
 -------------
