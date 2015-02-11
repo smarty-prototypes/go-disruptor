@@ -8,27 +8,45 @@ type Reader struct {
 	upstream Barrier
 	consumer Consumer
 	ready    bool
+	done     chan struct{}
 }
 
 func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer) *Reader {
+	// start it closed, so calling Wait on an unstarted reader will return
+	// instantly.
+	done := make(chan struct{})
+	close(done)
+
 	return &Reader{
 		read:     read,
 		written:  written,
 		upstream: upstream,
 		consumer: consumer,
 		ready:    false,
+		done:     done,
 	}
 }
 
 func (this *Reader) Start() {
 	this.ready = true
-	go this.receive()
+	this.done = make(chan struct{})
+	go this.receive(this.done)
 }
+
+func (this *Reader) StopAndWait() {
+	this.Stop()
+	this.Wait()
+}
+
 func (this *Reader) Stop() {
 	this.ready = false
 }
 
-func (this *Reader) receive() {
+func (this *Reader) Wait() {
+	<-this.done
+}
+
+func (this *Reader) receive(done chan struct{}) {
 	previous := this.read.Load()
 	idling, gating := 0, 0
 
@@ -56,4 +74,5 @@ func (this *Reader) receive() {
 		// reducing the number of writes allows the CPU to optimize the pipeline without prediction failures
 		time.Sleep(time.Microsecond)
 	}
+	close(done)
 }

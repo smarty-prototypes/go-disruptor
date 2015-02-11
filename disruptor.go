@@ -15,8 +15,19 @@ func (this Disruptor) Start() {
 	}
 }
 
+func (this Disruptor) StopAndWait() {
+	this.Stop()
+	this.Wait()
+}
+
 func (this Disruptor) Stop() {
 	for _, item := range this.readers {
 		item.Stop()
+	}
+}
+
+func (this Disruptor) Wait() {
+	for _, item := range this.readers {
+		item.Wait()
 	}
 }
