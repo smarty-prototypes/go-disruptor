@@ -23,7 +23,7 @@ const RingBufferCapacity = 1024 // must be a power of 2
 const RingBufferMask = RingBufferCapacity - 1
 
 // this instance will be shared among producers and consumers of this application
-ringBuffer := [RingBufferCapacity]MyStruct{}
+var ringBuffer = [RingBufferCapacity]MyStruct{}
 
 myDisruptor := disruptor.
 	Configure(RingBufferCapacity).
