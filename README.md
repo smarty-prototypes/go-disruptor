@@ -6,7 +6,7 @@ Disruptor Overview
 
 This is a port of the [LMAX Disruptor](https://github.com/LMAX-Exchange/disruptor) into the Go programming language. It retains the essence and spirit of the Disruptor and utilizes a lot of the same abstractions and concepts, but does not maintain the same API.
 
-On my MacBook Pro (Intel Core i7 3740QM @ 2.7 Ghz) using Go 1.2.x and Go 1.3, I was able to push over **900 million messages per second** (yes, you read that right) from one goroutine to another goroutine. The message being transferred between the two CPU cores was a simple, incrementing number, but literally could be anything. Note that your mileage may vary and that different operating systems can introduce significant “jitter” into the application by taking control of the CPU and invalidating the various CPU caches. Linux and Windows have the ability to assign a given process to specific CPU cores which reduces jitter significantly by keeping all the CPU caches hot.  Parenthetically, when the Disruptor code is compiled and run on a Nexus 5, it can push about 15-20 million messages per second.
+On my MacBook Pro (Intel Core i7-4960HQ CPU @ 2.60GHz) using Go 1.4.2, I was able to push over **900 million messages per second** (yes, you read that right) from one goroutine to another goroutine. The message being transferred between the two CPU cores was a simple, incrementing number, but literally could be anything. Note that your mileage may vary and that different operating systems can introduce significant “jitter” into the application by taking control of the CPU and invalidating the various CPU caches. Linux and Windows have the ability to assign a given process to specific CPU cores which reduces jitter significantly by keeping all the CPU caches hot.  Parenthetically, when the Disruptor code is compiled and run on a Nexus 5, it can push about 15-20 million messages per second.
 
 Once initialized and running, one of the preeminent design considerations of the Disruptor is to process messages at a constant rate. It does this using two primary techniques. First, it avoids using locks at all costs which cause contention between CPU cores prevents true scalability. Secondly, it produces no garbage by allowing the application to preallocate sequential space on a ring buffer. By avoiding garbage, the need for a garbage collection and the stop-the-world application pauses introduced can be almost entirely avoided.
 
@@ -71,11 +71,11 @@ Benchmarks
 ----------------------------
 Each of the following benchmark tests sends an incrementing sequence message from one goroutine to another. The receiving goroutine asserts that the message is received is the expected incrementing sequence value. Any failures cause a panic. Unless otherwise noted, all tests were run using `GOMAXPROCS=2`.
 
-##### MacBook Pro 15" Retina, Early 2013
+##### MacBook Pro 15" Retina, Mid 2014
 
-* CPU: `Intel Core i7 3740QM @ 2.7 Ghz`
-* Operation System: `OS X 10.9.2`
-* Go Runtime: `Go 1.3-beta2`
+* CPU: `Intel Core i7-4960HQ @ 2.60 Ghz`
+* Operation System: `OS X 10.10.2`
+* Go Runtime: `Go 1.4.2`
 * Go Architecture: `amd64`
 
 Scenario | Per Operation Time
@@ -83,13 +83,15 @@ Scenario | Per Operation Time
 Channels: Buffered, Blocking, GOMAXPROCS=1 | 58.6 ns
 Channels: Buffered, Blocking, GOMAXPROCS=2 | 86.6 ns
 Channels: Buffered, Blocking, GOMAXPROCS=3, Contended Write | 194 ns
-Channels: Buffered, Non-blocking, GOMAXPROCS=1| 73.9 ns
-Channels: Buffered, Non-blocking, GOMAXPROCS=2| 72.3 ns
-Channels: Buffered, Non-blocking, GOMAXPROCS=3, Contended Write | 259 ns
+Channels: Buffered, Non-blocking, GOMAXPROCS=1| 26.4 ns
+Channels: Buffered, Non-blocking, GOMAXPROCS=2| 29.2 ns
+Channels: Buffered, Non-blocking, GOMAXPROCS=3, Contended Write | 110 ns
 Disruptor: Writer, Reserve One | 4.3 ns
 Disruptor: Writer, Reserve Many | 1.1 ns
-Disruptor: Writer, Await One | 3.5 ns
-Disruptor: Writer, Await Many | 1.0 ns
+Disruptor: Writer, Reserve One, Multiple Readers | 4.5 ns
+Disruptor: Writer, Reserve Many, Multiple Readers | 1.1 ns
+Disruptor: Writer, Await One | 3.0 ns
+Disruptor: Writer, Await Many | 0.8 ns
 Disruptor: SharedWriter, Reserve One | 13.6 ns
 Disruptor: SharedWriter, Reserve Many | 2.5 ns
 Disruptor: SharedWriter, Reserve One, Contended Write | 56.9 ns
@@ -113,7 +115,7 @@ Despite Go channels being significantly slower than the Disruptor, channels shou
 
 Pre-Alpha
 ---------
-This code is pre-Alpha stage and is not supported or recommended for production environments. That being said, it has been run non-stop for days without exposing any race conditions. It does not have any unit tests and is only meant serve as spike code to and a proof of concept that the Disruptor is possible on the Go runtime despite some of the limits imposed by the [Go memory model](http://golang.org/ref/mem). The goal is to have an alpha release sometime in June 2014 and a series of beta releases during the months thereafter until we are satisfied. Following this, a release will be created and supported moving forward.
+This code is currently experimental (pre-Alpha stage) and is not supported or recommended for production environments. That being said, it has been run non-stop for days without exposing any race conditions. It does not have any unit tests and is only meant serve as spike code to and a proof of concept that the Disruptor is possible on the Go runtime despite some of the limits imposed by the [Go memory model](http://golang.org/ref/mem). The goal is to have an alpha release sometime in June 2014 and a series of beta releases during the months thereafter until we are satisfied. Following this, a release will be created and supported moving forward.
 
 We are very interested to receive feedback on this project and how performance can be improved using subtle techniques such as additional cache line padding, memory alignment, utilizing a pointer vs a struct in a given location, replacing less optimal techniques with more optimal ones, especially in the performance critical paths of `Reserve`/`Commit` in the various `Writer`s and `Receive`/`Commit` in the `Reader`
 
