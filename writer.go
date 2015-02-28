@@ -1,5 +1,7 @@
 package disruptor
 
+import "time"
+
 type Writer struct {
 	written  *Cursor
 	upstream Barrier
@@ -29,9 +31,15 @@ func assertPowerOfTwo(value int64) {
 
 func (this *Writer) Reserve(count int64) int64 {
 	this.previous += count
-	for this.previous-this.capacity > this.gate {
+
+	for spin := int64(0); this.previous-this.capacity > this.gate; spin++ {
+		if spin&SpinMask == 0 {
+			time.Sleep(time.Nanosecond)
+		}
+
 		this.gate = this.upstream.Read(0)
 	}
+
 	return this.previous
 }
 
@@ -40,3 +48,5 @@ func (this *Writer) Await(next int64) {
 		this.gate = this.upstream.Read(0)
 	}
 }
+
+const SpinMask = 1024*16 - 1 // arbitrary; we'll want to experiment with different values
