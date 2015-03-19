@@ -1,6 +1,6 @@
 package disruptor
 
-import "time"
+import "runtime"
 
 type Writer struct {
 	written  *Cursor
@@ -34,7 +34,7 @@ func (this *Writer) Reserve(count int64) int64 {
 
 	for spin := int64(0); this.previous-this.capacity > this.gate; spin++ {
 		if spin&SpinMask == 0 {
-			time.Sleep(time.Nanosecond)
+			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}
 
 		this.gate = this.upstream.Read(0)
