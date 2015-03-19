@@ -87,15 +87,15 @@ Channels: Buffered, Non-blocking, GOMAXPROCS=1| 26.4 ns
 Channels: Buffered, Non-blocking, GOMAXPROCS=2| 29.2 ns
 Channels: Buffered, Non-blocking, GOMAXPROCS=3, Contended Write | 110 ns
 Disruptor: Writer, Reserve One | 4.3 ns
-Disruptor: Writer, Reserve Many | 1.1 ns
+Disruptor: Writer, Reserve Many | 1.0 ns
 Disruptor: Writer, Reserve One, Multiple Readers | 4.5 ns
-Disruptor: Writer, Reserve Many, Multiple Readers | 1.1 ns
+Disruptor: Writer, Reserve Many, Multiple Readers | 0.9 ns
 Disruptor: Writer, Await One | 3.0 ns
-Disruptor: Writer, Await Many | 0.8 ns
+Disruptor: Writer, Await Many | 0.7 ns
 Disruptor: SharedWriter, Reserve One | 13.6 ns
 Disruptor: SharedWriter, Reserve Many | 2.5 ns
 Disruptor: SharedWriter, Reserve One, Contended Write | 56.9 ns
-Disruptor: SharedWriter, Reserve Many, Contended Write | 3.5 ns
+Disruptor: SharedWriter, Reserve Many, Contended Write | 3.1 ns
 
 ##### Nexus 5
 
