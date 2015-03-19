@@ -40,11 +40,10 @@ func (this *Reader) receive() {
 			this.consumer.Consume(lower, upper)
 			this.read.Store(upper)
 			previous = upper
-		} else if upper1 := this.written.Load(); lower <= upper1 {
+		} else if upper = this.written.Load(); lower <= upper {
 			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
 			gating++
 			idling = 0
-			upper = upper1
 		} else if this.ready {
 			// Idling--TODO: wait strategy (provide idling count to wait strategy for phased backoff)
 			idling++
@@ -55,6 +54,6 @@ func (this *Reader) receive() {
 
 		// sleeping increases the batch size which reduces number of writes required to store the sequence
 		// reducing the number of writes allows the CPU to optimize the pipeline without prediction failures
-		time.Sleep(time.Microsecond) // TODO: runtime.Gosched()?
+		time.Sleep(time.Microsecond)
 	}
 }

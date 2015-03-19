@@ -33,8 +33,8 @@ func (this *SharedWriterBarrier) Read(lower int64) int64 {
 	shift, mask := this.shift, this.mask
 	upper := this.written.Load()
 
-	for sequence := lower; sequence <= upper; sequence++ {
-		if this.committed[sequence&mask] != int32(sequence>>shift) {
+	for ; lower <= upper; lower++ {
+		if this.committed[lower&mask] != int32(lower>>shift) {
 			return lower - 1
 		}
 	}

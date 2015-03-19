@@ -1,8 +1,8 @@
 package disruptor
 
 import (
-	"runtime"
 	"sync/atomic"
+	"time"
 )
 
 type SharedWriter struct {
@@ -25,25 +25,23 @@ func NewSharedWriter(write *SharedWriterBarrier, upstream Barrier) *SharedWriter
 	}
 }
 
-func (this *SharedWriter) Reserve(id string, count int64) int64 {
+func (this *SharedWriter) Reserve(count int64) int64 {
 
 	for {
-		current := this.written.Load() // we've written up to this point;
-		next := current + count
+		previous := this.written.Load() // we've written up to this point;
+		upper := previous + count
 
-		for spin := int64(0); next-this.capacity > this.upstream.Read(0); spin++ {
-			if spin&SpinMask == 0 {
-				runtime.Gosched()
-			}
+		for upper-this.capacity > this.upstream.Read(0) {
+			time.Sleep(time.Nanosecond)
 		}
 
-		if atomic.CompareAndSwapInt64(&this.written.sequence, current, next) {
-			return next
+		if atomic.CompareAndSwapInt64(&this.written.sequence, previous, upper) {
+			return upper
 		}
 	}
 }
 
-func (this *SharedWriter) Commit(id string, lower, upper int64) {
+func (this *SharedWriter) Commit(lower, upper int64) {
 	if lower == upper {
 		this.committed[upper&this.mask] = int32(upper >> this.shift)
 	} else {
