@@ -1,12 +1,10 @@
 package disruptor
 
-import (
-	"sync/atomic"
-	"time"
-)
+import "sync/atomic"
 
 type SharedWriter struct {
 	written   *Cursor
+	gate      *Cursor
 	upstream  Barrier
 	capacity  int64
 	mask      int64
@@ -17,6 +15,7 @@ type SharedWriter struct {
 func NewSharedWriter(write *SharedWriterBarrier, upstream Barrier) *SharedWriter {
 	return &SharedWriter{
 		written:   write.written,
+		gate:      NewCursor(),
 		upstream:  upstream,
 		capacity:  write.capacity,
 		mask:      write.mask,
@@ -31,8 +30,8 @@ func (this *SharedWriter) Reserve(count int64) int64 {
 		previous := this.written.Load() // we've written up to this point;
 		upper := previous + count
 
-		for upper-this.capacity > this.upstream.Read(0) {
-			time.Sleep(time.Nanosecond)
+		for upper-this.capacity > this.gate.Load() {
+			this.gate.Store(this.upstream.Read(0))
 		}
 
 		if atomic.CompareAndSwapInt64(&this.written.sequence, previous, upper) {
