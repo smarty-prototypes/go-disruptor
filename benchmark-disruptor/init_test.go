@@ -3,7 +3,7 @@ package benchmarks
 import "time"
 
 const (
-	RingBufferSize   = 64
+	RingBufferSize   = 1024 * 64
 	RingBufferMask   = RingBufferSize - 1
 	ReserveOne       = 1
 	ReserveMany      = 16
