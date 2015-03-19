@@ -1,8 +1,14 @@
 package disruptor
 
-import "time"
+import (
+	"fmt"
+	"runtime"
+	"sync/atomic"
+	"time"
+)
 
 type Reader struct {
+	ID       uint64
 	read     *Cursor
 	written  *Cursor
 	upstream Barrier
@@ -12,6 +18,7 @@ type Reader struct {
 
 func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer) *Reader {
 	return &Reader{
+		ID:       atomic.AddUint64(&readerID, 1),
 		read:     read,
 		written:  written,
 		upstream: upstream,
@@ -38,13 +45,21 @@ func (this *Reader) receive() {
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)
+			fmt.Printf("Reader %d completed sequence (lower: %d and upper:%d)\n", this.ID, lower, upper)
 			this.read.Store(upper)
 			previous = upper
-		} else if upper = this.written.Load(); lower <= upper {
+		} else if upper1 := this.written.Load(); lower <= upper1 {
+			runtime.Gosched()
+			time.Sleep(time.Second)
+			fmt.Printf("Reader %d gating on upstream at sequence (reader completed up to: %d, desired: %d, upstream gate: %d, written by writer :%d)\n", this.ID, lower-1, lower, upper, upper1)
 			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
 			gating++
 			idling = 0
+			upper = upper1
 		} else if this.ready {
+			runtime.Gosched()
+			time.Sleep(time.Second)
+			fmt.Printf("Reader %d idling on writer at sequence (reader completed up to: %d, desired: %d and available/upstream gate:%d)\n", this.ID, lower-1, lower, upper)
 			// Idling--TODO: wait strategy (provide idling count to wait strategy for phased backoff)
 			idling++
 			gating = 0
@@ -54,6 +69,8 @@ func (this *Reader) receive() {
 
 		// sleeping increases the batch size which reduces number of writes required to store the sequence
 		// reducing the number of writes allows the CPU to optimize the pipeline without prediction failures
-		time.Sleep(time.Microsecond)
+		time.Sleep(time.Microsecond) // TODO: runtime.Gosched()?
 	}
 }
+
+var readerID uint64

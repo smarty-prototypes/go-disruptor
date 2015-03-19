@@ -29,7 +29,7 @@ func assertPowerOfTwo(value int64) {
 	}
 }
 
-func (this *Writer) Reserve(count int64) int64 {
+func (this *Writer) Reserve(id, count int64) int64 {
 	this.previous += count
 
 	for spin := int64(0); this.previous-this.capacity > this.gate; spin++ {
@@ -49,4 +49,4 @@ func (this *Writer) Await(next int64) {
 	}
 }
 
-const SpinMask = 1024*16 - 1 // arbitrary; we'll want to experiment with different values
+const SpinMask = 128 - 1 // arbitrary; we'll want to experiment with different values
