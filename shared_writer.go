@@ -43,7 +43,7 @@ func (this *SharedWriter) Commit(lower, upper int64) {
 	if lower == upper {
 		this.committed[upper&this.mask] = int32(upper >> this.shift)
 	} else {
-		// working down the array keeps all items in the commit together
+		// working down the array rather than up keeps all items in the commit together
 		// otherwise the reader(s) could split up the group
 		for upper >= lower {
 			this.committed[upper&this.mask] = int32(upper >> this.shift)
