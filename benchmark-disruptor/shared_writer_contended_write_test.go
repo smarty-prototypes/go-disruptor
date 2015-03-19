@@ -62,7 +62,7 @@ func BenchmarkSharedWriterReserveManyContendedWrite(b *testing.B) {
 	b.ResetTimer()
 
 	go func() {
-		previous, current := disruptor.InitialSequenceValue, disruptor.InitialSequenceValue
+		current := disruptor.InitialSequenceValue
 		for current < iterations {
 			current = writer.Reserve(ReserveMany)
 
@@ -71,10 +71,9 @@ func BenchmarkSharedWriterReserveManyContendedWrite(b *testing.B) {
 			}
 
 			writer.Commit(previous+1, current)
-			previous = current
 		}
 	}()
-	previous, current := disruptor.InitialSequenceValue, disruptor.InitialSequenceValue
+	current := disruptor.InitialSequenceValue
 	for current < iterations {
 		current = writer.Reserve(ReserveMany)
 
@@ -83,7 +82,6 @@ func BenchmarkSharedWriterReserveManyContendedWrite(b *testing.B) {
 		}
 
 		writer.Commit(previous+1, current)
-		previous = current
 	}
 
 	b.StopTimer()
