@@ -1,9 +1,6 @@
 package disruptor
 
-import (
-	"fmt"
-	"math"
-)
+import "math"
 
 type SharedWriterBarrier struct {
 	written   *Cursor
@@ -14,7 +11,6 @@ type SharedWriterBarrier struct {
 }
 
 func NewSharedWriterBarrier(written *Cursor, capacity int64) *SharedWriterBarrier {
-	fmt.Println("Shift: ", uint8(math.Log2(float64(capacity))))
 	assertPowerOfTwo(capacity)
 
 	return &SharedWriterBarrier{
@@ -38,9 +34,7 @@ func (this *SharedWriterBarrier) Read(lower int64) int64 {
 	upper := this.written.Load()
 
 	for sequence := lower; sequence <= upper; sequence++ {
-		fmt.Printf("Reader found sequence %d (slot %d) populated with %d, expected %d\n", sequence, sequence&mask, this.committed[sequence&mask], int32(sequence>>shift))
 		if this.committed[sequence&mask] != int32(sequence>>shift) {
-			fmt.Printf("Reader cannot advance, awaiting a writer to commit reservation.\n")
 			return lower - 1
 		}
 	}
