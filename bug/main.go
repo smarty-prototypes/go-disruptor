@@ -21,29 +21,27 @@ func main() {
 	writer := controller.Writer()
 
 	go func() {
-		previous, current := disruptor.InitialSequenceValue, disruptor.InitialSequenceValue
+		current := disruptor.InitialSequenceValue
 		for current < iterations {
 			current = writer.Reserve("A", ReserveMany)
 
-			for i := previous + 1; i <= current; i++ {
+			for i := current - ReserveMany; i <= current; i++ {
 				ringBuffer[i&RingBufferMask] = i
 			}
 
-			writer.Commit("A", previous+1, current)
-			previous = current
+			writer.Commit("A", current-ReserveMany, current)
 		}
 	}()
 	{
-		previous, current := disruptor.InitialSequenceValue, disruptor.InitialSequenceValue
+		current := disruptor.InitialSequenceValue
 		for current < iterations {
 			current = writer.Reserve("B", ReserveMany)
 
-			for i := previous + 1; i <= current; i++ {
+			for i := current - ReserveMany; i <= current; i++ {
 				ringBuffer[i&RingBufferMask] = i
 			}
 
-			writer.Commit("B", previous+1, current)
-			previous = current
+			writer.Commit("B", current-ReserveMany, current)
 		}
 	}
 }
