@@ -1,6 +1,9 @@
 package disruptor
 
-import "time"
+import (
+	"runtime"
+	"time"
+)
 
 type Reader struct {
 	read     *Cursor
@@ -41,10 +44,12 @@ func (this *Reader) receive() {
 			this.read.Store(upper)
 			previous = upper
 		} else if upper = this.written.Load(); lower <= upper {
+			time.Sleep(time.Microsecond)
 			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
 			gating++
 			idling = 0
 		} else if this.ready {
+			time.Sleep(time.Millisecond)
 			// Idling--TODO: wait strategy (provide idling count to wait strategy for phased backoff)
 			idling++
 			gating = 0
@@ -54,6 +59,6 @@ func (this *Reader) receive() {
 
 		// sleeping increases the batch size which reduces number of writes required to store the sequence
 		// reducing the number of writes allows the CPU to optimize the pipeline without prediction failures
-		time.Sleep(time.Microsecond)
+		runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 	}
 }
