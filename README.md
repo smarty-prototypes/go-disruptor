@@ -37,7 +37,7 @@ defer myDisruptor.Stop() // clean shutdown which stops all idling consumers afte
 // application code here, e.g. listen to HTTP, read from a network socket, etc.
 ```
 
-####Producer
+#### Producer
 ```
 writer := myDisruptor.Writer()
 
@@ -51,7 +51,7 @@ writer.Commit(sequence, sequence) // the item is ready to be consumed
 
 ```
 
-####Consumer
+#### Consumer
 ```
 type MyConsumer struct{}
 
