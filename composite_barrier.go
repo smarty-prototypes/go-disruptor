@@ -4,6 +4,14 @@ import "math"
 
 type compositeBarrier []*Sequence
 
+func newCompositeBarrier(sequences []*Sequence) Barrier {
+	if len(sequences) == 1 {
+		return sequences[0]
+	} else {
+		return compositeBarrier(sequences)
+	}
+}
+
 func (this compositeBarrier) Load() int64 {
 	var minimum int64 = math.MaxInt64
 
