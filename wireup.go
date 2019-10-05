@@ -1,12 +1,9 @@
 package disruptor
 
-// Cursors should be a party of the same backing array to keep them as close together as possible:
-// https://news.ycombinator.com/item?id=7800825
-
 type Wireup struct {
 	capacity int64
 	groups   [][]Consumer
-	cursors  []*Cursor // backing array keeps cursors (with padding) in contiguous memory
+	cursors  []*Cursor // slice keeps cursors in contiguous memory https://news.ycombinator.com/item?id=7800825
 }
 
 func Configure(capacity int64) Wireup {
