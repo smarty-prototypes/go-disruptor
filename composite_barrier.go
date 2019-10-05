@@ -6,7 +6,7 @@ func NewCompositeBarrier(cursors []*Cursor) CompositeBarrier {
 	return CompositeBarrier(cursors)
 }
 
-func (this CompositeBarrier) Read(_ int64) int64 {
+func (this CompositeBarrier) Load() int64 {
 	var minimum = MaxSequenceValue
 
 	for _, item := range this {

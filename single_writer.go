@@ -30,7 +30,7 @@ func assertPowerOfTwo(value int64) {
 func (this *SingleWriter) Reserve(count int64) int64 {
 	this.previous += count
 
-	for spin := int64(0); this.previous-this.capacity > this.upstream.Read(0); spin++ {
+	for spin := int64(0); this.previous-this.capacity > this.upstream.Load(); spin++ {
 		if spin&SpinMask == 0 {
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}

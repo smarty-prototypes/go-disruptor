@@ -5,7 +5,7 @@ type Consumer interface {
 }
 
 type Barrier interface {
-	Read(int64) int64
+	Load() int64
 }
 
 type Writer interface {

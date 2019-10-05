@@ -39,7 +39,7 @@ func (this *Reader) receive() {
 
 	for {
 		lower := previous + 1
-		upper := this.upstream.Read(lower)
+		upper := this.upstream.Load()
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)

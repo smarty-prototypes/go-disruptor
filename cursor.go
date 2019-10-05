@@ -13,7 +13,6 @@ func NewCursor() *Cursor {
 
 func (this *Cursor) Store(sequence int64) { atomic.StoreInt64(&this.sequence, sequence) }
 func (this *Cursor) Load() int64          { return atomic.LoadInt64(&this.sequence) }
-func (this *Cursor) Read(_ int64) int64   { return atomic.LoadInt64(&this.sequence) }
 
 const (
 	MaxSequenceValue     int64 = (1 << 63) - 1
