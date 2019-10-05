@@ -1,5 +1,15 @@
 package disruptor
 
+import "io"
+
+type Listener interface {
+	Listen()
+}
+type ListenCloser interface {
+	Listener
+	io.Closer
+}
+
 type Consumer interface {
 	Consume(lower, upper int64)
 }

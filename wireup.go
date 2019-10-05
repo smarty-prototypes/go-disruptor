@@ -34,31 +34,31 @@ func (this Wireup) WithConsumerGroup(consumers ...Consumer) Wireup {
 }
 
 func (this Wireup) Build() Disruptor {
-	var allReaders []*Reader
+	var listeners []ListenCloser
 	var upstream Barrier = this.cursors[0]
 	written := this.cursors[0]
 	cursorIndex := 1 // 0 index is reserved for the writer Cursor
 
 	for groupIndex, group := range this.groups {
 		groupReaders, groupBarrier := this.buildReaders(groupIndex, cursorIndex, written, upstream)
-		allReaders = append(allReaders, groupReaders...)
+		listeners = append(listeners, groupReaders...)
 		upstream = groupBarrier
 		cursorIndex += len(group)
 	}
 
 	writer := NewSingleWriter(written, upstream, this.capacity)
-	return Disruptor{writer: writer, readers: allReaders}
+	return Disruptor{writer: writer, workers: listeners}
 }
 
-func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, upstream Barrier) ([]*Reader, Barrier) {
+func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, upstream Barrier) ([]ListenCloser, Barrier) {
 	var barrierCursors []*Cursor
-	var readers []*Reader
+	var listeners []ListenCloser
 
 	for _, consumer := range this.groups[consumerIndex] {
 		cursor := this.cursors[cursorIndex]
 		barrierCursors = append(barrierCursors, cursor)
 		reader := NewReader(cursor, written, upstream, consumer)
-		readers = append(readers, reader)
+		listeners = append(listeners, reader)
 		cursorIndex++
 	}
 
@@ -67,8 +67,8 @@ func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor,
 	}
 
 	if len(this.groups[consumerIndex]) == 1 {
-		return readers, barrierCursors[0]
+		return listeners, barrierCursors[0]
 	} else {
-		return readers, NewCompositeBarrier(barrierCursors)
+		return listeners, NewCompositeBarrier(barrierCursors)
 	}
 }

@@ -1,19 +1,30 @@
 package disruptor
 
+import "sync"
+
 type Disruptor struct {
 	writer  Writer
-	readers []*Reader
+	workers []ListenCloser
 }
 
 func (this Disruptor) Listen() {
-	for _, item := range this.readers {
-		go item.Listen()
+	var waiter sync.WaitGroup
+	waiter.Add(len(this.workers))
+	this.listen(waiter)
+	waiter.Wait()
+}
+func (this Disruptor) listen(waiter sync.WaitGroup) {
+	for _, worker := range this.workers {
+		go func(listener Listener) {
+			listener.Listen()
+			waiter.Done()
+		}(worker)
 	}
 }
 
 func (this Disruptor) Close() error {
-	for _, item := range this.readers {
-		_ = item.Close()
+	for _, reader := range this.workers {
+		_ = reader.Close()
 	}
 
 	return nil
