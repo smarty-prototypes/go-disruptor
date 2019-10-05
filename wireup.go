@@ -72,8 +72,8 @@ func (this Wireup) BuildShared() SharedDisruptor {
 }
 
 func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, upstream Barrier) ([]*Reader, Barrier) {
-	barrierCursors := []*Cursor{}
-	readers := []*Reader{}
+	var barrierCursors []*Cursor
+	var readers []*Reader
 
 	for _, consumer := range this.groups[consumerIndex] {
 		cursor := this.cursors[cursorIndex]
