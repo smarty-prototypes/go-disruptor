@@ -1,5 +1,7 @@
 package disruptor
 
+import "errors"
+
 type Consumer interface {
 	Consume(lower, upper int64)
 }
@@ -22,3 +24,5 @@ type ListenCloser interface {
 	Listen()
 	Close() error
 }
+
+var ErrMinimumReservationSize = errors.New("the minimum reservation size is 1 slot")

@@ -34,7 +34,7 @@ func publish(sequencer disruptor.Sequencer, closer io.Closer) {
 		sequence = sequencer.Reserve(Reservations)
 
 		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {
-			ring[lower&BufferMask] = lower
+			ringBuffer[lower&BufferMask] = lower
 		}
 
 		sequencer.Commit(sequence-Reservations+1, sequence)
@@ -49,7 +49,7 @@ type MyConsumer struct{}
 
 func (this MyConsumer) Consume(lower, upper int64) {
 	for ; lower <= upper; lower++ {
-		message := ring[lower&BufferMask]
+		message := ringBuffer[lower&BufferMask]
 		if message != lower {
 			panic(fmt.Errorf("race condition: %d %d", message, lower))
 		}
@@ -63,4 +63,4 @@ const (
 	Reservations = 1
 )
 
-var ring = [BufferSize]int64{}
+var ringBuffer = [BufferSize]int64{}

@@ -17,6 +17,10 @@ func NewSequencer(written *Sequence, upstream Barrier, capacity int64) *DefaultS
 }
 
 func (this *DefaultSequencer) Reserve(count int64) int64 {
+	if count <= 0 {
+		panic(ErrMinimumReservationSize)
+	}
+
 	if this.previous+count-this.capacity > this.upstream.Load() {
 		return defaultSequenceValue // no room for the reservation
 	}
