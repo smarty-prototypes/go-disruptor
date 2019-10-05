@@ -7,17 +7,17 @@ type DefaultReader struct {
 	read     *Sequence // the reader has read up to this sequence
 	written  *Sequence // the ring buffer has been written up to this sequence
 	upstream Barrier   // the workers just in front of this reader have completed up to this sequence
-	consumer Consumer
 	waiter   WaitStrategy
+	consumer Consumer
 }
 
-func NewReader(read, written *Sequence, upstream Barrier, consumer Consumer, waiter WaitStrategy) *DefaultReader {
+func NewReader(read, written *Sequence, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultReader {
 	return &DefaultReader{
 		read:     read,
 		written:  written,
 		upstream: upstream,
-		consumer: consumer,
 		waiter:   waiter,
+		consumer: consumer,
 	}
 }
 
