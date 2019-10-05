@@ -1,9 +1,6 @@
 package disruptor
 
-import (
-	"runtime"
-	"sync/atomic"
-)
+import "runtime"
 
 type SharedWriter struct {
 	written   *Cursor
@@ -39,7 +36,7 @@ func (this *SharedWriter) Reserve(count int64) int64 {
 			this.gate.Store(this.upstream.Read(0))
 		}
 
-		if atomic.CompareAndSwapInt64(&this.written.sequence, previous, upper) {
+		if this.written.Swap(previous, upper) {
 			return upper
 		}
 	}
@@ -59,6 +56,5 @@ func (this *SharedWriter) Commit(lower, upper int64) {
 			this.committed[upper&this.mask] = int32(upper >> this.shift)
 			upper--
 		}
-
 	}
 }

@@ -43,7 +43,7 @@ func (this *SingleWriter) Reserve(count int64) int64 {
 	return this.previous
 }
 
-func (this *SingleWriter) Commit(lower, upper int64) {
+func (this *SingleWriter) Commit(_, upper int64) {
 	this.written.Store(upper)
 }
 
