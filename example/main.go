@@ -11,7 +11,7 @@ import (
 const (
 	BufferSize   = 1024 * 64
 	BufferMask   = BufferSize - 1
-	Iterations   = 1000000 * 100
+	Iterations   = 100000 * 100
 	Reservations = 16
 )
 
@@ -25,25 +25,27 @@ func main() {
 		WithConsumerGroup(SampleConsumer{}).
 		Build()
 
-	go controller.Listen()
-
 	started := time.Now()
-	publish(controller.Sequencer())
-	finished := time.Now()
 
-	_ = controller.Close()
-	fmt.Println(Iterations, finished.Sub(started))
+	go func() {
+		publish(controller.Sequencer())
+		_ = controller.Close()
+	}()
+
+	controller.Listen() // blocks until complete
+	finished := time.Now()
+	fmt.Println(finished.Sub(started))
 }
 
-func publish(writer disruptor.Sequencer) {
+func publish(sequencer disruptor.Sequencer) {
 	sequence := disruptor.InitialCursorSequenceValue
 	for sequence <= Iterations {
-		sequence = writer.Reserve(Reservations)
+		sequence = sequencer.Reserve(Reservations)
 		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {
 			ring[lower&BufferMask] = lower
 		}
 
-		writer.Commit(sequence-Reservations+1, sequence)
+		sequencer.Commit(sequence-Reservations+1, sequence)
 	}
 }
 
@@ -53,8 +55,7 @@ func (this SampleConsumer) Consume(lower, upper int64) {
 	for lower <= upper {
 		message := ring[lower&BufferMask]
 		if message != lower {
-			fmt.Println("Race condition", message, lower)
-			panic("Race condition")
+			panic(fmt.Errorf("race condition: %d %d", message, lower))
 		}
 		lower++
 	}

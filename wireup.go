@@ -47,7 +47,7 @@ func (this Wireup) Build() Disruptor {
 	}
 
 	sequencer := NewSingleSequencer(written, upstream, this.capacity)
-	return Disruptor{sequencer: sequencer, workers: listeners}
+	return Disruptor{sequencer: sequencer, listeners: listeners}
 }
 
 func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, upstream Barrier) ([]ListenCloser, Barrier) {
