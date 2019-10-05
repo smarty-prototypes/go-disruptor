@@ -1,3 +1,3 @@
-module github.com/smartystreets/go-disruptor
+module github.com/smartystreets-prototypes/go-disruptor
 
 go 1.13
