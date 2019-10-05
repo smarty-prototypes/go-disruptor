@@ -42,9 +42,7 @@ func (this Wireup) Build() Disruptor {
 
 	for groupIndex, group := range this.groups {
 		groupReaders, groupBarrier := this.buildReaders(groupIndex, cursorIndex, written, upstream)
-		for _, item := range groupReaders {
-			allReaders = append(allReaders, item)
-		}
+		allReaders = append(allReaders, groupReaders...)
 		upstream = groupBarrier
 		cursorIndex += len(group)
 	}
