@@ -16,7 +16,7 @@ func NewSingleWriter(written *Cursor, upstream Barrier, capacity int64) *SingleW
 		upstream: upstream,
 		written:  written,
 		capacity: capacity,
-		previous: InitialSequenceValue,
+		previous: InitialCursorSequenceValue,
 	}
 }
 

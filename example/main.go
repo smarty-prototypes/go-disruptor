@@ -36,7 +36,7 @@ func main() {
 }
 
 func publish(writer disruptor.Writer) {
-	sequence := disruptor.InitialSequenceValue
+	sequence := disruptor.InitialCursorSequenceValue
 	for sequence <= Iterations {
 		sequence = writer.Reserve(Reservations)
 		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {

@@ -5,7 +5,7 @@ type CompositeBarrier []*Cursor
 func NewCompositeBarrier(cursors []*Cursor) CompositeBarrier { return cursors }
 
 func (this CompositeBarrier) Load() int64 {
-	var minimum = MaxSequenceValue
+	var minimum = MaxCursorSequenceValue
 
 	for _, item := range this {
 		if sequence := item.Load(); sequence < minimum {

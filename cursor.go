@@ -6,7 +6,7 @@ type Cursor [cpuCacheLinePadding]int64
 
 func NewCursor() *Cursor {
 	this := &Cursor{}
-	this.Store(InitialSequenceValue)
+	this.Store(InitialCursorSequenceValue)
 	return this
 }
 

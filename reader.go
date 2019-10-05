@@ -34,12 +34,10 @@ func (this *Reader) Listen() {
 			previous = upper
 		} else if upper = this.written.Load(); lower <= upper {
 			time.Sleep(time.Microsecond)
-			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
 			gating++
 			idling = 0
-		} else if this.closed.Load() == 0 {
+		} else if this.closed.Load() == InitialCursorSequenceValue {
 			time.Sleep(time.Millisecond)
-			// Idling--TODO: wait strategy (provide idling count to wait strategy for phased backoff)
 			idling++
 			gating = 0
 		} else {

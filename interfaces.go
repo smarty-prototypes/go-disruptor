@@ -24,6 +24,6 @@ type Writer interface {
 }
 
 const (
-	MaxSequenceValue     int64 = (1 << 63) - 1
-	InitialSequenceValue int64 = -1
+	MaxCursorSequenceValue     int64 = (1 << 63) - 1
+	InitialCursorSequenceValue int64 = -1
 )
