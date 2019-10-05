@@ -9,8 +9,8 @@ type Barrier interface {
 }
 
 type WaitStrategy interface {
-	Gate(int)
-	Idle(int)
+	Gate(int64)
+	Idle(int64)
 }
 
 type Sequencer interface {

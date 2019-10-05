@@ -22,12 +22,12 @@ func NewReader(read, written *Sequence, upstream Barrier, waiter WaitStrategy, c
 }
 
 func (this *DefaultReader) Listen() {
-	current := this.read.Load()
-	gateCount, idleCount := 0, 0
+	var gateCount, idleCount, lower, upper int64
+	var current = this.read.Load()
 
 	for {
-		lower := current + 1
-		upper := this.upstream.Load()
+		lower = current + 1
+		upper = this.upstream.Load()
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)
