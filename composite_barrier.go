@@ -2,9 +2,7 @@ package disruptor
 
 type CompositeBarrier []*Cursor
 
-func NewCompositeBarrier(cursors []*Cursor) CompositeBarrier {
-	return CompositeBarrier(cursors)
-}
+func NewCompositeBarrier(cursors []*Cursor) CompositeBarrier { return cursors }
 
 func (this CompositeBarrier) Load() int64 {
 	var minimum = MaxSequenceValue

@@ -2,13 +2,12 @@ package disruptor
 
 // Cursors should be a party of the same backing array to keep them as close together as possible:
 // https://news.ycombinator.com/item?id=7800825
-type (
-	Wireup struct {
-		capacity int64
-		groups   [][]Consumer
-		cursors  []*Cursor // backing array keeps cursors (with padding) in contiguous memory
-	}
-)
+
+type Wireup struct {
+	capacity int64
+	groups   [][]Consumer
+	cursors  []*Cursor // backing array keeps cursors (with padding) in contiguous memory
+}
 
 func Configure(capacity int64) Wireup {
 	return Wireup{
@@ -35,9 +34,9 @@ func (this Wireup) WithConsumerGroup(consumers ...Consumer) Wireup {
 }
 
 func (this Wireup) Build() Disruptor {
-	allReaders := []*Reader{}
-	written := this.cursors[0]
+	var allReaders []*Reader
 	var upstream Barrier = this.cursors[0]
+	written := this.cursors[0]
 	cursorIndex := 1 // 0 index is reserved for the writer Cursor
 
 	for groupIndex, group := range this.groups {
@@ -61,6 +60,10 @@ func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor,
 		reader := NewReader(cursor, written, upstream, consumer)
 		readers = append(readers, reader)
 		cursorIndex++
+	}
+
+	if len(barrierCursors) == 0 {
+		panic("no barriers")
 	}
 
 	if len(this.groups[consumerIndex]) == 1 {
