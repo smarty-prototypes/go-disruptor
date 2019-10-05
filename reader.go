@@ -11,7 +11,13 @@ type Reader struct {
 }
 
 func NewReader(reads, writes *Cursor, upstream Barrier, consumer Consumer) *Reader {
-	return &Reader{reads: reads, writes: writes, upstream: upstream, consumer: consumer}
+	return &Reader{
+		closed:   NewCursor(),
+		reads:    reads,
+		writes:   writes,
+		upstream: upstream,
+		consumer: consumer,
+	}
 }
 
 func (this *Reader) Listen() {
