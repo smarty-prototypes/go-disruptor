@@ -1,11 +1,13 @@
 package disruptor
 
+import "math"
+
 type CompositeBarrier []*Sequence
 
 func NewCompositeBarrier(sequences []*Sequence) CompositeBarrier { return sequences }
 
 func (this CompositeBarrier) Load() int64 {
-	var minimum = maxCursorSequenceValue
+	var minimum int64 = math.MaxInt64
 
 	for _, item := range this {
 		if sequence := item.Load(); sequence < minimum {
@@ -15,5 +17,3 @@ func (this CompositeBarrier) Load() int64 {
 
 	return minimum
 }
-
-const maxCursorSequenceValue int64 = (1 << 63) - 1
