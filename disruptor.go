@@ -3,8 +3,8 @@ package disruptor
 import "sync"
 
 type Disruptor struct {
-	writer  Writer
-	workers []ListenCloser
+	sequencer Sequencer
+	workers   []ListenCloser
 }
 
 func (this Disruptor) Listen() {
@@ -30,4 +30,4 @@ func (this Disruptor) Close() error {
 	return nil
 }
 
-func (this Disruptor) Writer() Writer { return this.writer }
+func (this Disruptor) Sequencer() Sequencer { return this.sequencer }

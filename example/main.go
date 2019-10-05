@@ -28,14 +28,14 @@ func main() {
 	go controller.Listen()
 
 	started := time.Now()
-	publish(controller.Writer())
+	publish(controller.Sequencer())
 	finished := time.Now()
 
 	_ = controller.Close()
 	fmt.Println(Iterations, finished.Sub(started))
 }
 
-func publish(writer disruptor.Writer) {
+func publish(writer disruptor.Sequencer) {
 	sequence := disruptor.InitialCursorSequenceValue
 	for sequence <= Iterations {
 		sequence = writer.Reserve(Reservations)

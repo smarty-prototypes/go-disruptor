@@ -2,17 +2,17 @@ package disruptor
 
 import "runtime"
 
-type SingleWriter struct {
+type SingleSequencer struct {
 	written  *Cursor // the ring buffer has been written up to this sequence
 	upstream Barrier // all of the readers have advanced up to this sequence
 	capacity int64
 	previous int64
 }
 
-func NewSingleWriter(written *Cursor, upstream Barrier, capacity int64) *SingleWriter {
+func NewSingleSequencer(written *Cursor, upstream Barrier, capacity int64) *SingleSequencer {
 	assertPowerOfTwo(capacity)
 
-	return &SingleWriter{
+	return &SingleSequencer{
 		upstream: upstream,
 		written:  written,
 		capacity: capacity,
@@ -27,7 +27,7 @@ func assertPowerOfTwo(value int64) {
 	}
 }
 
-func (this *SingleWriter) Reserve(count int64) int64 {
+func (this *SingleSequencer) Reserve(count int64) int64 {
 	this.previous += count
 
 	for spin := int64(0); this.previous-this.capacity > this.upstream.Load(); spin++ {
@@ -39,7 +39,7 @@ func (this *SingleWriter) Reserve(count int64) int64 {
 	return this.previous
 }
 
-func (this *SingleWriter) Commit(_, upper int64) {
+func (this *SingleSequencer) Commit(_, upper int64) {
 	this.written.Store(upper)
 }
 

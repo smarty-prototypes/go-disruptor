@@ -18,7 +18,7 @@ type Barrier interface {
 	Load() int64
 }
 
-type Writer interface {
+type Sequencer interface {
 	Reserve(count int64) int64
 	Commit(lower, upper int64)
 }
