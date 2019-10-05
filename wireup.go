@@ -75,8 +75,15 @@ func (this *Wireup) Build() (Sequencer, ListenCloser) {
 		upstreamBarrier = compositeBarrier(consumerGroupSequences)
 	}
 
-	sequencer := NewSequencer(writtenSequence, upstreamBarrier, this.capacity)
-	return sequencer, compositeListener(listeners)
+	return this.buildSequencer(writtenSequence, upstreamBarrier), compositeListener(listeners)
+}
+func (this *Wireup) buildSequencer(writtenSequence *Sequence, upstreamBarrier Barrier) Sequencer {
+	var sequencer Sequencer = NewSequencer(writtenSequence, upstreamBarrier, this.capacity)
+	if this.spinWait {
+		return NewSpinSequencer(sequencer)
+	}
+
+	return sequencer
 }
 
 func WithSpinWait(value bool) Option             { return func(this *Wireup) { this.spinWait = value } }
