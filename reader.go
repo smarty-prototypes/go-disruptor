@@ -4,29 +4,29 @@ import "time"
 
 type Reader struct {
 	closed   *Cursor
-	read     *Cursor // the reader has read up to this sequence
-	written  *Cursor // the ring buffer has been written up to this sequence
+	reads    *Cursor // the reader has read up to this sequence
+	writes   *Cursor // the ring buffer has been written up to this sequence
 	upstream Barrier // the workers just in front of this reader have completed up to this sequence
 	consumer Consumer
 }
 
-func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer) *Reader {
-	return &Reader{read: read, written: written, upstream: upstream, consumer: consumer}
+func NewReader(reads, writes *Cursor, upstream Barrier, consumer Consumer) *Reader {
+	return &Reader{reads: reads, writes: writes, upstream: upstream, consumer: consumer}
 }
 
 func (this *Reader) Listen() {
-	previous := this.read.Load()
+	current := this.reads.Load()
 	idling, gating := 0, 0
 
 	for {
-		lower := previous + 1
+		lower := current + 1
 		upper := this.upstream.Load()
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)
-			this.read.Store(upper)
-			previous = upper
-		} else if upper = this.written.Load(); lower <= upper {
+			this.reads.Store(upper)
+			current = upper
+		} else if upper = this.writes.Load(); lower <= upper {
 			time.Sleep(time.Microsecond)
 			gating++
 			idling = 0

@@ -10,11 +10,7 @@ type Wireup struct {
 }
 
 func Configure(capacity int64) Wireup {
-	return Wireup{
-		capacity: capacity,
-		groups:   [][]Consumer{},
-		cursors:  []*Cursor{NewCursor()},
-	}
+	return Wireup{capacity: capacity, cursors: []*Cursor{NewCursor()}}
 }
 
 func (this Wireup) WithConsumerGroup(consumers ...Consumer) Wireup {
@@ -50,14 +46,14 @@ func (this Wireup) Build() Disruptor {
 	return Disruptor{sequencer: sequencer, listeners: listeners}
 }
 
-func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, upstream Barrier) ([]ListenCloser, Barrier) {
+func (this Wireup) buildReaders(consumerIndex, cursorIndex int, writeSequence *Cursor, upstream Barrier) ([]ListenCloser, Barrier) {
 	var barrierCursors []*Cursor
 	var listeners []ListenCloser
 
 	for _, consumer := range this.groups[consumerIndex] {
-		cursor := this.cursors[cursorIndex]
-		barrierCursors = append(barrierCursors, cursor)
-		reader := NewReader(cursor, written, upstream, consumer)
+		readSequence := this.cursors[cursorIndex]
+		barrierCursors = append(barrierCursors, readSequence)
+		reader := NewReader(readSequence, writeSequence, upstream, consumer)
 		listeners = append(listeners, reader)
 		cursorIndex++
 	}
