@@ -1,15 +1,14 @@
 package disruptor
 
 import (
-	"runtime"
 	"sync/atomic"
 	"time"
 )
 
 type Reader struct {
-	read     *Cursor
-	written  *Cursor
-	upstream Barrier
+	read     *Cursor // this particular reader has advanced to this sequence
+	written  *Cursor // the ring buffer has been written up to this sequence
+	upstream Barrier // don't allow the reader to advance beyond this sequence
 	consumer Consumer
 	ready    int32
 }
@@ -59,9 +58,5 @@ func (this *Reader) receive() {
 		} else {
 			break
 		}
-
-		// sleeping increases the batch size which reduces number of writes required to store the sequence
-		// reducing the number of writes allows the CPU to optimize the pipeline without prediction failures
-		runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 	}
 }
