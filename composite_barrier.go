@@ -4,7 +4,7 @@ import "math"
 
 type compositeBarrier []*Sequence
 
-func newCompositeBarrier(sequences []*Sequence) Barrier {
+func NewCompositeBarrier(sequences ...*Sequence) Barrier {
 	if len(sequences) == 1 {
 		return sequences[0]
 	} else {

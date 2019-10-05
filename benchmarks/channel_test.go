@@ -4,18 +4,18 @@ import (
 	"testing"
 )
 
-func BenchmarkBlockingOneGoroutine(b *testing.B) {
+func BenchmarkChannelBlockingOneGoroutine(b *testing.B) {
 	benchmarkBlocking(b, 1)
 }
-func BenchmarkBlockingTwoGoroutines(b *testing.B) {
+func BenchmarkChannelBlockingTwoGoroutines(b *testing.B) {
 	benchmarkBlocking(b, 1)
 }
-func BenchmarkBlockingThreeGoroutinesWithContendedWrite(b *testing.B) {
+func BenchmarkChannelBlockingThreeGoroutinesWithContendedWrite(b *testing.B) {
 	benchmarkBlocking(b, 2)
 }
 func benchmarkBlocking(b *testing.B, writers int64) {
-	iterations := int64(b.N)
 	channel := make(chan int64, 1024*16)
+	iterations := int64(b.N)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -34,17 +34,15 @@ func benchmarkBlocking(b *testing.B, writers int64) {
 			panic("out of sequence")
 		}
 	}
-
-	b.StopTimer()
 }
 
-func BenchmarkNonBlockingOneGoroutine(b *testing.B) {
+func BenchmarkChannelNonBlockingOneGoroutine(b *testing.B) {
 	benchmarkNonBlocking(b, 1)
 }
-func BenchmarkNonBlockingTwoGoroutines(b *testing.B) {
+func BenchmarkChannelNonBlockingTwoGoroutines(b *testing.B) {
 	benchmarkNonBlocking(b, 1)
 }
-func BenchmarkNonBlockingThreeGoroutinesWithContendedWrite(b *testing.B) {
+func BenchmarkChannelNonBlockingThreeGoroutinesWithContendedWrite(b *testing.B) {
 	benchmarkNonBlocking(b, 2)
 }
 func benchmarkNonBlocking(b *testing.B, writers int64) {
@@ -78,6 +76,4 @@ func benchmarkNonBlocking(b *testing.B, writers int64) {
 			continue
 		}
 	}
-
-	b.StopTimer()
 }

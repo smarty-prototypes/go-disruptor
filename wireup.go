@@ -75,7 +75,7 @@ func (this *Wireup) buildListeners(writerSequence *Sequence) (listeners []Listen
 			consumerGroupSequences = append(consumerGroupSequences, currentSequence)
 		}
 
-		upstream = newCompositeBarrier(consumerGroupSequences)
+		upstream = NewCompositeBarrier(consumerGroupSequences...)
 	}
 
 	return listeners, upstream
