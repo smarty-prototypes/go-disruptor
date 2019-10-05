@@ -4,9 +4,9 @@ import "time"
 
 type Reader struct {
 	closed   *Cursor // indicates if the reader should continue processing
-	read     *Cursor // this particular reader has advanced to this sequence
+	read     *Cursor // the reader has read up to this sequence
 	written  *Cursor // the ring buffer has been written up to this sequence
-	upstream Barrier // don't allow the reader to advance beyond this sequence
+	upstream Barrier // the workers just in front of this reader have completed up to this sequence
 	consumer Consumer
 }
 
