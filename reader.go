@@ -20,14 +20,7 @@ func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer) *Read
 	}
 }
 
-func (this *Reader) Start() {
-	go this.receive()
-}
-func (this *Reader) Stop() {
-	this.closed.Store(1)
-}
-
-func (this *Reader) receive() {
+func (this *Reader) Listen() {
 	previous := this.read.Load()
 	idling, gating := 0, 0
 
@@ -53,4 +46,9 @@ func (this *Reader) receive() {
 			break
 		}
 	}
+}
+
+func (this *Reader) Close() error {
+	this.closed.Store(1)
+	return nil
 }

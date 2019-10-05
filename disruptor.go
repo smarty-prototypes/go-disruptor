@@ -5,16 +5,18 @@ type Disruptor struct {
 	readers []*Reader
 }
 
-func (this Disruptor) Start() {
+func (this Disruptor) Listen() {
 	for _, item := range this.readers {
-		item.Start()
+		go item.Listen()
 	}
 }
 
-func (this Disruptor) Stop() {
+func (this Disruptor) Close() error {
 	for _, item := range this.readers {
-		item.Stop()
+		_ = item.Close()
 	}
+
+	return nil
 }
 
 func (this Disruptor) Writer() Writer { return this.writer }

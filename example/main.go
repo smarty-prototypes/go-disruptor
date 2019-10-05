@@ -25,13 +25,13 @@ func main() {
 		WithConsumerGroup(SampleConsumer{}).
 		Build()
 
-	controller.Start()
+	go controller.Listen()
 
 	started := time.Now()
 	publish(controller.Writer())
 	finished := time.Now()
 
-	controller.Stop()
+	_ = controller.Close()
 	fmt.Println(Iterations, finished.Sub(started))
 }
 
