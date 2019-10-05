@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/smartystreets-prototypes/go-disruptor"
 )
@@ -10,7 +9,11 @@ import (
 func main() {
 	sequencer, listener := wireup()
 
-	go publish(sequencer, listener)
+	go func() {
+		publish(sequencer)
+		_ = listener.Close()
+	}()
+
 	listener.Listen()
 }
 func wireup() (disruptor.Sequencer, disruptor.ListenCloser) {
@@ -29,7 +32,7 @@ func wireup() (disruptor.Sequencer, disruptor.ListenCloser) {
 	return wireup.Build()
 }
 
-func publish(sequencer disruptor.Sequencer, closer io.Closer) {
+func publish(sequencer disruptor.Sequencer) {
 	for sequence := int64(0); sequence <= Iterations; {
 		sequence = sequencer.Reserve(Reservations)
 
@@ -39,8 +42,6 @@ func publish(sequencer disruptor.Sequencer, closer io.Closer) {
 
 		sequencer.Commit(sequence-Reservations+1, sequence)
 	}
-
-	_ = closer.Close()
 }
 
 // ////////////////////
