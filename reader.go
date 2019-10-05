@@ -3,7 +3,7 @@ package disruptor
 import "time"
 
 type Reader struct {
-	closed   *Cursor // indicates if the reader should continue processing
+	closed   *Cursor
 	read     *Cursor // the reader has read up to this sequence
 	written  *Cursor // the ring buffer has been written up to this sequence
 	upstream Barrier // the workers just in front of this reader have completed up to this sequence
@@ -11,13 +11,7 @@ type Reader struct {
 }
 
 func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer) *Reader {
-	return &Reader{
-		closed:   NewCursor(),
-		read:     read,
-		written:  written,
-		upstream: upstream,
-		consumer: consumer,
-	}
+	return &Reader{read: read, written: written, upstream: upstream, consumer: consumer}
 }
 
 func (this *Reader) Listen() {
@@ -47,6 +41,6 @@ func (this *Reader) Listen() {
 }
 
 func (this *Reader) Close() error {
-	this.closed.Store(1)
+	this.closed.Store(InitialCursorSequenceValue + 1)
 	return nil
 }
