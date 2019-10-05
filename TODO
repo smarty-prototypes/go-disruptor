@@ -8,3 +8,5 @@
   2. Multiple CPU architectures: ARM, i386, AMD64
   3. Multiple operation systems: Linux, OSX, Windows, etc.
   Ideally each of the above combinations would be an individual exercise
+
+- performance impact of Consumer.Consume(sequence, remaining int64) (consumed int64)?
