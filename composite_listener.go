@@ -9,8 +9,8 @@ func (this compositeListener) Listen() {
 	waiter.Add(len(this))
 
 	for _, item := range this {
-		go func(value ListenCloser) {
-			value.Listen()
+		go func(listener ListenCloser) {
+			listener.Listen()
 			waiter.Done()
 		}(item)
 	}

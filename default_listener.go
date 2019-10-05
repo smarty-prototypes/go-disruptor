@@ -3,7 +3,7 @@ package disruptor
 import "sync/atomic"
 
 type DefaultListener struct {
-	closed   int64
+	state    int64
 	current  *Sequence // the listener has processed up to this sequence
 	written  *Sequence // the ring buffer has been written up to this sequence
 	upstream Barrier   // the upstream listeners have processed up to this sequence
@@ -13,6 +13,7 @@ type DefaultListener struct {
 
 func NewListener(read, written *Sequence, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultListener {
 	return &DefaultListener{
+		state:    stateRunning,
 		current:  read,
 		written:  written,
 		upstream: upstream,
@@ -37,7 +38,7 @@ func (this *DefaultListener) Listen() {
 			gateCount++
 			idleCount = 0
 			this.waiter.Gate(gateCount)
-		} else if atomic.LoadInt64(&this.closed) == 0 {
+		} else if atomic.LoadInt64(&this.state) == stateRunning {
 			idleCount++
 			gateCount = 0
 			this.waiter.Idle(idleCount)
@@ -48,6 +49,11 @@ func (this *DefaultListener) Listen() {
 }
 
 func (this *DefaultListener) Close() error {
-	atomic.StoreInt64(&this.closed, 1)
+	atomic.StoreInt64(&this.state, stateClosed)
 	return nil
 }
+
+const (
+	stateRunning = iota
+	stateClosed
+)
