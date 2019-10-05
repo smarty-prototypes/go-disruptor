@@ -4,7 +4,7 @@ import "sync/atomic"
 
 type Sequence [8]int64 // prevent false sharing of the sequence cursor by padding the CPU cache line with 64 *bytes* of data.
 
-func NewCursor() *Sequence {
+func NewSequence() *Sequence {
 	var this Sequence
 	this[0] = defaultSequenceValue
 	return &this

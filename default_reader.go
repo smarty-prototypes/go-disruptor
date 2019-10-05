@@ -37,7 +37,7 @@ func (this *DefaultReader) Listen() {
 			gateCount++
 			idleCount = 0
 			this.waiter.Gate(gateCount)
-		} else if atomic.LoadInt64(&this.closed) > 0 {
+		} else if atomic.LoadInt64(&this.closed) == 0 {
 			idleCount++
 			gateCount = 0
 			this.waiter.Idle(idleCount)
