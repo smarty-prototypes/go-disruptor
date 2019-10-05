@@ -2,18 +2,18 @@ package disruptor
 
 import "sync/atomic"
 
-type DefaultReader struct {
+type DefaultListener struct {
 	closed   int64
-	read     *Sequence // the reader has read up to this sequence
+	current  *Sequence // the listener has processed up to this sequence
 	written  *Sequence // the ring buffer has been written up to this sequence
-	upstream Barrier   // the workers just in front of this reader have completed up to this sequence
+	upstream Barrier   // the upstream listeners have processed up to this sequence
 	waiter   WaitStrategy
 	consumer Consumer
 }
 
-func NewReader(read, written *Sequence, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultReader {
-	return &DefaultReader{
-		read:     read,
+func NewListener(read, written *Sequence, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultListener {
+	return &DefaultListener{
+		current:  read,
 		written:  written,
 		upstream: upstream,
 		waiter:   waiter,
@@ -21,9 +21,9 @@ func NewReader(read, written *Sequence, upstream Barrier, waiter WaitStrategy, c
 	}
 }
 
-func (this *DefaultReader) Listen() {
+func (this *DefaultListener) Listen() {
 	var gateCount, idleCount, lower, upper int64
-	var current = this.read.Load()
+	var current = this.current.Load()
 
 	for {
 		lower = current + 1
@@ -31,7 +31,7 @@ func (this *DefaultReader) Listen() {
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)
-			this.read.Store(upper)
+			this.current.Store(upper)
 			current = upper
 		} else if upper = this.written.Load(); lower <= upper {
 			gateCount++
@@ -47,7 +47,7 @@ func (this *DefaultReader) Listen() {
 	}
 }
 
-func (this *DefaultReader) Close() error {
+func (this *DefaultListener) Close() error {
 	atomic.StoreInt64(&this.closed, 1)
 	return nil
 }

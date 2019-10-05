@@ -59,26 +59,29 @@ func (this *Wireup) validate() error {
 }
 
 func (this *Wireup) Build() (Sequencer, ListenCloser) {
-	var writtenSequence = NewSequence()
-	var upstreamBarrier Barrier = writtenSequence
-	var listeners []ListenCloser
+	var writerSequence = NewSequence()
+	listeners, listenBarrier := this.buildListeners(writerSequence)
+	return this.buildSequencer(writerSequence, listenBarrier), compositeListener(listeners)
+}
+func (this *Wireup) buildListeners(writtenSequence *Sequence) (listeners []ListenCloser, upstream Barrier) {
+	upstream = writtenSequence
 
 	for _, consumerGroup := range this.consumerGroups {
 		var consumerGroupSequences []*Sequence
 
 		for i, consumer := range consumerGroup {
 			consumerGroupSequences = append(consumerGroupSequences, NewSequence())
-			reader := NewReader(consumerGroupSequences[i], writtenSequence, upstreamBarrier, this.waiter, consumer)
-			listeners = append(listeners, reader)
+			listeners = append(listeners,
+				NewListener(consumerGroupSequences[i], writtenSequence, upstream, this.waiter, consumer))
 		}
 
-		upstreamBarrier = compositeBarrier(consumerGroupSequences)
+		upstream = compositeBarrier(consumerGroupSequences)
 	}
 
-	return this.buildSequencer(writtenSequence, upstreamBarrier), compositeListener(listeners)
+	return listeners, upstream
 }
-func (this *Wireup) buildSequencer(writtenSequence *Sequence, upstreamBarrier Barrier) Sequencer {
-	var sequencer Sequencer = NewSequencer(writtenSequence, upstreamBarrier, this.capacity)
+func (this *Wireup) buildSequencer(writerSequence *Sequence, readBarrier Barrier) Sequencer {
+	var sequencer Sequencer = NewSequencer(writerSequence, readBarrier, this.capacity)
 	if this.spinWait {
 		return NewSpinSequencer(sequencer)
 	}
