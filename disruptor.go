@@ -1,12 +1,8 @@
 package disruptor
 
 type Disruptor struct {
-	writer  *Writer
+	writer  Writer
 	readers []*Reader
-}
-
-func (this Disruptor) Writer() *Writer {
-	return this.writer
 }
 
 func (this Disruptor) Start() {
@@ -20,3 +16,5 @@ func (this Disruptor) Stop() {
 		item.Stop()
 	}
 }
+
+func (this Disruptor) Writer() Writer { return this.writer }

@@ -35,7 +35,7 @@ func main() {
 	fmt.Println(Iterations, finished.Sub(started))
 }
 
-func publish(writer *disruptor.Writer) {
+func publish(writer disruptor.Writer) {
 	sequence := disruptor.InitialSequenceValue
 	for sequence <= Iterations {
 		sequence = writer.Reserve(Reservations)
@@ -46,18 +46,6 @@ func publish(writer *disruptor.Writer) {
 		writer.Commit(sequence-Reservations+1, sequence)
 	}
 }
-
-// func publish(writer *disruptor.Writer) {
-// 	sequence := disruptor.InitialSequenceValue
-// 	for sequence <= Iterations {
-// 		sequence += Reservations // only an advantage at smaller reservations, e.g. 1-4?
-// 		writer.Await(sequence)
-// 		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {
-// 			ring[lower&BufferMask] = lower
-// 		}
-// 		writer.Commit(sequence-Reservations+1, sequence)
-// 	}
-// }
 
 type SampleConsumer struct{}
 

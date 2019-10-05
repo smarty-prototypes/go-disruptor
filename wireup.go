@@ -47,11 +47,11 @@ func (this Wireup) Build() Disruptor {
 		cursorIndex += len(group)
 	}
 
-	writer := NewWriter(written, upstream, this.capacity)
+	writer := NewSingleWriter(written, upstream, this.capacity)
 	return Disruptor{writer: writer, readers: allReaders}
 }
 
-func (this Wireup) BuildShared() SharedDisruptor {
+func (this Wireup) BuildShared() Disruptor {
 	allReaders := []*Reader{}
 	written := this.cursors[0]
 	writerBarrier := NewSharedWriterBarrier(written, this.capacity)
@@ -68,7 +68,7 @@ func (this Wireup) BuildShared() SharedDisruptor {
 	}
 
 	writer := NewSharedWriter(writerBarrier, upstream)
-	return SharedDisruptor{writer: writer, readers: allReaders}
+	return Disruptor{writer: writer, readers: allReaders}
 }
 
 func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, upstream Barrier) ([]*Reader, Barrier) {

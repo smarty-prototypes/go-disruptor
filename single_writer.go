@@ -2,7 +2,7 @@ package disruptor
 
 import "runtime"
 
-type Writer struct {
+type SingleWriter struct {
 	written  *Cursor
 	upstream Barrier
 	capacity int64
@@ -10,10 +10,10 @@ type Writer struct {
 	gate     int64
 }
 
-func NewWriter(written *Cursor, upstream Barrier, capacity int64) *Writer {
+func NewSingleWriter(written *Cursor, upstream Barrier, capacity int64) *SingleWriter {
 	assertPowerOfTwo(capacity)
 
-	return &Writer{
+	return &SingleWriter{
 		upstream: upstream,
 		written:  written,
 		capacity: capacity,
@@ -29,7 +29,7 @@ func assertPowerOfTwo(value int64) {
 	}
 }
 
-func (this *Writer) Reserve(count int64) int64 {
+func (this *SingleWriter) Reserve(count int64) int64 {
 	this.previous += count
 
 	for spin := int64(0); this.previous-this.capacity > this.gate; spin++ {
@@ -43,14 +43,8 @@ func (this *Writer) Reserve(count int64) int64 {
 	return this.previous
 }
 
-func (this *Writer) Commit(lower, upper int64) {
+func (this *SingleWriter) Commit(lower, upper int64) {
 	this.written.Store(upper)
-}
-
-func (this *Writer) Await(next int64) {
-	for next-this.capacity > this.gate {
-		this.gate = this.upstream.Read(0)
-	}
 }
 
 const SpinMask = 1024*16 - 1 // arbitrary; we'll want to experiment with different values
