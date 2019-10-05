@@ -2,6 +2,7 @@ package disruptor
 
 import (
 	"runtime"
+	"sync/atomic"
 	"time"
 )
 
@@ -10,7 +11,7 @@ type Reader struct {
 	written  *Cursor
 	upstream Barrier
 	consumer Consumer
-	ready    bool
+	ready    int32
 }
 
 func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer) *Reader {
@@ -19,16 +20,18 @@ func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer) *Read
 		written:  written,
 		upstream: upstream,
 		consumer: consumer,
-		ready:    false,
 	}
 }
 
 func (this *Reader) Start() {
-	this.ready = true
+	atomic.StoreInt32(&this.ready, 0)
 	go this.receive()
 }
 func (this *Reader) Stop() {
-	this.ready = false
+	atomic.StoreInt32(&this.ready, 1)
+}
+func (this *Reader) isReady() bool {
+	return atomic.LoadInt32(&this.ready) == 0
 }
 
 func (this *Reader) receive() {
@@ -48,7 +51,7 @@ func (this *Reader) receive() {
 			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
 			gating++
 			idling = 0
-		} else if this.ready {
+		} else if this.isReady() {
 			time.Sleep(time.Millisecond)
 			// Idling--TODO: wait strategy (provide idling count to wait strategy for phased backoff)
 			idling++
