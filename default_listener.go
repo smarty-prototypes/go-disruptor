@@ -11,10 +11,10 @@ type DefaultListener struct {
 	consumer Consumer
 }
 
-func NewListener(read, written *Sequence, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultListener {
+func NewListener(current, written *Sequence, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultListener {
 	return &DefaultListener{
 		state:    stateRunning,
-		current:  read,
+		current:  current,
 		written:  written,
 		upstream: upstream,
 		waiter:   waiter,

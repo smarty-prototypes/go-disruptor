@@ -63,16 +63,16 @@ func (this *Wireup) Build() (Sequencer, ListenCloser) {
 	listeners, listenBarrier := this.buildListeners(writerSequence)
 	return this.buildSequencer(writerSequence, listenBarrier), compositeListener(listeners)
 }
-func (this *Wireup) buildListeners(writtenSequence *Sequence) (listeners []ListenCloser, upstream Barrier) {
-	upstream = writtenSequence
+func (this *Wireup) buildListeners(writerSequence *Sequence) (listeners []ListenCloser, upstream Barrier) {
+	upstream = writerSequence
 
 	for _, consumerGroup := range this.consumerGroups {
 		var consumerGroupSequences []*Sequence
 
-		for i, consumer := range consumerGroup {
-			consumerGroupSequences = append(consumerGroupSequences, NewSequence())
-			listeners = append(listeners,
-				NewListener(consumerGroupSequences[i], writtenSequence, upstream, this.waiter, consumer))
+		for _, consumer := range consumerGroup {
+			currentSequence := NewSequence()
+			listeners = append(listeners, NewListener(currentSequence, writerSequence, upstream, this.waiter, consumer))
+			consumerGroupSequences = append(consumerGroupSequences, currentSequence)
 		}
 
 		upstream = compositeBarrier(consumerGroupSequences)
