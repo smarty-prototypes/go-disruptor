@@ -15,8 +15,7 @@ func NewCompositeBarrier(upstream ...*Cursor) CompositeBarrier {
 func (this CompositeBarrier) Read(_ int64) int64 {
 	minimum := MaxSequenceValue
 	for _, item := range this {
-		sequence := item.Load()
-		if sequence < minimum {
+		if sequence := item.Load(); sequence < minimum {
 			minimum = sequence
 		}
 	}
