@@ -10,20 +10,16 @@ type SingleSequencer struct {
 }
 
 func NewSingleSequencer(written *Cursor, upstream Barrier, capacity int64) *SingleSequencer {
-	assertPowerOfTwo(capacity)
+	if capacity <= 0 || (capacity&(capacity-1)) != 0 {
+		// Wikipedia entry: http://bit.ly/1krhaSB
+		panic("The ring capacity must be a power of two, e.g. 2, 4, 8, 16, 32, 64, etc.")
+	}
 
 	return &SingleSequencer{
 		upstream: upstream,
 		written:  written,
 		capacity: capacity,
 		previous: InitialCursorSequenceValue,
-	}
-}
-
-func assertPowerOfTwo(value int64) {
-	if value > 0 && (value&(value-1)) != 0 {
-		// Wikipedia entry: http://bit.ly/1krhaSB
-		panic("The ring capacity must be a power of two, e.g. 2, 4, 8, 16, 32, 64, etc.")
 	}
 }
 
