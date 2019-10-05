@@ -10,3 +10,12 @@
   Ideally each of the above combinations would be an individual exercise
 
 - performance impact of Consumer.Consume(sequence, remaining int64) (consumed int64)?
+
+
+
+Research aligned read/write:
+- https://github.com/fmstephe/fatomic/blob/master/slice.go
+- https://groups.google.com/forum/#!topic/golang-nuts/XDfQUn4U_g8
+- https://gist.github.com/anachronistic/7495541
+- http://blog.chewxy.com/2013/12/10/pointer-tagging-in-go/
+- http://www.goinggo.net/2014/01/concurrency-goroutines-and-gomaxprocs.html

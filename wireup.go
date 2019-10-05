@@ -86,6 +86,6 @@ func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor,
 	if len(this.groups[consumerIndex]) == 1 {
 		return readers, barrierCursors[0]
 	} else {
-		return readers, NewCompositeBarrier(barrierCursors...)
+		return readers, NewCompositeBarrier(barrierCursors)
 	}
 }

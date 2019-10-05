@@ -2,13 +2,7 @@ package disruptor
 
 type CompositeBarrier []*Cursor
 
-func NewCompositeBarrier(upstream ...*Cursor) CompositeBarrier {
-	if len(upstream) == 0 {
-		panic("At least one upstream cursor is required.")
-	}
-
-	cursors := make([]*Cursor, len(upstream))
-	copy(cursors, upstream)
+func NewCompositeBarrier(cursors []*Cursor) CompositeBarrier {
 	return CompositeBarrier(cursors)
 }
 
