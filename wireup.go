@@ -39,7 +39,7 @@ func (this Wireup) Build() Disruptor {
 		cursorIndex += len(group)
 	}
 
-	sequencer := NewSingleSequencer(written, upstream, this.capacity)
+	sequencer := NewSequencer(written, upstream, this.capacity)
 	return Disruptor{sequencer: sequencer, listeners: listeners}
 }
 
@@ -47,10 +47,11 @@ func (this Wireup) buildReaders(consumerIndex, cursorIndex int, writeSequence *C
 	var barrierCursors []*Cursor
 	var listeners []ListenCloser
 
+	waiter := NewWaitStrategy()
 	for _, consumer := range this.groups[consumerIndex] {
 		readSequence := this.cursors[cursorIndex]
 		barrierCursors = append(barrierCursors, readSequence)
-		reader := NewReader(readSequence, writeSequence, upstream, consumer)
+		reader := NewReader(readSequence, writeSequence, upstream, consumer, waiter)
 		listeners = append(listeners, reader)
 		cursorIndex++
 	}

@@ -2,15 +2,15 @@ package disruptor
 
 import "runtime"
 
-type SingleSequencer struct {
+type DefaultSequencer struct {
 	written  *Cursor // the ring buffer has been written up to this sequence
 	upstream Barrier // all of the readers have advanced up to this sequence
 	capacity int64
 	previous int64
 }
 
-func NewSingleSequencer(written *Cursor, upstream Barrier, capacity int64) *SingleSequencer {
-	return &SingleSequencer{
+func NewSequencer(written *Cursor, upstream Barrier, capacity int64) *DefaultSequencer {
+	return &DefaultSequencer{
 		upstream: upstream,
 		written:  written,
 		capacity: capacity,
@@ -18,7 +18,7 @@ func NewSingleSequencer(written *Cursor, upstream Barrier, capacity int64) *Sing
 	}
 }
 
-func (this *SingleSequencer) Reserve(count int64) int64 {
+func (this *DefaultSequencer) Reserve(count int64) int64 {
 	this.previous += count
 
 	for spin := int64(0); this.previous-this.capacity > this.upstream.Load(); spin++ {
@@ -30,6 +30,6 @@ func (this *SingleSequencer) Reserve(count int64) int64 {
 	return this.previous
 }
 
-func (this *SingleSequencer) Commit(_, upper int64) { this.written.Store(upper) }
+func (this *DefaultSequencer) Commit(_, upper int64) { this.written.Store(upper) }
 
 const spinMask = 1024*16 - 1 // arbitrary; we'll want to experiment with different values

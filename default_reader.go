@@ -1,28 +1,28 @@
 package disruptor
 
-import "time"
-
-type Reader struct {
+type DefaultReader struct {
 	closed   *Cursor
 	read     *Cursor // the reader has read up to this sequence
 	written  *Cursor // the ring buffer has been written up to this sequence
 	upstream Barrier // the workers just in front of this reader have completed up to this sequence
 	consumer Consumer
+	waiter   WaitStrategy
 }
 
-func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer) *Reader {
-	return &Reader{
+func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer, waiter WaitStrategy) *DefaultReader {
+	return &DefaultReader{
 		closed:   NewCursor(),
 		read:     read,
 		written:  written,
 		upstream: upstream,
 		consumer: consumer,
+		waiter:   waiter,
 	}
 }
 
-func (this *Reader) Listen() {
+func (this *DefaultReader) Listen() {
 	current := this.read.Load()
-	idling, gating := 0, 0
+	gateCount, idleCount := 0, 0
 
 	for {
 		lower := current + 1
@@ -33,20 +33,20 @@ func (this *Reader) Listen() {
 			this.read.Store(upper)
 			current = upper
 		} else if upper = this.written.Load(); lower <= upper {
-			time.Sleep(time.Microsecond)
-			gating++
-			idling = 0
+			gateCount++
+			idleCount = 0
+			this.waiter.Gate(gateCount)
 		} else if this.closed.Load() == InitialCursorSequenceValue {
-			time.Sleep(time.Millisecond)
-			idling++
-			gating = 0
+			idleCount++
+			gateCount = 0
+			this.waiter.Idle(idleCount)
 		} else {
 			break
 		}
 	}
 }
 
-func (this *Reader) Close() error {
+func (this *DefaultReader) Close() error {
 	this.closed.Store(InitialCursorSequenceValue + 1)
 	return nil
 }
