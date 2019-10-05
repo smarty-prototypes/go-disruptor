@@ -28,7 +28,4 @@ type Sequencer interface {
 	Commit(lower, upper int64)
 }
 
-const (
-	MaxCursorSequenceValue     int64 = (1 << 63) - 1
-	InitialCursorSequenceValue int64 = -1
-)
+const MaxCursorSequenceValue int64 = (1 << 63) - 1

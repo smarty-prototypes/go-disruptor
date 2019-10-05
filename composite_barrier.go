@@ -1,8 +1,8 @@
 package disruptor
 
-type CompositeBarrier []*Cursor
+type CompositeBarrier []*Sequence
 
-func NewCompositeBarrier(cursors []*Cursor) CompositeBarrier { return cursors }
+func NewCompositeBarrier(sequences []*Sequence) CompositeBarrier { return sequences }
 
 func (this CompositeBarrier) Load() int64 {
 	var minimum = MaxCursorSequenceValue

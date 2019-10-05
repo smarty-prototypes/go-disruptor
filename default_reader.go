@@ -1,17 +1,18 @@
 package disruptor
 
+import "sync/atomic"
+
 type DefaultReader struct {
-	closed   *Cursor
-	read     *Cursor // the reader has read up to this sequence
-	written  *Cursor // the ring buffer has been written up to this sequence
-	upstream Barrier // the workers just in front of this reader have completed up to this sequence
+	closed   int64
+	read     *Sequence // the reader has read up to this sequence
+	written  *Sequence // the ring buffer has been written up to this sequence
+	upstream Barrier   // the workers just in front of this reader have completed up to this sequence
 	consumer Consumer
 	waiter   WaitStrategy
 }
 
-func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer, waiter WaitStrategy) *DefaultReader {
+func NewReader(read, written *Sequence, upstream Barrier, consumer Consumer, waiter WaitStrategy) *DefaultReader {
 	return &DefaultReader{
-		closed:   NewCursor(),
 		read:     read,
 		written:  written,
 		upstream: upstream,
@@ -36,7 +37,7 @@ func (this *DefaultReader) Listen() {
 			gateCount++
 			idleCount = 0
 			this.waiter.Gate(gateCount)
-		} else if this.closed.Load() == InitialCursorSequenceValue {
+		} else if atomic.LoadInt64(&this.closed) > 0 {
 			idleCount++
 			gateCount = 0
 			this.waiter.Idle(idleCount)
@@ -47,6 +48,6 @@ func (this *DefaultReader) Listen() {
 }
 
 func (this *DefaultReader) Close() error {
-	this.closed.Store(InitialCursorSequenceValue + 1)
+	atomic.StoreInt64(&this.closed, 1)
 	return nil
 }
