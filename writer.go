@@ -43,6 +43,10 @@ func (this *Writer) Reserve(count int64) int64 {
 	return this.previous
 }
 
+func (this *Writer) Commit(lower, upper int64) {
+	this.written.Store(upper)
+}
+
 func (this *Writer) Await(next int64) {
 	for next-this.capacity > this.gate {
 		this.gate = this.upstream.Read(0)
