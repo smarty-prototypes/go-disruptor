@@ -27,8 +27,8 @@ func main() {
     // publish messages
     go func() {
         reservation := sequencer.Reserve(1)
-        ringBuffer[sequence&RingBufferMask] = "Hello, World"
-        sequencer.Commit(sequence, sequence)
+        ringBuffer[sequence&RingBufferMask] = 42 // example of incoming value from a network operation such as HTTP, TCP, UDP, etc.
+        sequencer.Commit(reservation, reservation)
 
         _ = listener.Close()
     }()
@@ -46,7 +46,7 @@ func (m MyConsumer) Consume(lowerSequence, upperSequence int64) {
 	}
 }
 
-var ringBuffer = [BufferSize]string
+var ringBuffer = [BufferSize]int
 
 const (
 	BufferSize   = 1024 * 64
