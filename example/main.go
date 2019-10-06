@@ -7,7 +7,10 @@ import (
 )
 
 func main() {
-	sequencer, listener := wireup()
+	sequencer, listener := disruptor.New(
+		disruptor.WithCapacity(BufferSize),
+		disruptor.WithConsumerGroup(MyConsumer{}),
+	).Build()
 
 	go func() {
 		publish(sequencer)
@@ -15,16 +18,6 @@ func main() {
 	}()
 
 	listener.Listen()
-}
-func wireup() (disruptor.Sequencer, disruptor.ListenCloser) {
-	wireup, err := disruptor.New(
-		disruptor.WithCapacity(BufferSize),
-		disruptor.WithConsumerGroup(MyConsumer{}))
-	if err != nil {
-		panic(err)
-	}
-
-	return wireup.Build()
 }
 
 func publish(sequencer disruptor.Sequencer) {

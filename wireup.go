@@ -10,14 +10,14 @@ type Wireup struct {
 }
 type Option func(*Wireup)
 
-func RequireNew(options ...Option) *Wireup {
-	if this, err := New(options...); err != nil {
+func New(options ...Option) *Wireup {
+	if this, err := TryNew(options...); err != nil {
 		panic(err)
 	} else {
 		return this
 	}
 }
-func New(options ...Option) (*Wireup, error) {
+func TryNew(options ...Option) (*Wireup, error) {
 	this := &Wireup{}
 
 	WithSpinWait(true)(this)

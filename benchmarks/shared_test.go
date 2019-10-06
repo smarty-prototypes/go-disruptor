@@ -19,7 +19,7 @@ func (this SampleConsumer) Consume(lower, upper int64) {
 }
 
 func build(consumers ...disruptor.Consumer) (disruptor.Sequencer, disruptor.ListenCloser) {
-	return disruptor.RequireNew(
+	return disruptor.New(
 		disruptor.WithCapacity(RingBufferSize),
 		disruptor.WithConsumerGroup(consumers...)).
 		Build()
