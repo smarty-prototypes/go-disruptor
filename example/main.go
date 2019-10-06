@@ -19,12 +19,7 @@ func main() {
 func wireup() (disruptor.Sequencer, disruptor.ListenCloser) {
 	wireup, err := disruptor.New(
 		disruptor.WithCapacity(BufferSize),
-		disruptor.WithConsumerGroup(MyConsumer{}, MyConsumer{}, MyConsumer{}, MyConsumer{}, MyConsumer{}),
-		disruptor.WithConsumerGroup(MyConsumer{}, MyConsumer{}, MyConsumer{}, MyConsumer{}, MyConsumer{}),
-		disruptor.WithConsumerGroup(MyConsumer{}, MyConsumer{}, MyConsumer{}, MyConsumer{}, MyConsumer{}),
-		disruptor.WithConsumerGroup(MyConsumer{}, MyConsumer{}, MyConsumer{}, MyConsumer{}, MyConsumer{}),
-		disruptor.WithConsumerGroup(MyConsumer{}, MyConsumer{}, MyConsumer{}, MyConsumer{}, MyConsumer{}),
-	)
+		disruptor.WithConsumerGroup(MyConsumer{}))
 	if err != nil {
 		panic(err)
 	}

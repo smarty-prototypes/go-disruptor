@@ -77,4 +77,3 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...disr
 
 	listener.Listen()
 }
-

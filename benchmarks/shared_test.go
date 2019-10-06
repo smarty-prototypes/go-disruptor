@@ -19,15 +19,10 @@ func (this SampleConsumer) Consume(lower, upper int64) {
 }
 
 func build(consumers ...disruptor.Consumer) (disruptor.Sequencer, disruptor.ListenCloser) {
-	wireup, err := disruptor.New(
+	return disruptor.RequireNew(
 		disruptor.WithCapacity(RingBufferSize),
-		disruptor.WithConsumerGroup(consumers...),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	return wireup.Build()
+		disruptor.WithConsumerGroup(consumers...)).
+		Build()
 }
 
 const (
