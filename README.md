@@ -17,31 +17,28 @@ Example Usage
 
 ```
 func main() {
-    // wireup
-    options := []disruptor.Options{
+    sequencer, listener := disruptor.New(
         disruptor.WithCapacity(BufferSize),
-        disruptor.WithConsumerGroup(MyConsumer{})} 
-
-    sequencer, listener := disruptor.New(options...)).Build()
+        disruptor.WithConsumerGroup(MyConsumer{}))
     
-    // publish messages
+    // producer
     go func() {
         reservation := sequencer.Reserve(1)
         ringBuffer[sequence&RingBufferMask] = 42 // example of incoming value from a network operation such as HTTP, TCP, UDP, etc.
         sequencer.Commit(reservation, reservation)
 
-        _ = listener.Close()
+        _ = listener.Close() // once we're done producing messages
     }()
     
-    // listen for messages and process them
-    listener.Listen()
+    listener.Listen() // start consumer
 }
 
 type MyConsumer struct{}
 
 func (m MyConsumer) Consume(lowerSequence, upperSequence int64) {
 	for sequence := lowerSequence; sequence <= upperSequence; sequence++ {
-		message := ringBuffer[sequence&RingBufferMask]
+        index := sequence&RingBufferMask
+		message := ringBuffer[index]
         fmt.Println(message)		
 	}
 }

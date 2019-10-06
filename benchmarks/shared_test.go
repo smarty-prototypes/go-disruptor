@@ -21,16 +21,14 @@ func (this SampleConsumer) Consume(lower, upper int64) {
 func build(consumers ...disruptor.Consumer) (disruptor.Sequencer, disruptor.ListenCloser) {
 	return disruptor.New(
 		disruptor.WithCapacity(RingBufferSize),
-		disruptor.WithConsumerGroup(consumers...)).
-		Build()
+		disruptor.WithConsumerGroup(consumers...))
 }
 
 const (
-	RingBufferSize   = 1024 * 64
-	RingBufferMask   = RingBufferSize - 1
-	ReserveOne       = 1
-	ReserveMany      = 16
-	ReserveManyDelta = ReserveMany - 1
+	RingBufferSize = 1024 * 64
+	RingBufferMask = RingBufferSize - 1
+	ReserveOne     = 1
+	ReserveMany    = 16
 )
 
 var ringBuffer = [RingBufferSize]int64{}

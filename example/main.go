@@ -9,8 +9,7 @@ import (
 func main() {
 	sequencer, listener := disruptor.New(
 		disruptor.WithCapacity(BufferSize),
-		disruptor.WithConsumerGroup(MyConsumer{}),
-	).Build()
+		disruptor.WithConsumerGroup(MyConsumer{}))
 
 	go func() {
 		publish(sequencer)
