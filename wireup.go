@@ -10,6 +10,13 @@ type Wireup struct {
 }
 type Option func(*Wireup)
 
+func RequireNew(options ...Option) *Wireup {
+	if this, err := New(options...); err != nil {
+		panic(err)
+	} else {
+		return this
+	}
+}
 func New(options ...Option) (*Wireup, error) {
 	this := &Wireup{}
 
