@@ -9,7 +9,7 @@ type Wireup struct {
 }
 type Option func(*Wireup)
 
-func New(options ...Option) (Sequencer, ListenCloser) {
+func New(options ...Option) (Writer, Reader) {
 	if this, err := NewWireup(options...); err != nil {
 		panic(err)
 	} else {
@@ -64,12 +64,12 @@ func (this *Wireup) validate() error {
 	return nil
 }
 
-func (this *Wireup) Build() (Sequencer, ListenCloser) {
+func (this *Wireup) Build() (Writer, Reader) {
 	var writerSequence = NewCursor()
 	readers, readBarrier := this.buildReaders(writerSequence)
-	return NewWriter(writerSequence, readBarrier, this.capacity), compositeListener(readers)
+	return NewWriter(writerSequence, readBarrier, this.capacity), compositeReader(readers)
 }
-func (this *Wireup) buildReaders(writerSequence *Cursor) (readers []ListenCloser, upstream Barrier) {
+func (this *Wireup) buildReaders(writerSequence *Cursor) (readers []Reader, upstream Barrier) {
 	upstream = writerSequence
 
 	for _, consumerGroup := range this.consumerGroups {

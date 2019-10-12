@@ -14,10 +14,10 @@ func main() {
 
 	go publish(writer, reader)
 
-	reader.Listen()
+	reader.Read()
 }
 
-func publish(writer disruptor.Sequencer, closer io.Closer) {
+func publish(writer disruptor.Writer, closer io.Closer) {
 	for sequence := int64(0); sequence <= Iterations; {
 		sequence = writer.Reserve(Reservations)
 

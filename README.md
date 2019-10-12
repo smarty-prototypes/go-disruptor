@@ -27,10 +27,10 @@ func main() {
         ringBuffer[sequence&RingBufferMask] = 42 // example of incoming value from a network operation such as HTTP, TCP, UDP, etc.
         writer.Commit(reservation, reservation)
 
-        _ = reader.Close() // once we're done producing messages
+        _ = reader.Close() // close the Reader once we're done producing messages
     }()
     
-    reader.Listen() // start consumer
+    reader.Read() // blocks until fully closed
 }
 
 type MyConsumer struct{}
@@ -85,7 +85,7 @@ Pre-Alpha
 ---------
 This code is currently experimental (pre-Alpha stage) and is not supported or recommended for production environments. It does not have any unit tests and is only meant serve as spike code to and a proof of concept that the Disruptor is possible on the Go runtime despite some of the limits imposed by the [Go memory model](http://golang.org/ref/mem).
 
-We are very interested to receive feedback on this project and how performance can be improved using subtle techniques such as additional cache line padding, memory alignment, utilizing a pointer vs a struct in a given location, replacing less optimal techniques with more optimal ones, especially in the performance critical paths of `Reserve`/`Commit` in the various `Sequencer` structs as well as the `Receive` operation of the `Listener`.
+We are very interested to receive feedback on this project and how performance can be improved using subtle techniques such as additional cache line padding, memory alignment, utilizing a pointer vs a struct in a given location, replacing less optimal techniques with more optimal ones, especially in the performance critical paths of `Reserve`/`Commit` in the various `Writer` structs as well as the `Receive` operation of the `Reader`.
 
 Caveats
 -------

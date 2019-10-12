@@ -76,7 +76,7 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...disr
 		_ = reader.Close()
 	}()
 
-	reader.Listen()
+	reader.Read()
 }
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +94,7 @@ func (this SampleConsumer) Consume(lower, upper int64) {
 	}
 }
 
-func build(consumers ...disruptor.Consumer) (disruptor.Sequencer, disruptor.ListenCloser) {
+func build(consumers ...disruptor.Consumer) (disruptor.Writer, disruptor.Reader) {
 	return disruptor.New(
 		disruptor.WithCapacity(RingBufferSize),
 		disruptor.WithConsumerGroup(consumers...))

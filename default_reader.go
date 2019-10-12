@@ -22,7 +22,7 @@ func NewReader(current, written *Cursor, upstream Barrier, waiter WaitStrategy, 
 	}
 }
 
-func (this *DefaultReader) Listen() {
+func (this *DefaultReader) Read() {
 	var gateCount, idleCount, lower int64
 	var upper = this.current.Load()
 
