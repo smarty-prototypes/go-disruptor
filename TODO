@@ -1,4 +1,6 @@
-- Rewrite all code test first (including diamond pattern)
+- Shared writer which can be used by multiple goroutines simultaneously.
+
+- Rewrite all code test first (note: assert that the diamond pattern is supported).
 
 - Documentation
 
