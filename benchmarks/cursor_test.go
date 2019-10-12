@@ -6,9 +6,9 @@ import (
 	"github.com/smartystreets-prototypes/go-disruptor"
 )
 
-func BenchmarkSequenceStore(b *testing.B) {
+func BenchmarkCursorStore(b *testing.B) {
 	iterations := int64(b.N)
-	sequence := disruptor.NewSequence()
+	sequence := disruptor.NewCursor()
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -17,9 +17,9 @@ func BenchmarkSequenceStore(b *testing.B) {
 		sequence.Store(i)
 	}
 }
-func BenchmarkSequenceLoad(b *testing.B) {
+func BenchmarkCursorLoad(b *testing.B) {
 	iterations := int64(b.N)
-	sequence := disruptor.NewSequence()
+	sequence := disruptor.NewCursor()
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -29,8 +29,8 @@ func BenchmarkSequenceLoad(b *testing.B) {
 	}
 }
 
-func BenchmarkSequenceLoadAsBarrier(b *testing.B) {
-	var barrier disruptor.Barrier = disruptor.NewSequence()
+func BenchmarkCursorLoadAsBarrier(b *testing.B) {
+	var barrier disruptor.Barrier = disruptor.NewCursor()
 	iterations := int64(b.N)
 
 	b.ReportAllocs()

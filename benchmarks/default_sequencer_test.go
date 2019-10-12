@@ -9,7 +9,7 @@ import (
 )
 
 func BenchmarkSequencerReserve(b *testing.B) {
-	read, written := disruptor.NewSequence(), disruptor.NewSequence()
+	read, written := disruptor.NewCursor(), disruptor.NewCursor()
 	writer := disruptor.NewSequencer(written, read, 1024)
 	iterations := int64(b.N)
 	b.ReportAllocs()
@@ -21,7 +21,7 @@ func BenchmarkSequencerReserve(b *testing.B) {
 	}
 }
 func BenchmarkSequencerNextWrapPoint(b *testing.B) {
-	read, written := disruptor.NewSequence(), disruptor.NewSequence()
+	read, written := disruptor.NewCursor(), disruptor.NewCursor()
 	writer := disruptor.NewSequencer(written, read, 1024)
 	iterations := int64(b.N)
 	b.ReportAllocs()
@@ -33,7 +33,7 @@ func BenchmarkSequencerNextWrapPoint(b *testing.B) {
 	}
 }
 func BenchmarkSequencerCommit(b *testing.B) {
-	writer := disruptor.NewSequencer(disruptor.NewSequence(), nil, 1024)
+	writer := disruptor.NewSequencer(disruptor.NewCursor(), nil, 1024)
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()

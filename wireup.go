@@ -67,18 +67,18 @@ func (this *Wireup) validate() error {
 }
 
 func (this *Wireup) Build() (Sequencer, ListenCloser) {
-	var writerSequence = NewSequence()
+	var writerSequence = NewCursor()
 	listeners, listenBarrier := this.buildListeners(writerSequence)
 	return NewSequencer(writerSequence, listenBarrier, this.capacity), compositeListener(listeners)
 }
-func (this *Wireup) buildListeners(writerSequence *Sequence) (listeners []ListenCloser, upstream Barrier) {
+func (this *Wireup) buildListeners(writerSequence *Cursor) (listeners []ListenCloser, upstream Barrier) {
 	upstream = writerSequence
 
 	for _, consumerGroup := range this.consumerGroups {
-		var consumerGroupSequences []*Sequence
+		var consumerGroupSequences []*Cursor
 
 		for _, consumer := range consumerGroup {
-			currentSequence := NewSequence()
+			currentSequence := NewCursor()
 			listeners = append(listeners, NewListener(currentSequence, writerSequence, upstream, this.waiter, consumer))
 			consumerGroupSequences = append(consumerGroupSequences, currentSequence)
 		}
