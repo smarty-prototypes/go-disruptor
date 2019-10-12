@@ -17,29 +17,29 @@ Example Usage
 
 ```
 func main() {
-    writer, reader := disruptor.New(
-        disruptor.WithCapacity(BufferSize),
-        disruptor.WithConsumerGroup(MyConsumer{}))
-    
-    // producer
-    go func() {
-        reservation := writer.Reserve(1)
-        ringBuffer[sequence&RingBufferMask] = 42 // example of incoming value from a network operation such as HTTP, TCP, UDP, etc.
-        writer.Commit(reservation, reservation)
+	writer, reader := disruptor.New(
+		disruptor.WithCapacity(BufferSize),
+		disruptor.WithConsumerGroup(MyConsumer{}))
 
-        _ = reader.Close() // close the Reader once we're done producing messages
-    }()
-    
-    reader.Read() // blocks until fully closed
+	// producer
+	go func() {
+		reservation := writer.Reserve(1)
+		ringBuffer[sequence&RingBufferMask] = 42 // example of incoming value from a network operation such as HTTP, TCP, UDP, etc.
+		writer.Commit(reservation, reservation)
+
+		_ = reader.Close() // close the Reader once we're done producing messages
+	}()
+
+	reader.Read() // blocks until fully closed
 }
 
 type MyConsumer struct{}
 
 func (m MyConsumer) Consume(lowerSequence, upperSequence int64) {
 	for sequence := lowerSequence; sequence <= upperSequence; sequence++ {
-        index := sequence&RingBufferMask
+		index := sequence&RingBufferMask
 		message := ringBuffer[index]
-        fmt.Println(message)		
+		fmt.Println(message)
 	}
 }
 
