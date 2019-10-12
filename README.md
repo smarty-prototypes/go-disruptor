@@ -43,8 +43,8 @@ func (m MyConsumer) Consume(lowerSequence, upperSequence int64) {
 var ringBuffer = [BufferSize]int
 
 const (
-    BufferSize   = 1024 * 64
-    BufferMask   = BufferSize - 1
+    BufferSize = 1024 * 64
+    BufferMask = BufferSize - 1
 )
 ```
 
