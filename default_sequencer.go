@@ -21,17 +21,18 @@ func NewSequencer(written *Sequence, upstream Barrier, capacity int64) *DefaultS
 }
 
 func (this *DefaultSequencer) Reserve(count int64) int64 {
-	this.previous += count
+	if count <= 0 {
+		panic(ErrMinimumReservationSize)
+	}
 
+	this.previous += count
 	for spin := int64(0); this.previous-this.capacity > this.gate; spin++ {
 		if spin&SpinMask == 0 {
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}
 
 		this.gate = this.upstream.Load()
-
 	}
-
 	return this.previous
 }
 
