@@ -69,7 +69,7 @@ func (this *Wireup) validate() error {
 func (this *Wireup) Build() (Sequencer, ListenCloser) {
 	var writerSequence = NewSequence()
 	listeners, listenBarrier := this.buildListeners(writerSequence)
-	return this.buildSequencer(writerSequence, listenBarrier), compositeListener(listeners)
+	return NewSequencer(writerSequence, listenBarrier, this.capacity), compositeListener(listeners)
 }
 func (this *Wireup) buildListeners(writerSequence *Sequence) (listeners []ListenCloser, upstream Barrier) {
 	upstream = writerSequence
@@ -87,14 +87,6 @@ func (this *Wireup) buildListeners(writerSequence *Sequence) (listeners []Listen
 	}
 
 	return listeners, upstream
-}
-func (this *Wireup) buildSequencer(writerSequence *Sequence, readBarrier Barrier) Sequencer {
-	var sequencer Sequencer = NewSequencer(writerSequence, readBarrier, this.capacity)
-	if this.spinWait {
-		return NewSpinSequencer(sequencer)
-	}
-
-	return sequencer
 }
 
 func WithSpinWait(value bool) Option             { return func(this *Wireup) { this.spinWait = value } }

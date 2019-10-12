@@ -9,8 +9,9 @@ import (
 type SampleConsumer struct{}
 
 func (this SampleConsumer) Consume(lower, upper int64) {
+	var message int64
 	for lower <= upper {
-		message := ringBuffer[lower&RingBufferMask]
+		message = ringBuffer[lower&RingBufferMask]
 		if message != lower {
 			log.Panicf("race condition: Sequence: %d, Message: %d", lower, message)
 		}
