@@ -4,9 +4,9 @@ import "sync/atomic"
 
 type DefaultListener struct {
 	state    int64
-	current  *Cursor // the listener has processed up to this sequence
+	current  *Cursor // this listener has processed up to this sequence
 	written  *Cursor // the ring buffer has been written up to this sequence
-	upstream Barrier // the upstream listeners have processed up to this sequence
+	upstream Barrier // all of the readers have advanced up to this sequence
 	waiter   WaitStrategy
 	consumer Consumer
 }
@@ -23,17 +23,16 @@ func NewListener(current, written *Cursor, upstream Barrier, waiter WaitStrategy
 }
 
 func (this *DefaultListener) Listen() {
-	var gateCount, idleCount, lower, upper int64
-	var current = this.current.Load()
+	var gateCount, idleCount, lower int64
+	var upper = this.current.Load()
 
 	for {
-		lower = current + 1
+		lower = upper + 1
 		upper = this.upstream.Load()
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)
 			this.current.Store(upper)
-			current = upper
 		} else if upper = this.written.Load(); lower <= upper {
 			gateCount++
 			idleCount = 0
