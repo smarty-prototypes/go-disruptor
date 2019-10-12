@@ -72,10 +72,10 @@ Channels: Buffered, Blocking, Contended Write | 121 ns
 Channels: Buffered, Non-blocking | 60 ns
 Channels: Buffered, Non-blocking | 68 ns
 Channels: Buffered, Non-blocking Contended Write | 205 ns
-Disruptor: Sequencer, Reserve One | 9 ns
-Disruptor: Sequencer, Reserve Many | 1 ns
-Disruptor: Sequencer, Reserve One, Multiple Readers | 10 ns
-Disruptor: Sequencer, Reserve Many, Multiple Readers | 1 ns
+Disruptor: Sequencer, Reserve One | 9.73 ns
+Disruptor: Sequencer, Reserve Many | 1.64 ns
+Disruptor: Sequencer, Reserve One, Multiple Readers | 10.4 ns
+Disruptor: Sequencer, Reserve Many, Multiple Readers | 1.59 ns
 
 When In Doubt, Use Channels
 ----------------------------
