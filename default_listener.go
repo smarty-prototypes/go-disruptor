@@ -4,14 +4,14 @@ import "sync/atomic"
 
 type DefaultListener struct {
 	state    int64
-	current  *Sequence // the listener has processed up to this sequence
-	written  *Sequence // the ring buffer has been written up to this sequence
-	upstream Barrier   // the upstream listeners have processed up to this sequence
+	current  *Cursor // the listener has processed up to this sequence
+	written  *Cursor // the ring buffer has been written up to this sequence
+	upstream Barrier // the upstream listeners have processed up to this sequence
 	waiter   WaitStrategy
 	consumer Consumer
 }
 
-func NewListener(current, written *Sequence, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultListener {
+func NewListener(current, written *Cursor, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultListener {
 	return &DefaultListener{
 		state:    stateRunning,
 		current:  current,

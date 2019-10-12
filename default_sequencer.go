@@ -3,20 +3,20 @@ package disruptor
 import "runtime"
 
 type DefaultSequencer struct {
-	written  *Sequence // the ring buffer has been written up to this sequence
-	upstream Barrier   // all of the readers have advanced up to this sequence
+	written  *Cursor // the ring buffer has been written up to this sequence
+	upstream Barrier // all of the readers have advanced up to this sequence
 	capacity int64
 	previous int64
 	gate     int64
 }
 
-func NewSequencer(written *Sequence, upstream Barrier, capacity int64) *DefaultSequencer {
+func NewSequencer(written *Cursor, upstream Barrier, capacity int64) *DefaultSequencer {
 	return &DefaultSequencer{
 		upstream: upstream,
 		written:  written,
 		capacity: capacity,
-		previous: defaultSequenceValue,
-		gate:     defaultSequenceValue,
+		previous: defaultCursorValue,
+		gate:     defaultCursorValue,
 	}
 }
 

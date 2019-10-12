@@ -2,9 +2,9 @@ package disruptor
 
 import "math"
 
-type compositeBarrier []*Sequence
+type compositeBarrier []*Cursor
 
-func NewCompositeBarrier(sequences ...*Sequence) Barrier {
+func NewCompositeBarrier(sequences ...*Cursor) Barrier {
 	if len(sequences) == 1 {
 		return sequences[0]
 	} else {
