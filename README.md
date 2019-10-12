@@ -17,20 +17,20 @@ Example Usage
 
 ```
 func main() {
-    sequencer, listener := disruptor.New(
+    writer, reader := disruptor.New(
         disruptor.WithCapacity(BufferSize),
         disruptor.WithConsumerGroup(MyConsumer{}))
     
     // producer
     go func() {
-        reservation := sequencer.Reserve(1)
+        reservation := writer.Reserve(1)
         ringBuffer[sequence&RingBufferMask] = 42 // example of incoming value from a network operation such as HTTP, TCP, UDP, etc.
-        sequencer.Commit(reservation, reservation)
+        writer.Commit(reservation, reservation)
 
-        _ = listener.Close() // once we're done producing messages
+        _ = reader.Close() // once we're done producing messages
     }()
     
-    listener.Listen() // start consumer
+    reader.Listen() // start consumer
 }
 
 type MyConsumer struct{}

@@ -8,9 +8,9 @@ import (
 	"github.com/smartystreets-prototypes/go-disruptor"
 )
 
-func BenchmarkSequencerReserve(b *testing.B) {
+func BenchmarkWriterReserve(b *testing.B) {
 	read, written := disruptor.NewCursor(), disruptor.NewCursor()
-	writer := disruptor.NewSequencer(written, read, 1024)
+	writer := disruptor.NewWriter(written, read, 1024)
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -20,9 +20,9 @@ func BenchmarkSequencerReserve(b *testing.B) {
 		read.Store(sequence)
 	}
 }
-func BenchmarkSequencerNextWrapPoint(b *testing.B) {
+func BenchmarkWriterNextWrapPoint(b *testing.B) {
 	read, written := disruptor.NewCursor(), disruptor.NewCursor()
-	writer := disruptor.NewSequencer(written, read, 1024)
+	writer := disruptor.NewWriter(written, read, 1024)
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -32,8 +32,8 @@ func BenchmarkSequencerNextWrapPoint(b *testing.B) {
 		writer.Reserve(1)
 	}
 }
-func BenchmarkSequencerCommit(b *testing.B) {
-	writer := disruptor.NewSequencer(disruptor.NewCursor(), nil, 1024)
+func BenchmarkWriterCommit(b *testing.B) {
+	writer := disruptor.NewWriter(disruptor.NewCursor(), nil, 1024)
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -43,22 +43,22 @@ func BenchmarkSequencerCommit(b *testing.B) {
 	}
 }
 
-func BenchmarkSequencerReserveOneSingleConsumer(b *testing.B) {
+func BenchmarkWriterReserveOneSingleConsumer(b *testing.B) {
 	benchmarkSequencerReservations(b, ReserveOne, SampleConsumer{})
 }
-func BenchmarkSequencerReserveManySingleConsumer(b *testing.B) {
+func BenchmarkWriterReserveManySingleConsumer(b *testing.B) {
 	benchmarkSequencerReservations(b, ReserveMany, SampleConsumer{})
 }
-func BenchmarkSequencerReserveOneMultipleConsumers(b *testing.B) {
+func BenchmarkWriterReserveOneMultipleConsumers(b *testing.B) {
 	benchmarkSequencerReservations(b, ReserveOne, SampleConsumer{}, SampleConsumer{})
 }
-func BenchmarkSequencerReserveManyMultipleConsumers(b *testing.B) {
+func BenchmarkWriterReserveManyMultipleConsumers(b *testing.B) {
 	benchmarkSequencerReservations(b, ReserveMany, SampleConsumer{}, SampleConsumer{})
 }
 func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...disruptor.Consumer) {
 	iterations := int64(b.N)
 
-	sequencer, listener := build(consumers...)
+	writer, reader := build(consumers...)
 
 	go func() {
 		b.ReportAllocs()
@@ -66,17 +66,17 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...disr
 
 		var sequence int64 = -1
 		for sequence < iterations {
-			sequence = sequencer.Reserve(count)
+			sequence = writer.Reserve(count)
 			for i := sequence - (count - 1); i <= sequence; i++ {
 				ringBuffer[i&RingBufferMask] = i
 			}
-			sequencer.Commit(sequence, sequence)
+			writer.Commit(sequence, sequence)
 		}
 
-		_ = listener.Close()
+		_ = reader.Close()
 	}()
 
-	listener.Listen()
+	reader.Listen()
 }
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -8,24 +8,24 @@ import (
 )
 
 func main() {
-	sequencer, listener := disruptor.New(
+	writer, reader := disruptor.New(
 		disruptor.WithCapacity(BufferSize),
 		disruptor.WithConsumerGroup(MyConsumer{}))
 
-	go publish(sequencer, listener)
+	go publish(writer, reader)
 
-	listener.Listen()
+	reader.Listen()
 }
 
-func publish(sequencer disruptor.Sequencer, closer io.Closer) {
+func publish(writer disruptor.Sequencer, closer io.Closer) {
 	for sequence := int64(0); sequence <= Iterations; {
-		sequence = sequencer.Reserve(Reservations)
+		sequence = writer.Reserve(Reservations)
 
 		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {
 			ringBuffer[lower&BufferMask] = lower
 		}
 
-		sequencer.Commit(sequence-Reservations+1, sequence)
+		writer.Commit(sequence-Reservations+1, sequence)
 	}
 
 	_ = closer.Close()

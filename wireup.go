@@ -3,7 +3,6 @@ package disruptor
 import "errors"
 
 type Wireup struct {
-	spinWait       bool
 	waiter         WaitStrategy
 	capacity       int64
 	consumerGroups [][]Consumer
@@ -21,7 +20,6 @@ func New(options ...Option) (Sequencer, ListenCloser) {
 func NewWireup(options ...Option) (*Wireup, error) {
 	this := &Wireup{}
 
-	WithSpinWait(true)(this)
 	WithWaitStrategy(NewWaitStrategy())(this)
 
 	for _, option := range options {
@@ -68,10 +66,10 @@ func (this *Wireup) validate() error {
 
 func (this *Wireup) Build() (Sequencer, ListenCloser) {
 	var writerSequence = NewCursor()
-	listeners, listenBarrier := this.buildListeners(writerSequence)
-	return NewSequencer(writerSequence, listenBarrier, this.capacity), compositeListener(listeners)
+	readers, readBarrier := this.buildReaders(writerSequence)
+	return NewWriter(writerSequence, readBarrier, this.capacity), compositeListener(readers)
 }
-func (this *Wireup) buildListeners(writerSequence *Cursor) (listeners []ListenCloser, upstream Barrier) {
+func (this *Wireup) buildReaders(writerSequence *Cursor) (readers []ListenCloser, upstream Barrier) {
 	upstream = writerSequence
 
 	for _, consumerGroup := range this.consumerGroups {
@@ -79,17 +77,16 @@ func (this *Wireup) buildListeners(writerSequence *Cursor) (listeners []ListenCl
 
 		for _, consumer := range consumerGroup {
 			currentSequence := NewCursor()
-			listeners = append(listeners, NewListener(currentSequence, writerSequence, upstream, this.waiter, consumer))
+			readers = append(readers, NewReader(currentSequence, writerSequence, upstream, this.waiter, consumer))
 			consumerGroupSequences = append(consumerGroupSequences, currentSequence)
 		}
 
 		upstream = NewCompositeBarrier(consumerGroupSequences...)
 	}
 
-	return listeners, upstream
+	return readers, upstream
 }
 
-func WithSpinWait(value bool) Option             { return func(this *Wireup) { this.spinWait = value } }
 func WithWaitStrategy(value WaitStrategy) Option { return func(this *Wireup) { this.waiter = value } }
 func WithCapacity(value int64) Option            { return func(this *Wireup) { this.capacity = value } }
 func WithConsumerGroup(value ...Consumer) Option {

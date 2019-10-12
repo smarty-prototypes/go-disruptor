@@ -2,17 +2,17 @@ package disruptor
 
 import "sync/atomic"
 
-type DefaultListener struct {
+type DefaultReader struct {
 	state    int64
-	current  *Cursor // this listener has processed up to this sequence
+	current  *Cursor // this reader has processed up to this sequence
 	written  *Cursor // the ring buffer has been written up to this sequence
 	upstream Barrier // all of the readers have advanced up to this sequence
 	waiter   WaitStrategy
 	consumer Consumer
 }
 
-func NewListener(current, written *Cursor, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultListener {
-	return &DefaultListener{
+func NewReader(current, written *Cursor, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultReader {
+	return &DefaultReader{
 		state:    stateRunning,
 		current:  current,
 		written:  written,
@@ -22,7 +22,7 @@ func NewListener(current, written *Cursor, upstream Barrier, waiter WaitStrategy
 	}
 }
 
-func (this *DefaultListener) Listen() {
+func (this *DefaultReader) Listen() {
 	var gateCount, idleCount, lower int64
 	var upper = this.current.Load()
 
@@ -47,7 +47,7 @@ func (this *DefaultListener) Listen() {
 	}
 }
 
-func (this *DefaultListener) Close() error {
+func (this *DefaultReader) Close() error {
 	atomic.StoreInt64(&this.state, stateClosed)
 	return nil
 }
