@@ -1,21 +1,12 @@
 - Rewrite all code test first (including diamond pattern)
-- Squeeze little bits of performance here and there by trying a few different things
-	e.g. pointers vs structs, padding, etc.
+
 - Documentation
-- Website with screenshots and examples
+
+- Squeeze little bits of performance here and there by trying a few different things
+	e.g. pointers vs structures, padding, etc.
+
 - Integration suite that can exercise the Disruptor code on:
   1. Multiple Go runtime versions, e.g. (1.1, 1.2, 1.3, etc.) (plus point releases and the latest tip)
   2. Multiple CPU architectures: ARM, i386, AMD64
   3. Multiple operation systems: Linux, OSX, Windows, etc.
   Ideally each of the above combinations would be an individual exercise
-
-- performance impact of Consumer.Consume(sequence, remaining int64) (consumed int64)?
-
-
-
-Research aligned read/write:
-- https://github.com/fmstephe/fatomic/blob/master/slice.go
-- https://groups.google.com/forum/#!topic/golang-nuts/XDfQUn4U_g8
-- https://gist.github.com/anachronistic/7495541
-- http://blog.chewxy.com/2013/12/10/pointer-tagging-in-go/
-- http://www.goinggo.net/2014/01/concurrency-goroutines-and-gomaxprocs.html
