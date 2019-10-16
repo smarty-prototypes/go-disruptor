@@ -1,6 +1,9 @@
 package disruptor
 
-import "sync/atomic"
+import (
+	"io"
+	"sync/atomic"
+)
 
 type DefaultReader struct {
 	state    int64
@@ -45,6 +48,10 @@ func (this *DefaultReader) Read() {
 		} else {
 			break
 		}
+	}
+
+	if closer, ok := this.consumer.(io.Closer); ok {
+		_ = closer.Close()
 	}
 }
 
