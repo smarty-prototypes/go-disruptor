@@ -23,16 +23,17 @@ func NewReader(current, written *Cursor, upstream Barrier, waiter WaitStrategy, 
 }
 
 func (this *DefaultReader) Read() {
-	var gateCount, idleCount, lower int64
-	var upper = this.current.Load()
+	var gateCount, idleCount, lower, upper int64
+	var current = this.current.Load()
 
 	for {
-		lower = upper + 1
+		lower = current + 1
 		upper = this.upstream.Load()
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)
 			this.current.Store(upper)
+			current = upper
 		} else if upper = this.written.Load(); lower <= upper {
 			gateCount++
 			idleCount = 0
