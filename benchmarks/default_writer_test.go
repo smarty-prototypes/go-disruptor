@@ -58,7 +58,7 @@ func BenchmarkWriterReserveManyMultipleConsumers(b *testing.B) {
 func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...disruptor.Consumer) {
 	iterations := int64(b.N)
 
-	writer, reader := build(consumers...)
+	myDisruptor := build(consumers...)
 
 	go func() {
 		b.ReportAllocs()
@@ -66,17 +66,17 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...disr
 
 		var sequence int64 = -1
 		for sequence < iterations {
-			sequence = writer.Reserve(count)
+			sequence = myDisruptor.Reserve(count)
 			for i := sequence - (count - 1); i <= sequence; i++ {
 				ringBuffer[i&RingBufferMask] = i
 			}
-			writer.Commit(sequence, sequence)
+			myDisruptor.Commit(sequence, sequence)
 		}
 
-		_ = reader.Close()
+		_ = myDisruptor.Close()
 	}()
 
-	reader.Read()
+	myDisruptor.Read()
 }
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +94,7 @@ func (this SampleConsumer) Consume(lower, upper int64) {
 	}
 }
 
-func build(consumers ...disruptor.Consumer) (disruptor.Writer, disruptor.Reader) {
+func build(consumers ...disruptor.Consumer) disruptor.Disruptor {
 	return disruptor.New(
 		disruptor.WithCapacity(RingBufferSize),
 		disruptor.WithConsumerGroup(consumers...))

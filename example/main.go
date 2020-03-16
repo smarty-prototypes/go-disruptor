@@ -2,33 +2,32 @@ package main
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/smartystreets-prototypes/go-disruptor"
 )
 
 func main() {
-	writer, reader := disruptor.New(
+	myDisruptor := disruptor.New(
 		disruptor.WithCapacity(BufferSize),
 		disruptor.WithConsumerGroup(MyConsumer{}))
 
-	go publish(writer, reader)
+	go publish(myDisruptor)
 
-	reader.Read()
+	myDisruptor.Read()
 }
 
-func publish(writer disruptor.Writer, closer io.Closer) {
+func publish(myDisruptor disruptor.Disruptor) {
 	for sequence := int64(0); sequence <= Iterations; {
-		sequence = writer.Reserve(Reservations)
+		sequence = myDisruptor.Reserve(Reservations)
 
 		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {
 			ringBuffer[lower&BufferMask] = lower
 		}
 
-		writer.Commit(sequence-Reservations+1, sequence)
+		myDisruptor.Commit(sequence-Reservations+1, sequence)
 	}
 
-	_ = closer.Close()
+	_ = myDisruptor.Close()
 }
 
 // ////////////////////

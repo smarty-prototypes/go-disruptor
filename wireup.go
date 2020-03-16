@@ -9,11 +9,11 @@ type Wireup struct {
 }
 type Option func(*Wireup)
 
-func New(options ...Option) (Writer, Reader) {
+func New(options ...Option) Disruptor {
 	if this, err := NewWireup(options...); err != nil {
 		panic(err)
 	} else {
-		return this.Build()
+		return NewDisruptor(this.Build())
 	}
 }
 
