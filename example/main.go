@@ -13,7 +13,7 @@ func main() {
 
 	go publish(myDisruptor)
 
-	myDisruptor.Read()
+	myDisruptor.Listen()
 }
 
 func publish(myDisruptor disruptor.Disruptor) {
@@ -34,7 +34,7 @@ func publish(myDisruptor disruptor.Disruptor) {
 
 type MyConsumer struct{}
 
-func (this MyConsumer) Consume(lower, upper int64) {
+func (this MyConsumer) Handle(lower, upper int64) {
 	for ; lower <= upper; lower++ {
 		message := ringBuffer[lower&BufferMask]
 		if message != lower {

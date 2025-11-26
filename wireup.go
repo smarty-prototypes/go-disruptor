@@ -8,7 +8,7 @@ import (
 type Wireup struct {
 	waiter         WaitStrategy
 	capacity       int64
-	consumerGroups [][]Consumer
+	consumerGroups [][]Handler
 }
 type Option func(*Wireup)
 
@@ -67,12 +67,12 @@ func (this *Wireup) validate() error {
 	return nil
 }
 
-func (this *Wireup) Build() (Writer, Reader) {
+func (this *Wireup) Build() (Writer, ListenCloser) {
 	var writerSequence = NewCursor()
 	readers, readBarrier := this.buildReaders(writerSequence)
 	return NewWriter(writerSequence, readBarrier, this.capacity), compositeReader(readers)
 }
-func (this *Wireup) buildReaders(writerSequence *atomic.Int64) (readers []Reader, upstream Barrier) {
+func (this *Wireup) buildReaders(writerSequence *atomic.Int64) (readers []ListenCloser, upstream Barrier) {
 	upstream = writerSequence
 
 	for _, consumerGroup := range this.consumerGroups {
@@ -80,7 +80,7 @@ func (this *Wireup) buildReaders(writerSequence *atomic.Int64) (readers []Reader
 
 		for _, consumer := range consumerGroup {
 			currentSequence := NewCursor()
-			readers = append(readers, NewReader(currentSequence, writerSequence, upstream, this.waiter, consumer))
+			readers = append(readers, NewListener(currentSequence, writerSequence, upstream, this.waiter, consumer))
 			consumerGroupSequences = append(consumerGroupSequences, currentSequence)
 		}
 
@@ -92,7 +92,7 @@ func (this *Wireup) buildReaders(writerSequence *atomic.Int64) (readers []Reader
 
 func WithWaitStrategy(value WaitStrategy) Option { return func(this *Wireup) { this.waiter = value } }
 func WithCapacity(value int64) Option            { return func(this *Wireup) { this.capacity = value } }
-func WithConsumerGroup(value ...Consumer) Option {
+func WithConsumerGroup(value ...Handler) Option {
 	return func(this *Wireup) { this.consumerGroups = append(this.consumerGroups, value) }
 }
 

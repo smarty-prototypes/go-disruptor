@@ -2,8 +2,8 @@ package disruptor
 
 import "errors"
 
-type Consumer interface {
-	Consume(lower, upper int64)
+type Handler interface {
+	Handle(lower, upper int64)
 }
 
 type Barrier interface {
@@ -20,8 +20,8 @@ type Writer interface {
 	Commit(lower, upper int64)
 }
 
-type Reader interface {
-	Read()
+type ListenCloser interface {
+	Listen()
 	Close() error
 }
 
