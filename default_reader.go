@@ -7,14 +7,14 @@ import (
 
 type DefaultReader struct {
 	state    int64
-	current  *Cursor // this reader has processed up to this sequence
-	written  *Cursor // the ring buffer has been written up to this sequence
-	upstream Barrier // all of the readers have advanced up to this sequence
+	current  *atomic.Int64 // this reader has processed up to this sequence
+	written  *atomic.Int64 // the ring buffer has been written up to this sequence
+	upstream Barrier       // all of the readers have advanced up to this sequence
 	waiter   WaitStrategy
 	consumer Consumer
 }
 
-func NewReader(current, written *Cursor, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultReader {
+func NewReader(current, written *atomic.Int64, upstream Barrier, waiter WaitStrategy, consumer Consumer) *DefaultReader {
 	return &DefaultReader{
 		state:    stateRunning,
 		current:  current,

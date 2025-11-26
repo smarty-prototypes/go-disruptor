@@ -1,6 +1,9 @@
 package disruptor
 
-import "errors"
+import (
+	"errors"
+	"sync/atomic"
+)
 
 type Wireup struct {
 	waiter         WaitStrategy
@@ -69,11 +72,11 @@ func (this *Wireup) Build() (Writer, Reader) {
 	readers, readBarrier := this.buildReaders(writerSequence)
 	return NewWriter(writerSequence, readBarrier, this.capacity), compositeReader(readers)
 }
-func (this *Wireup) buildReaders(writerSequence *Cursor) (readers []Reader, upstream Barrier) {
+func (this *Wireup) buildReaders(writerSequence *atomic.Int64) (readers []Reader, upstream Barrier) {
 	upstream = writerSequence
 
 	for _, consumerGroup := range this.consumerGroups {
-		var consumerGroupSequences []*Cursor
+		var consumerGroupSequences []*atomic.Int64
 
 		for _, consumer := range consumerGroup {
 			currentSequence := NewCursor()

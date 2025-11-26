@@ -1,10 +1,13 @@
 package disruptor
 
-import "math"
+import (
+	"math"
+	"sync/atomic"
+)
 
-type compositeBarrier []*Cursor
+type compositeBarrier []*atomic.Int64
 
-func NewCompositeBarrier(sequences ...*Cursor) Barrier {
+func NewCompositeBarrier(sequences ...*atomic.Int64) Barrier {
 	if len(sequences) == 1 {
 		return sequences[0]
 	} else {

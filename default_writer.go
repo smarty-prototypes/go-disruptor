@@ -1,16 +1,19 @@
 package disruptor
 
-import "runtime"
+import (
+	"runtime"
+	"sync/atomic"
+)
 
 type DefaultWriter struct {
-	written  *Cursor // the ring buffer has been written up to this sequence
-	upstream Barrier // all of the readers have advanced up to this sequence
+	written  *atomic.Int64 // the ring buffer has been written up to this sequence
+	upstream Barrier       // all of the readers have advanced up to this sequence
 	capacity int64
 	previous int64
 	gate     int64
 }
 
-func NewWriter(written *Cursor, upstream Barrier, capacity int64) *DefaultWriter {
+func NewWriter(written *atomic.Int64, upstream Barrier, capacity int64) *DefaultWriter {
 	return &DefaultWriter{
 		upstream: upstream,
 		written:  written,
