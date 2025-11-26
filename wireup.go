@@ -67,12 +67,12 @@ func (this *Wireup) validate() error {
 	return nil
 }
 
-func (this *Wireup) Build() (Writer, ListenCloser) {
+func (this *Wireup) Build() (Writer, ReadCloser) {
 	var writerSequence = NewCursor()
 	readers, readBarrier := this.buildReaders(writerSequence)
 	return NewWriter(writerSequence, readBarrier, this.capacity), compositeReader(readers)
 }
-func (this *Wireup) buildReaders(writerSequence *atomic.Int64) (readers []ListenCloser, upstream Barrier) {
+func (this *Wireup) buildReaders(writerSequence *atomic.Int64) (readers []ReadCloser, upstream Barrier) {
 	upstream = writerSequence
 
 	for _, consumerGroup := range this.consumerGroups {
@@ -80,11 +80,11 @@ func (this *Wireup) buildReaders(writerSequence *atomic.Int64) (readers []Listen
 
 		for _, consumer := range consumerGroup {
 			currentSequence := NewCursor()
-			readers = append(readers, NewListener(currentSequence, writerSequence, upstream, this.waiter, consumer))
+			readers = append(readers, NewReader(currentSequence, writerSequence, upstream, this.waiter, consumer))
 			consumerGroupSequences = append(consumerGroupSequences, currentSequence)
 		}
 
-		upstream = NewCompositeBarrier(consumerGroupSequences...)
+		upstream = NewMultiBarrier(consumerGroupSequences...)
 	}
 
 	return readers, upstream

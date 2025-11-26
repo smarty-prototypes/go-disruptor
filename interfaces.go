@@ -20,8 +20,8 @@ type Writer interface {
 	Commit(lower, upper int64)
 }
 
-type ListenCloser interface {
-	Listen()
+type ReadCloser interface {
+	Read()
 	Close() error
 }
 

@@ -76,7 +76,7 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...disr
 		_ = myDisruptor.Close()
 	}()
 
-	myDisruptor.Listen()
+	myDisruptor.Read()
 }
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -9,7 +9,7 @@ import (
 func BenchmarkCompositeBarrierRead(b *testing.B) {
 	iterations := int64(b.N)
 
-	barrier := disruptor.NewCompositeBarrier(
+	barrier := disruptor.NewMultiBarrier(
 		disruptor.NewCursor(), disruptor.NewCursor(), disruptor.NewCursor(), disruptor.NewCursor())
 
 	b.ReportAllocs()

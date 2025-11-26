@@ -13,7 +13,7 @@ func main() {
 
 	go publish(myDisruptor)
 
-	myDisruptor.Listen()
+	myDisruptor.Read()
 }
 
 func publish(myDisruptor disruptor.Disruptor) {

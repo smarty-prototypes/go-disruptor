@@ -2,12 +2,12 @@ package disruptor
 
 type Disruptor struct {
 	Writer
-	ListenCloser
+	ReadCloser
 }
 
-func NewDisruptor(writer Writer, reader ListenCloser) Disruptor {
+func NewDisruptor(writer Writer, reader ReadCloser) Disruptor {
 	return Disruptor{
-		Writer:       writer,
-		ListenCloser: reader,
+		Writer:     writer,
+		ReadCloser: reader,
 	}
 }

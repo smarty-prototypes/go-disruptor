@@ -5,17 +5,17 @@ import (
 	"sync/atomic"
 )
 
-type compositeBarrier []*atomic.Int64
+type multiBarrier []*atomic.Int64
 
-func NewCompositeBarrier(sequences ...*atomic.Int64) Barrier {
+func NewMultiBarrier(sequences ...*atomic.Int64) Barrier {
 	if len(sequences) == 1 {
 		return sequences[0]
 	} else {
-		return compositeBarrier(sequences)
+		return multiBarrier(sequences)
 	}
 }
 
-func (this compositeBarrier) Load() int64 {
+func (this multiBarrier) Load() int64 {
 	var minimum int64 = math.MaxInt64
 
 	for _, item := range this {
