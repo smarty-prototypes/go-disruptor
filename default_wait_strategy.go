@@ -2,8 +2,8 @@ package disruptor
 
 import "time"
 
-type DefaultWaitStrategy struct{}
+type defaultWaitStrategy struct{}
 
-func NewWaitStrategy() DefaultWaitStrategy        { return DefaultWaitStrategy{} }
-func (this DefaultWaitStrategy) Gate(count int64) { time.Sleep(time.Nanosecond) }
-func (this DefaultWaitStrategy) Idle(count int64) { time.Sleep(time.Microsecond * 50) }
+func NewWaitStrategy() WaitStrategy         { return defaultWaitStrategy{} }
+func (this defaultWaitStrategy) Gate(int64) { time.Sleep(time.Nanosecond) }
+func (this defaultWaitStrategy) Idle(int64) { time.Sleep(time.Microsecond * 50) }
