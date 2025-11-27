@@ -2,15 +2,15 @@ package disruptor
 
 import "sync"
 
-type compositeReader []ReadCloser
+type compositeListener []ListenCloser
 
-func (this compositeReader) Read() {
+func (this compositeListener) Listen() {
 	var waiter sync.WaitGroup
 	waiter.Add(len(this))
 
 	for _, item := range this {
-		go func(reader ReadCloser) {
-			reader.Read()
+		go func(reader ListenCloser) {
+			reader.Listen()
 			waiter.Done()
 		}(item)
 	}
@@ -18,7 +18,7 @@ func (this compositeReader) Read() {
 	waiter.Wait()
 }
 
-func (this compositeReader) Close() error {
+func (this compositeListener) Close() error {
 	for _, item := range this {
 		_ = item.Close()
 	}

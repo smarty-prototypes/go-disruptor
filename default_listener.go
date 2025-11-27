@@ -5,17 +5,17 @@ import (
 	"sync/atomic"
 )
 
-type defaultReader struct {
+type defaultListener struct {
 	state    int64
-	current  *atomic.Int64 // this reader has processed up to this sequence
-	written  *atomic.Int64 // the ring buffer has been written up to this sequence
-	upstream Barrier       // all of the readers have advanced up to this sequence
+	current  *atomic.Int64   // this reader has processed up to this sequence
+	written  *atomic.Int64   // the ring buffer has been written up to this sequence
+	upstream sequenceBarrier // all of the readers have advanced up to this sequence
 	waiter   WaitStrategy
 	consumer Handler
 }
 
-func NewReader(current, written *atomic.Int64, upstream Barrier, waiter WaitStrategy, consumer Handler) ReadCloser {
-	return &defaultReader{
+func newListener(current, written *atomic.Int64, upstream sequenceBarrier, waiter WaitStrategy, consumer Handler) ListenCloser {
+	return &defaultListener{
 		state:    stateRunning,
 		current:  current,
 		written:  written,
@@ -25,7 +25,7 @@ func NewReader(current, written *atomic.Int64, upstream Barrier, waiter WaitStra
 	}
 }
 
-func (this *defaultReader) Read() {
+func (this *defaultListener) Listen() {
 	var gateCount, idleCount, lower, upper int64
 	var current = this.current.Load()
 
@@ -55,7 +55,7 @@ func (this *defaultReader) Read() {
 	}
 }
 
-func (this *defaultReader) Close() error {
+func (this *defaultListener) Close() error {
 	atomic.StoreInt64(&this.state, stateClosed)
 	return nil
 }

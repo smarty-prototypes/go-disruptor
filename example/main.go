@@ -7,16 +7,16 @@ import (
 )
 
 func main() {
-	myDisruptor := disruptor.New(
-		disruptor.WithCapacity(BufferSize),
-		disruptor.WithConsumerGroup(MyConsumer{}))
+	myDisruptor, _ := disruptor.New(
+		disruptor.Options.Capacity(BufferSize),
+		disruptor.Options.ConsumerGroup(MyConsumer{}))
 
 	go publish(myDisruptor)
 
-	myDisruptor.Read()
+	myDisruptor.Listen()
 }
 
-func publish(myDisruptor disruptor.Disruptor) {
+func publish(myDisruptor *disruptor.Disruptor) {
 	for sequence := int64(0); sequence <= Iterations; {
 		sequence = myDisruptor.Reserve(Reservations)
 

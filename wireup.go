@@ -5,96 +5,109 @@ import (
 	"sync/atomic"
 )
 
-type Wireup struct {
-	waiter         WaitStrategy
-	capacity       int64
-	consumerGroups [][]Handler
-}
-type Option func(*Wireup)
-
-func New(options ...Option) Disruptor {
-	if this, err := NewWireup(options...); err != nil {
-		panic(err)
-	} else {
-		return NewDisruptor(this.Build())
-	}
+type configuration struct {
+	WaitStrategy   WaitStrategy
+	Capacity       int64
+	ConsumerGroups [][]Handler
 }
 
-func NewWireup(options ...Option) (*Wireup, error) {
-	this := &Wireup{}
-
-	WithWaitStrategy(NewWaitStrategy())(this)
-
-	for _, option := range options {
-		option(this)
-	}
-
-	if err := this.validate(); err != nil {
-		return nil, err
-	}
-
-	return this, nil
+type Disruptor struct {
+	Writer
+	ListenCloser
 }
-func (this *Wireup) validate() error {
-	if this.waiter == nil {
-		return errMissingWaitStrategy
+
+func New(options ...option) (*Disruptor, error) {
+	config := configuration{}
+	Options.apply(options...)(&config)
+
+	if config.Capacity <= 0 {
+		return nil, errCapacityTooSmall
 	}
 
-	if this.capacity <= 0 {
-		return errCapacityTooSmall
+	if config.Capacity&(config.Capacity-1) != 0 {
+		return nil, errCapacityPowerOfTwo
 	}
 
-	if this.capacity&(this.capacity-1) != 0 {
-		return errCapacityPowerOfTwo
+	if len(config.ConsumerGroups) == 0 {
+		return nil, errMissingConsumers
 	}
 
-	if len(this.consumerGroups) == 0 {
-		return errMissingConsumers
-	}
-
-	for _, consumerGroup := range this.consumerGroups {
+	for _, consumerGroup := range config.ConsumerGroups {
 		if len(consumerGroup) == 0 {
-			return errMissingConsumersInGroup
+			return nil, errMissingConsumersInGroup
 		}
 
 		for _, consumer := range consumerGroup {
 			if consumer == nil {
-				return errEmptyConsumer
+				return nil, errEmptyConsumer
 			}
 		}
 	}
 
-	return nil
+	writer, listener := config.build()
+	return &Disruptor{Writer: writer, ListenCloser: listener}, nil
 }
-
-func (this *Wireup) Build() (Writer, ReadCloser) {
-	var writerSequence = NewCursor()
-	readers, readBarrier := this.buildReaders(writerSequence)
-	return NewWriter(writerSequence, readBarrier, this.capacity), compositeReader(readers)
+func (this configuration) build() (Writer, ListenCloser) {
+	var writerSequence = newCursor()
+	listeners, readBarrier := this.newListeners(writerSequence)
+	return newWriter(writerSequence, readBarrier, this.Capacity), compositeListener(listeners)
 }
-func (this *Wireup) buildReaders(writerSequence *atomic.Int64) (readers []ReadCloser, upstream Barrier) {
+func (this configuration) newListeners(writerSequence *atomic.Int64) (listeners []ListenCloser, upstream sequenceBarrier) {
 	upstream = writerSequence
 
-	for _, consumerGroup := range this.consumerGroups {
+	for _, consumerGroup := range this.ConsumerGroups {
 		var consumerGroupSequences []*atomic.Int64
 
 		for _, consumer := range consumerGroup {
-			currentSequence := NewCursor()
-			readers = append(readers, NewReader(currentSequence, writerSequence, upstream, this.waiter, consumer))
+			currentSequence := newCursor()
+			listeners = append(listeners, newListener(currentSequence, writerSequence, upstream, this.WaitStrategy, consumer))
 			consumerGroupSequences = append(consumerGroupSequences, currentSequence)
 		}
 
-		upstream = NewMultiBarrier(consumerGroupSequences...)
+		upstream = newCompositeBarrier(consumerGroupSequences...)
 	}
 
-	return readers, upstream
+	return listeners, upstream
 }
 
-func WithWaitStrategy(value WaitStrategy) Option { return func(this *Wireup) { this.waiter = value } }
-func WithCapacity(value int64) Option            { return func(this *Wireup) { this.capacity = value } }
-func WithConsumerGroup(value ...Handler) Option {
-	return func(this *Wireup) { this.consumerGroups = append(this.consumerGroups, value) }
+func (singleton) WaitStrategy(value WaitStrategy) option {
+	return func(this *configuration) { this.WaitStrategy = value }
 }
+func (singleton) Capacity(value int64) option {
+	return func(this *configuration) { this.Capacity = value }
+}
+func (singleton) ConsumerGroup(value ...Handler) option {
+	return func(this *configuration) { this.ConsumerGroups = append(this.ConsumerGroups, value) }
+}
+
+func (singleton) apply(options ...option) option {
+	return func(this *configuration) {
+		for _, item := range Options.defaults(options...) {
+			item(this)
+		}
+	}
+}
+func (singleton) defaults(options ...option) []option {
+	return append([]option{
+		Options.Capacity(1024),
+		Options.WaitStrategy(newWaitStrategy()),
+	}, options...)
+}
+
+type singleton struct{}
+type option func(*configuration)
+
+var Options singleton
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func newCursor() *atomic.Int64 {
+	this := &atomic.Int64{}
+	this.Store(defaultCursorValue)
+	return this
+}
+
+const defaultCursorValue = -1
 
 var (
 	errMissingWaitStrategy     = errors.New("a wait strategy must be provided")

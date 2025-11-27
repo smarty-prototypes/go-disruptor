@@ -6,7 +6,7 @@ type Handler interface {
 	Handle(lower, upper int64)
 }
 
-type Barrier interface {
+type sequenceBarrier interface {
 	Load() int64
 }
 
@@ -20,8 +20,8 @@ type Writer interface {
 	Commit(lower, upper int64)
 }
 
-type ReadCloser interface {
-	Read()
+type ListenCloser interface {
+	Listen()
 	Close() error
 }
 

@@ -6,13 +6,13 @@ import (
 )
 
 type defaultWriter struct {
-	written  *atomic.Int64 // the ring buffer has been written up to this sequence
-	upstream Barrier       // all of the readers have advanced up to this sequence
+	written  *atomic.Int64   // ring has been written up to this sequence
+	upstream sequenceBarrier // all readers have advanced up to this sequence
 	capacity int64
 	previous int64
 }
 
-func NewWriter(written *atomic.Int64, upstream Barrier, capacity int64) Writer {
+func newWriter(written *atomic.Int64, upstream sequenceBarrier, capacity int64) Writer {
 	return &defaultWriter{
 		upstream: upstream,
 		written:  written,
@@ -28,7 +28,7 @@ func (this *defaultWriter) Reserve(count int64) int64 {
 
 	this.previous += count
 	for spin, gate := int64(0), int64(defaultCursorValue); this.previous-this.capacity > gate; spin++ {
-		if spin&SpinMask == 0 {
+		if spin&spinMask == 0 {
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}
 
@@ -39,4 +39,4 @@ func (this *defaultWriter) Reserve(count int64) int64 {
 
 func (this *defaultWriter) Commit(_, upper int64) { this.written.Store(upper) }
 
-const SpinMask = 1024*16 - 1 // arbitrary; we'll want to experiment with different values
+const spinMask = 1024*16 - 1 // arbitrary; we'll want to experiment with different values
