@@ -22,8 +22,8 @@ func newWriter(written *atomic.Int64, upstream sequenceBarrier, capacity int64) 
 }
 
 func (this *defaultWriter) Reserve(count int64) int64 {
-	if count <= 0 {
-		panic(ErrMinimumReservationSize)
+	if count <= 0 || count > this.capacity {
+		return ErrReservationSize
 	}
 
 	var gate int64 = defaultCursorValue // TODO: this field may need to be stateful

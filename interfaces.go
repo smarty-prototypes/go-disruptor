@@ -1,7 +1,5 @@
 package disruptor
 
-import "errors"
-
 type Handler interface {
 	Handle(lower, upper int64)
 }
@@ -25,4 +23,4 @@ type ListenCloser interface {
 	Close() error
 }
 
-var ErrMinimumReservationSize = errors.New("the minimum reservation size is 1 slot")
+const ErrReservationSize = -1
