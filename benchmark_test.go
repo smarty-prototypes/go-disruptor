@@ -164,16 +164,16 @@ func BenchmarkWriterCommit(b *testing.B) {
 }
 
 func BenchmarkWriterReserveOneSingleConsumer(b *testing.B) {
-	benchmarkSequencerReservations(b, ReserveOne, SampleConsumer{})
+	benchmarkSequencerReservations(b, reserveOne, sampleConsumer{})
 }
 func BenchmarkWriterReserveManySingleConsumer(b *testing.B) {
-	benchmarkSequencerReservations(b, ReserveMany, SampleConsumer{})
+	benchmarkSequencerReservations(b, reserveMany, sampleConsumer{})
 }
 func BenchmarkWriterReserveOneMultipleConsumers(b *testing.B) {
-	benchmarkSequencerReservations(b, ReserveOne, SampleConsumer{}, SampleConsumer{})
+	benchmarkSequencerReservations(b, reserveOne, sampleConsumer{}, sampleConsumer{})
 }
 func BenchmarkWriterReserveManyMultipleConsumers(b *testing.B) {
-	benchmarkSequencerReservations(b, ReserveMany, SampleConsumer{}, SampleConsumer{})
+	benchmarkSequencerReservations(b, reserveMany, sampleConsumer{}, sampleConsumer{})
 }
 func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Handler) {
 	iterations := int64(b.N)
@@ -188,7 +188,7 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 		for sequence < iterations {
 			sequence = myDisruptor.Reserve(count)
 			for i := sequence - (count - 1); i <= sequence; i++ {
-				ringBuffer[i&RingBufferMask] = i
+				ringBuffer[i&ringBufferMask] = i
 			}
 			myDisruptor.Commit(sequence, sequence)
 		}
@@ -201,31 +201,30 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type SampleConsumer struct{}
+type sampleConsumer struct{}
 
-func (this SampleConsumer) Handle(lower, upper int64) {
+func (this sampleConsumer) Handle(lower, upper int64) {
 	var message int64
 	for lower <= upper {
-		message = ringBuffer[lower&RingBufferMask]
+		message = ringBuffer[lower&ringBufferMask]
 		if message != lower {
 			log.Panicf("race condition: Sequence: %d, Message: %d", lower, message)
 		}
 		lower++
 	}
 }
-
-func build(consumers ...Handler) *Disruptor {
+func build(consumers ...Handler) Disruptor {
 	this, _ := New(
-		Options.Capacity(RingBufferSize),
-		Options.ConsumerGroup(consumers...))
+		Options.Capacity(ringBufferSize),
+		Options.AddConsumerGroup(consumers...))
 	return this
 }
 
 const (
-	RingBufferSize = 1024 * 64
-	RingBufferMask = RingBufferSize - 1
-	ReserveOne     = 1
-	ReserveMany    = 16
+	ringBufferSize = 1024 * 64
+	ringBufferMask = ringBufferSize - 1
+	reserveOne     = 1
+	reserveMany    = 16
 )
 
-var ringBuffer = [RingBufferSize]int64{}
+var ringBuffer = [ringBufferSize]int64{}

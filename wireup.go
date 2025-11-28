@@ -74,8 +74,8 @@ func (singleton) WaitStrategy(value WaitStrategy) option {
 func (singleton) Capacity(value int64) option {
 	return func(this *configuration) { this.Capacity = value }
 }
-func (singleton) ConsumerGroup(value ...Handler) option {
-	return func(this *configuration) { this.ConsumerGroups = append(this.ConsumerGroups, value) }
+func (singleton) AddConsumerGroup(values ...Handler) option {
+	return func(this *configuration) { this.ConsumerGroups = append(this.ConsumerGroups, values) }
 }
 
 func (singleton) apply(options ...option) option {
@@ -86,9 +86,12 @@ func (singleton) apply(options ...option) option {
 	}
 }
 func (singleton) defaults(options ...option) []option {
+	const defaultCapacity = 1024
+	var waitStrategy = defaultWaitStrategy{}
+
 	return append([]option{
-		Options.Capacity(1024),
-		Options.WaitStrategy(defaultWaitStrategy{}),
+		Options.Capacity(defaultCapacity),
+		Options.WaitStrategy(waitStrategy),
 	}, options...)
 }
 
