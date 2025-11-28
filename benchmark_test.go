@@ -84,7 +84,7 @@ func BenchmarkCompositeBarrierRead(b *testing.B) {
 	iterations := int64(b.N)
 
 	barrier := newCompositeBarrier(
-		newCursor(), newCursor(), newCursor(), newCursor())
+		newSequence(), newSequence(), newSequence(), newSequence())
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -96,7 +96,7 @@ func BenchmarkCompositeBarrierRead(b *testing.B) {
 
 func BenchmarkCursorStore(b *testing.B) {
 	iterations := int64(b.N)
-	sequence := newCursor()
+	sequence := newSequence()
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -107,7 +107,7 @@ func BenchmarkCursorStore(b *testing.B) {
 }
 func BenchmarkCursorLoad(b *testing.B) {
 	iterations := int64(b.N)
-	sequence := newCursor()
+	sequence := newSequence()
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -117,7 +117,7 @@ func BenchmarkCursorLoad(b *testing.B) {
 	}
 }
 func BenchmarkCursorLoadAsBarrier(b *testing.B) {
-	var barrier sequenceBarrier = newCursor()
+	var barrier sequenceBarrier = newSequence()
 	iterations := int64(b.N)
 
 	b.ReportAllocs()
@@ -129,7 +129,7 @@ func BenchmarkCursorLoadAsBarrier(b *testing.B) {
 }
 
 func BenchmarkWriterReserve(b *testing.B) {
-	read, written := newCursor(), newCursor()
+	read, written := newSequence(), newSequence()
 	writer := newWriter(written, read, 1024)
 	iterations := int64(b.N)
 	b.ReportAllocs()
@@ -141,7 +141,7 @@ func BenchmarkWriterReserve(b *testing.B) {
 	}
 }
 func BenchmarkWriterNextWrapPoint(b *testing.B) {
-	read, written := newCursor(), newCursor()
+	read, written := newSequence(), newSequence()
 	writer := newWriter(written, read, 1024)
 	iterations := int64(b.N)
 	b.ReportAllocs()
@@ -153,7 +153,7 @@ func BenchmarkWriterNextWrapPoint(b *testing.B) {
 	}
 }
 func BenchmarkWriterCommit(b *testing.B) {
-	writer := newWriter(newCursor(), nil, 1024)
+	writer := newWriter(newSequence(), nil, 1024)
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -164,21 +164,22 @@ func BenchmarkWriterCommit(b *testing.B) {
 }
 
 func BenchmarkWriterReserveOneSingleConsumer(b *testing.B) {
-	benchmarkSequencerReservations(b, reserveOne, sampleConsumer{})
+	benchmarkSequencerReservations(b, reserveOne, simpleHandler{})
 }
 func BenchmarkWriterReserveManySingleConsumer(b *testing.B) {
-	benchmarkSequencerReservations(b, reserveMany, sampleConsumer{})
+	benchmarkSequencerReservations(b, reserveMany, simpleHandler{})
 }
 func BenchmarkWriterReserveOneMultipleConsumers(b *testing.B) {
-	benchmarkSequencerReservations(b, reserveOne, sampleConsumer{}, sampleConsumer{})
+	benchmarkSequencerReservations(b, reserveOne, simpleHandler{}, simpleHandler{})
 }
 func BenchmarkWriterReserveManyMultipleConsumers(b *testing.B) {
-	benchmarkSequencerReservations(b, reserveMany, sampleConsumer{}, sampleConsumer{})
+	benchmarkSequencerReservations(b, reserveMany, simpleHandler{}, simpleHandler{})
 }
 func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Handler) {
 	iterations := int64(b.N)
 
-	myDisruptor := build(consumers...)
+	simpleDisruptor := newSimpleDisruptor(consumers...)
+	writer := simpleDisruptor.Writers()[0]
 
 	go func() {
 		b.ReportAllocs()
@@ -186,24 +187,24 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 
 		var sequence int64 = -1
 		for sequence < iterations {
-			sequence = myDisruptor.Reserve(count)
+			sequence = writer.Reserve(count)
 			for i := sequence - (count - 1); i <= sequence; i++ {
 				ringBuffer[i&ringBufferMask] = i
 			}
-			myDisruptor.Commit(sequence, sequence)
+			writer.Commit(sequence, sequence)
 		}
 
-		_ = myDisruptor.Close()
+		_ = simpleDisruptor.Close()
 	}()
 
-	myDisruptor.Listen()
+	simpleDisruptor.Listen()
 }
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type sampleConsumer struct{}
+type simpleHandler struct{}
 
-func (this sampleConsumer) Handle(lower, upper int64) {
+func (this simpleHandler) Handle(lower, upper int64) {
 	var message int64
 	for lower <= upper {
 		message = ringBuffer[lower&ringBufferMask]
@@ -213,10 +214,10 @@ func (this sampleConsumer) Handle(lower, upper int64) {
 		lower++
 	}
 }
-func build(consumers ...Handler) Disruptor {
-	this, _ := New(
-		Options.Capacity(ringBufferSize),
-		Options.NewListenerGroup(consumers...))
+func newSimpleDisruptor(consumers ...Handler) Disruptor[struct{}] {
+	this, _ := New[struct{}](
+		Options.BufferCapacity(ringBufferSize),
+		Options.NewHandlerGroup(consumers...))
 	return this
 }
 

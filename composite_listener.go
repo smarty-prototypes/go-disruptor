@@ -4,6 +4,14 @@ import "sync"
 
 type compositeListener []ListenCloser
 
+func newCompositeListener(listeners []ListenCloser) ListenCloser {
+	if len(listeners) == 1 {
+		return listeners[0]
+	} else {
+		return compositeListener(listeners)
+	}
+}
+
 func (this compositeListener) Listen() {
 	waiter := &sync.WaitGroup{}
 	waiter.Add(len(this))

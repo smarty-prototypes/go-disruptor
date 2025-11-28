@@ -7,34 +7,35 @@ import (
 )
 
 func main() {
-	myDisruptor, _ := disruptor.New(
-		disruptor.Options.Capacity(BufferSize),
-		disruptor.Options.NewListenerGroup(MyConsumer{}))
+	myDisruptor, _ := disruptor.New[int64](
+		disruptor.Options.BufferCapacity(BufferSize),
+		disruptor.Options.NewHandlerGroup(simpleHandler{}))
 
 	go publish(myDisruptor)
 
 	myDisruptor.Listen()
 }
 
-func publish(myDisruptor disruptor.Disruptor) {
+func publish(myDisruptor disruptor.Disruptor[int64]) {
+	defer func() { _ = myDisruptor.Close() }()
+	writer := myDisruptor.Writers()[0]
+
 	for sequence := int64(0); sequence <= Iterations; {
-		sequence = myDisruptor.Reserve(Reservations)
+		sequence = writer.Reserve(Reservations)
 
 		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {
 			ringBuffer[lower&BufferMask] = lower
 		}
 
-		myDisruptor.Commit(sequence-Reservations+1, sequence)
+		writer.Commit(sequence-Reservations+1, sequence)
 	}
-
-	_ = myDisruptor.Close()
 }
 
-// ////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type MyConsumer struct{}
+type simpleHandler struct{}
 
-func (this MyConsumer) Handle(lower, upper int64) {
+func (this simpleHandler) Handle(lower, upper int64) {
 	for ; lower <= upper; lower++ {
 		message := ringBuffer[lower&BufferMask]
 		if message != lower {

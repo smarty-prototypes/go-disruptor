@@ -1,16 +1,20 @@
 package disruptor
 
-type Disruptor interface {
-	Writer
+import "io"
+
+type Disruptor[T any] interface {
+	Writers() []Writer
 	ListenCloser
 }
 
-type Handler interface {
-	Handle(lower, upper int64)
-}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type sequenceBarrier interface {
-	Load() int64
+type ListenCloser interface {
+	Listener
+	io.Closer
+}
+type Listener interface {
+	Listen()
 }
 
 type WaitStrategy interface {
@@ -18,14 +22,23 @@ type WaitStrategy interface {
 	Idle(int64)
 }
 
-type Writer interface {
-	Reserve(count int64) int64
-	Commit(lower, upper int64)
+type Handler interface {
+	Handle(lowerSequence, upperSequence int64)
 }
 
-type ListenCloser interface {
-	Listen()
-	Close() error
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type Writer interface {
+	Reserve(slots int64) (lowerSequence int64)
+	Commit(lowerSequence, upperSequence int64)
 }
 
 const ErrReservationSize = -1
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type sequenceBarrier interface {
+	Load() int64
+}
+
+const defaultCursorValue = -1

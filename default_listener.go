@@ -1,29 +1,24 @@
 package disruptor
 
-import (
-	"io"
-	"sync/atomic"
-)
+import "sync/atomic"
 
 type defaultListener struct {
-	state    *atomic.Int64   // using atomic.Int64 which is padded to avoid false sharing
-	current  *atomic.Int64   // this reader has processed up to this sequence
-	written  *atomic.Int64   // the ring buffer has been written up to this sequence
-	upstream sequenceBarrier // all readers have advanced to this sequence
-	wait     WaitStrategy
-	consumer Handler
+	state     *atomic.Int64
+	current   *atomic.Int64   // processed up to this sequence
+	committed sequenceBarrier // all writers have committed up to this sequence
+	upstream  sequenceBarrier // upstream readers have completed up to this sequence
+	waiting   WaitStrategy
+	handler   Handler
 }
 
-func newListener(current, written *atomic.Int64, upstream sequenceBarrier, wait WaitStrategy, consumer Handler) ListenCloser {
-	state := &atomic.Int64{}
-	state.Store(stateRunning)
+func newListener(current *atomic.Int64, committed, upstream sequenceBarrier, waiting WaitStrategy, handler Handler) ListenCloser {
 	return &defaultListener{
-		state:    state,
-		current:  current,
-		written:  written,
-		upstream: upstream,
-		wait:     wait,
-		consumer: consumer,
+		state:     &atomic.Int64{},
+		current:   current,
+		committed: committed,
+		upstream:  upstream,
+		waiting:   waiting,
+		handler:   handler,
 	}
 }
 
@@ -36,33 +31,24 @@ func (this *defaultListener) Listen() {
 		upper = this.upstream.Load()
 
 		if lower <= upper {
-			this.consumer.Handle(lower, upper)
+			this.handler.Handle(lower, upper)
 			this.current.Store(upper)
 			current = upper
-		} else if upper = this.written.Load(); lower <= upper {
+		} else if upper = this.committed.Load(); lower <= upper {
 			gatedCount++
 			idlingCount = 0
-			this.wait.Gate(gatedCount)
-		} else if this.state.Load() == stateRunning {
+			this.waiting.Gate(gatedCount)
+		} else if this.state.Load() > 0 {
 			idlingCount++
 			gatedCount = 0
-			this.wait.Idle(idlingCount)
+			this.waiting.Idle(idlingCount)
 		} else {
 			break
 		}
 	}
-
-	if closer, ok := this.consumer.(io.Closer); ok {
-		_ = closer.Close()
-	}
 }
 
 func (this *defaultListener) Close() error {
-	this.state.Store(stateClosed)
+	this.state.Store(1)
 	return nil
 }
-
-const (
-	stateRunning = iota
-	stateClosed
-)
