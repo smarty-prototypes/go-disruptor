@@ -216,7 +216,7 @@ func (this sampleConsumer) Handle(lower, upper int64) {
 func build(consumers ...Handler) Disruptor {
 	this, _ := New(
 		Options.Capacity(ringBufferSize),
-		Options.AddConsumerGroup(consumers...))
+		Options.NewListenerGroup(consumers...))
 	return this
 }
 

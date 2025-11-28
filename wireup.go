@@ -8,7 +8,7 @@ import (
 type configuration struct {
 	WaitStrategy   WaitStrategy
 	Capacity       int64
-	ConsumerGroups [][]Handler
+	ListenerGroups [][]Handler
 }
 
 func New(options ...option) (Disruptor, error) {
@@ -23,18 +23,18 @@ func New(options ...option) (Disruptor, error) {
 		return nil, errCapacityPowerOfTwo
 	}
 
-	if len(config.ConsumerGroups) == 0 {
-		return nil, errMissingConsumers
+	if len(config.ListenerGroups) == 0 {
+		return nil, errNoListeners
 	}
 
-	for _, consumerGroup := range config.ConsumerGroups {
-		if len(consumerGroup) == 0 {
-			return nil, errMissingConsumersInGroup
+	for _, listenerGroup := range config.ListenerGroups {
+		if len(listenerGroup) == 0 {
+			return nil, errEmptyListenerGroup
 		}
 
-		for _, consumer := range consumerGroup {
+		for _, consumer := range listenerGroup {
 			if consumer == nil {
-				return nil, errEmptyConsumer
+				return nil, errEmptyListener
 			}
 		}
 	}
@@ -53,10 +53,10 @@ func New(options ...option) (Disruptor, error) {
 func (this configuration) newListeners(writerSequence *atomic.Int64) (listeners []ListenCloser, upstream sequenceBarrier) {
 	upstream = writerSequence
 
-	for _, consumerGroup := range this.ConsumerGroups {
+	for _, listenerGroup := range this.ListenerGroups {
 		var consumerGroupSequences []*atomic.Int64
 
-		for _, consumer := range consumerGroup {
+		for _, consumer := range listenerGroup {
 			currentSequence := newCursor()
 			listeners = append(listeners, newListener(currentSequence, writerSequence, upstream, this.WaitStrategy, consumer))
 			consumerGroupSequences = append(consumerGroupSequences, currentSequence)
@@ -74,8 +74,8 @@ func (singleton) WaitStrategy(value WaitStrategy) option {
 func (singleton) Capacity(value int64) option {
 	return func(this *configuration) { this.Capacity = value }
 }
-func (singleton) AddConsumerGroup(values ...Handler) option {
-	return func(this *configuration) { this.ConsumerGroups = append(this.ConsumerGroups, values) }
+func (singleton) NewListenerGroup(values ...Handler) option {
+	return func(this *configuration) { this.ListenerGroups = append(this.ListenerGroups, values) }
 }
 
 func (singleton) apply(options ...option) option {
@@ -103,9 +103,9 @@ var Options singleton
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var (
-	errCapacityTooSmall        = errors.New("the capacity must be at least 1")
-	errCapacityPowerOfTwo      = errors.New("the capacity be a power of two, e.g. 2, 4, 8, 16")
-	errMissingConsumers        = errors.New("no consumers have been provided")
-	errMissingConsumersInGroup = errors.New("the consumer group does not have any consumers")
-	errEmptyConsumer           = errors.New("an empty consumer was specified in the consumer group")
+	errCapacityTooSmall   = errors.New("the capacity must be at least 1")
+	errCapacityPowerOfTwo = errors.New("the capacity be a power of two, e.g. 2, 4, 8, 16")
+	errNoListeners        = errors.New("no consumers have been provided")
+	errEmptyListenerGroup = errors.New("empty listener group")
+	errEmptyListener      = errors.New("an empty listener was specified in the listener group")
 )

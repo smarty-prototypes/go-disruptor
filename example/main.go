@@ -9,7 +9,7 @@ import (
 func main() {
 	myDisruptor, _ := disruptor.New(
 		disruptor.Options.Capacity(BufferSize),
-		disruptor.Options.AddConsumerGroup(MyConsumer{}))
+		disruptor.Options.NewListenerGroup(MyConsumer{}))
 
 	go publish(myDisruptor)
 
