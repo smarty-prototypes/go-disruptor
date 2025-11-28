@@ -6,27 +6,29 @@ import (
 )
 
 type defaultListener struct {
-	state    int64
+	state    *atomic.Int64   // using atomic.Int64 which is padded to avoid false sharing
 	current  *atomic.Int64   // this reader has processed up to this sequence
 	written  *atomic.Int64   // the ring buffer has been written up to this sequence
-	upstream sequenceBarrier // all of the readers have advanced up to this sequence
-	waiter   WaitStrategy
+	upstream sequenceBarrier // all readers have advanced to this sequence
+	wait     WaitStrategy
 	consumer Handler
 }
 
-func newListener(current, written *atomic.Int64, upstream sequenceBarrier, waiter WaitStrategy, consumer Handler) ListenCloser {
+func newListener(current, written *atomic.Int64, upstream sequenceBarrier, wait WaitStrategy, consumer Handler) ListenCloser {
+	state := &atomic.Int64{}
+	state.Store(stateRunning)
 	return &defaultListener{
-		state:    stateRunning,
+		state:    state,
 		current:  current,
 		written:  written,
 		upstream: upstream,
-		waiter:   waiter,
+		wait:     wait,
 		consumer: consumer,
 	}
 }
 
 func (this *defaultListener) Listen() {
-	var gateCount, idleCount, lower, upper int64
+	var gatedCount, idlingCount, lower, upper int64
 	var current = this.current.Load()
 
 	for {
@@ -38,13 +40,13 @@ func (this *defaultListener) Listen() {
 			this.current.Store(upper)
 			current = upper
 		} else if upper = this.written.Load(); lower <= upper {
-			gateCount++
-			idleCount = 0
-			this.waiter.Gate(gateCount)
-		} else if atomic.LoadInt64(&this.state) == stateRunning {
-			idleCount++
-			gateCount = 0
-			this.waiter.Idle(idleCount)
+			gatedCount++
+			idlingCount = 0
+			this.wait.Gate(gatedCount)
+		} else if this.state.Load() == stateRunning {
+			idlingCount++
+			gatedCount = 0
+			this.wait.Idle(idlingCount)
 		} else {
 			break
 		}
@@ -56,7 +58,7 @@ func (this *defaultListener) Listen() {
 }
 
 func (this *defaultListener) Close() error {
-	atomic.StoreInt64(&this.state, stateClosed)
+	this.state.Store(stateClosed)
 	return nil
 }
 

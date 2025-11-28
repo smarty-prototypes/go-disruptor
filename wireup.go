@@ -90,7 +90,7 @@ func (singleton) apply(options ...option) option {
 func (singleton) defaults(options ...option) []option {
 	return append([]option{
 		Options.Capacity(1024),
-		Options.WaitStrategy(newWaitStrategy()),
+		Options.WaitStrategy(defaultWaitStrategy{}),
 	}, options...)
 }
 
@@ -110,7 +110,6 @@ func newCursor() *atomic.Int64 {
 const defaultCursorValue = -1
 
 var (
-	errMissingWaitStrategy     = errors.New("a wait strategy must be provided")
 	errCapacityTooSmall        = errors.New("the capacity must be at least 1")
 	errCapacityPowerOfTwo      = errors.New("the capacity be a power of two, e.g. 2, 4, 8, 16")
 	errMissingConsumers        = errors.New("no consumers have been provided")

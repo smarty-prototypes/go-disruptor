@@ -5,17 +5,16 @@ import "sync"
 type compositeListener []ListenCloser
 
 func (this compositeListener) Listen() {
-	var waiter sync.WaitGroup
+	waiter := &sync.WaitGroup{}
 	waiter.Add(len(this))
+	defer waiter.Wait()
 
 	for _, item := range this {
-		go func(reader ListenCloser) {
-			reader.Listen()
+		go func(listener ListenCloser) {
+			listener.Listen()
 			waiter.Done()
 		}(item)
 	}
-
-	waiter.Wait()
 }
 
 func (this compositeListener) Close() error {

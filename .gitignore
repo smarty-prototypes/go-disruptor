@@ -1,2 +1,7 @@
-/.idea
-/coverage.*
+*DS_Store*
+*.swp
+__MACOSX
+/.idea/
+/.docker/
+/workspace/
+config*.json*

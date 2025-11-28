@@ -26,8 +26,10 @@ func (this *defaultWriter) Reserve(count int64) int64 {
 		panic(ErrMinimumReservationSize)
 	}
 
+	var gate int64 = defaultCursorValue // TODO: this field may need to be stateful
+
 	this.previous += count
-	for spin, gate := int64(0), int64(defaultCursorValue); this.previous-this.capacity > gate; spin++ {
+	for spin := int64(0); this.previous-this.capacity > gate; spin++ {
 		if spin&spinMask == 0 {
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}

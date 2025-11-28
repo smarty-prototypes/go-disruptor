@@ -8,9 +8,8 @@ import (
 type compositeBarrier []*atomic.Int64
 
 func newCompositeBarrier(sequences ...*atomic.Int64) sequenceBarrier {
-
 	if len(sequences) == 0 {
-		return compositeBarrier(nil)
+		return compositeBarrier{}
 	} else if len(sequences) == 1 {
 		return sequences[0]
 	} else {
