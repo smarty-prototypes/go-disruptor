@@ -16,7 +16,7 @@ func main() {
 	myDisruptor.Listen()
 }
 
-func publish(myDisruptor *disruptor.Disruptor) {
+func publish(myDisruptor disruptor.Disruptor) {
 	for sequence := int64(0); sequence <= Iterations; {
 		sequence = myDisruptor.Reserve(Reservations)
 

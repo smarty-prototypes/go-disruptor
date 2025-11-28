@@ -1,5 +1,10 @@
 package disruptor
 
+type Disruptor interface {
+	Writer
+	ListenCloser
+}
+
 type Handler interface {
 	Handle(lower, upper int64)
 }

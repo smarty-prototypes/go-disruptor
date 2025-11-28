@@ -41,4 +41,13 @@ func (this *defaultWriter) Reserve(count int64) int64 {
 
 func (this *defaultWriter) Commit(_, upper int64) { this.written.Store(upper) }
 
-const spinMask = 1024*16 - 1 // arbitrary; we'll want to experiment with different values
+func newCursor() *atomic.Int64 {
+	this := &atomic.Int64{}
+	this.Store(defaultCursorValue)
+	return this
+}
+
+const (
+	spinMask           = 1024*16 - 1 // arbitrary; we'll want to experiment with different values
+	defaultCursorValue = -1
+)

@@ -11,12 +11,7 @@ type configuration struct {
 	ConsumerGroups [][]Handler
 }
 
-type Disruptor struct {
-	Writer
-	ListenCloser
-}
-
-func New(options ...option) (*Disruptor, error) {
+func New(options ...option) (Disruptor, error) {
 	config := configuration{}
 	Options.apply(options...)(&config)
 
@@ -44,13 +39,16 @@ func New(options ...option) (*Disruptor, error) {
 		}
 	}
 
-	writer, listener := config.build()
-	return &Disruptor{Writer: writer, ListenCloser: listener}, nil
-}
-func (this configuration) build() (Writer, ListenCloser) {
 	var writerSequence = newCursor()
-	listeners, readBarrier := this.newListeners(writerSequence)
-	return newWriter(writerSequence, readBarrier, this.Capacity), compositeListener(listeners)
+	listeners, readBarrier := config.newListeners(writerSequence)
+
+	return struct {
+		Writer
+		ListenCloser
+	}{
+		Writer:       newWriter(writerSequence, readBarrier, config.Capacity),
+		ListenCloser: compositeListener(listeners),
+	}, nil
 }
 func (this configuration) newListeners(writerSequence *atomic.Int64) (listeners []ListenCloser, upstream sequenceBarrier) {
 	upstream = writerSequence
@@ -100,14 +98,6 @@ type option func(*configuration)
 var Options singleton
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func newCursor() *atomic.Int64 {
-	this := &atomic.Int64{}
-	this.Store(defaultCursorValue)
-	return this
-}
-
-const defaultCursorValue = -1
 
 var (
 	errCapacityTooSmall        = errors.New("the capacity must be at least 1")
