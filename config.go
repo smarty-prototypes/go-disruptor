@@ -6,19 +6,6 @@ import (
 	"time"
 )
 
-func NewRingBuffer[T any](capacity uint32, initializer func() T) []T {
-	buffer := make([]T, capacity)
-	if initializer != nil {
-		for i := uint32(0); i < capacity; i++ {
-			buffer[i] = initializer()
-		}
-	}
-
-	return buffer
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 func New(options ...option) (Disruptor, error) {
 	config := configuration{}
 	Options.apply(options...)(&config)
