@@ -2,7 +2,7 @@ package disruptor
 
 import "io"
 
-type Disruptor[T any] interface {
+type Disruptor interface {
 	Writers() []Writer
 	ListenCloser
 }

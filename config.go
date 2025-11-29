@@ -19,7 +19,7 @@ func NewRingBuffer[T any](capacity uint32, initializer func() T) []T {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func New[T any](options ...option) (Disruptor[T], error) {
+func New(options ...option) (Disruptor, error) {
 	config := configuration{}
 	Options.apply(options...)(&config)
 
@@ -35,7 +35,7 @@ func New[T any](options ...option) (Disruptor[T], error) {
 	listener, handledBarrier := newListeners(config, committedSequence)
 	writer := newWriter(committedSequence, handledBarrier, config.BufferCapacity)
 
-	return &defaultDisruptor[T]{
+	return &defaultDisruptor{
 		ListenCloser: listener,
 		writers:      []Writer{writer}, // TODO: multi-writer
 	}, nil
@@ -130,9 +130,9 @@ func newSequence() *atomic.Int64 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type defaultDisruptor[T any] struct {
+type defaultDisruptor struct {
 	ListenCloser
 	writers []Writer
 }
 
-func (this *defaultDisruptor[T]) Writers() []Writer { return this.writers }
+func (this *defaultDisruptor) Writers() []Writer { return this.writers }

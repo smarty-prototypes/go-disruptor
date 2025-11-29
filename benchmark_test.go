@@ -214,8 +214,8 @@ func (this simpleHandler) Handle(lower, upper int64) {
 		lower++
 	}
 }
-func newSimpleDisruptor(consumers ...Handler) Disruptor[struct{}] {
-	this, _ := New[struct{}](
+func newSimpleDisruptor(consumers ...Handler) Disruptor {
+	this, _ := New(
 		Options.BufferCapacity(ringBufferSize),
 		Options.NewHandlerGroup(consumers...))
 	return this

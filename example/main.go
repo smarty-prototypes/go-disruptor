@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	myDisruptor, _ := disruptor.New[int64](
+	myDisruptor, _ := disruptor.New(
 		disruptor.Options.BufferCapacity(BufferSize),
 		disruptor.Options.NewHandlerGroup(simpleHandler{}))
 
@@ -16,7 +16,7 @@ func main() {
 	myDisruptor.Listen()
 }
 
-func publish(myDisruptor disruptor.Disruptor[int64]) {
+func publish(myDisruptor disruptor.Disruptor) {
 	defer func() { _ = myDisruptor.Close() }()
 	writer := myDisruptor.Writers()[0]
 
