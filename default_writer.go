@@ -10,6 +10,7 @@ type defaultWriter struct {
 	upstream sequenceBarrier // all readers have advanced up to this sequence
 	capacity int64
 	previous int64
+	gate     int64
 }
 
 func newWriter(written *atomic.Int64, upstream sequenceBarrier, capacity int64) Writer {
@@ -18,6 +19,7 @@ func newWriter(written *atomic.Int64, upstream sequenceBarrier, capacity int64) 
 		written:  written,
 		capacity: capacity,
 		previous: defaultSequenceValue,
+		gate:     defaultSequenceValue,
 	}
 }
 
@@ -26,15 +28,13 @@ func (this *defaultWriter) Reserve(count int64) int64 {
 		return ErrReservationSize
 	}
 
-	var gate int64 = defaultSequenceValue // TODO: this field may need to be stateful
-
 	this.previous += count
-	for spin := int64(0); this.previous-this.capacity > gate; spin++ {
+	for spin := int64(0); this.previous-this.capacity > this.gate; spin++ {
 		if spin&spinMask == 0 {
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}
 
-		gate = this.upstream.Load()
+		this.gate = this.upstream.Load()
 	}
 	return this.previous
 }
