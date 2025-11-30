@@ -29,7 +29,7 @@ type Handler interface {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type Writer interface {
-	Reserve(slots int64) (lowerSequence int64)
+	Reserve(slots int64) (upperSequence int64)
 	Commit(lowerSequence, upperSequence int64)
 }
 
