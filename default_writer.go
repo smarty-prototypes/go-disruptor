@@ -17,7 +17,7 @@ func newWriter(written *atomic.Int64, upstream sequenceBarrier, capacity int64) 
 		upstream: upstream,
 		written:  written,
 		capacity: capacity,
-		previous: defaultCursorValue,
+		previous: defaultSequenceValue,
 	}
 }
 
@@ -26,7 +26,7 @@ func (this *defaultWriter) Reserve(count int64) int64 {
 		return ErrReservationSize
 	}
 
-	var gate int64 = defaultCursorValue // TODO: this field may need to be stateful
+	var gate int64 = defaultSequenceValue // TODO: this field may need to be stateful
 
 	this.previous += count
 	for spin := int64(0); this.previous-this.capacity > gate; spin++ {

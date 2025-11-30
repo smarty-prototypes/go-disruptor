@@ -94,7 +94,7 @@ func BenchmarkCompositeBarrierRead(b *testing.B) {
 	}
 }
 
-func BenchmarkCursorStore(b *testing.B) {
+func BenchmarkSequenceStore(b *testing.B) {
 	iterations := int64(b.N)
 	sequence := newSequence()
 
@@ -105,7 +105,7 @@ func BenchmarkCursorStore(b *testing.B) {
 		sequence.Store(i)
 	}
 }
-func BenchmarkCursorLoad(b *testing.B) {
+func BenchmarkSequenceLoad(b *testing.B) {
 	iterations := int64(b.N)
 	sequence := newSequence()
 
@@ -116,7 +116,7 @@ func BenchmarkCursorLoad(b *testing.B) {
 		_ = sequence.Load()
 	}
 }
-func BenchmarkCursorLoadAsBarrier(b *testing.B) {
+func BenchmarkSequenceLoadAsBarrier(b *testing.B) {
 	var barrier sequenceBarrier = newSequence()
 	iterations := int64(b.N)
 

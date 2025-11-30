@@ -19,7 +19,7 @@ func New(options ...option) (Disruptor, error) {
 	}
 
 	committedSequence := newSequence()
-	listener, handledBarrier := newListeners(config, committedSequence)
+	listener, handledBarrier := config.newListeners(committedSequence)
 	writer := newWriter(committedSequence, handledBarrier, config.BufferCapacity)
 
 	return &defaultDisruptor{
@@ -27,17 +27,17 @@ func New(options ...option) (Disruptor, error) {
 		writers:      []Writer{writer}, // TODO: multi-writer
 	}, nil
 }
-func newListeners(config configuration, writeBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
+func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
 	handledBarrier = writeBarrier
 	var listeners []ListenCloser
 
-	for _, handlers := range config.HandlerGroups {
+	for _, handlers := range this.HandlerGroups {
 		group := make([]ListenCloser, 0, len(handlers))
 		sequences := make([]*atomic.Int64, 0, len(handlers))
 		for _, handler := range handlers {
 			currentSequence := newSequence()
 			sequences = append(sequences, currentSequence)
-			group = append(group, newListener(currentSequence, writeBarrier, handledBarrier, config.WaitStrategy, handler))
+			group = append(group, newListener(currentSequence, writeBarrier, handledBarrier, this.WaitStrategy, handler))
 		}
 		handledBarrier = newCompositeBarrier(sequences...) // next batch cannot handle beyond the sequences the current batch have handled.
 		listeners = append(listeners, newCompositeListener(group))
@@ -111,7 +111,7 @@ func (this defaultWaitStrategy) Idle(int64) { time.Sleep(time.Millisecond) }
 
 func newSequence() *atomic.Int64 {
 	this := &atomic.Int64{}
-	this.Store(defaultCursorValue)
+	this.Store(defaultSequenceValue)
 	return this
 }
 

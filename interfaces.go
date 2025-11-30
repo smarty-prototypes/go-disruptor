@@ -41,4 +41,4 @@ type sequenceBarrier interface {
 	Load() int64
 }
 
-const defaultCursorValue = -1
+const defaultSequenceValue = -1
