@@ -6,7 +6,7 @@ type defaultWriter struct {
 	written  atomicSequence  // ring has been written up to this sequence
 	upstream sequenceBarrier // all readers have advanced up to this sequence
 	capacity int64
-	previous int64
+	current  int64
 	gate     int64
 }
 
@@ -15,7 +15,7 @@ func newWriter(written atomicSequence, upstream sequenceBarrier, capacity int64)
 		upstream: upstream,
 		written:  written,
 		capacity: capacity,
-		previous: defaultSequenceValue,
+		current:  defaultSequenceValue,
 		gate:     defaultSequenceValue,
 	}
 }
@@ -25,15 +25,18 @@ func (this *defaultWriter) Reserve(count int64) int64 {
 		return ErrReservationSize
 	}
 
-	this.previous += count
-	for spin := int64(0); this.previous-this.capacity > this.gate; spin++ {
+	this.current += count
+
+	// blocks until desired number of slots becomes available
+	for spin := int64(0); this.current-this.capacity > this.gate; spin++ {
 		if spin&spinMask == 0 {
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}
 
 		this.gate = this.upstream.Load()
 	}
-	return this.previous
+
+	return this.current
 }
 func (this *defaultWriter) Commit(_, upper int64) { this.written.Store(upper) }
 
