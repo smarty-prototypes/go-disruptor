@@ -12,8 +12,11 @@ type defaultListener struct {
 }
 
 func newListener(current *atomic.Int64, committed, upstream sequenceBarrier, waiting WaitStrategy, handler Handler) ListenCloser {
+	state := &atomic.Int64{}
+	state.Store(stateRunning)
+
 	return &defaultListener{
-		state:     &atomic.Int64{},
+		state:     state,
 		current:   current,
 		committed: committed,
 		upstream:  upstream,
@@ -38,7 +41,7 @@ func (this *defaultListener) Listen() {
 			gatedCount++
 			idlingCount = 0
 			this.waiting.Gate(gatedCount)
-		} else if this.state.Load() > 0 {
+		} else if this.state.Load() == stateRunning {
 			idlingCount++
 			gatedCount = 0
 			this.waiting.Idle(idlingCount)
@@ -49,6 +52,11 @@ func (this *defaultListener) Listen() {
 }
 
 func (this *defaultListener) Close() error {
-	this.state.Store(1)
+	this.state.Store(stateClosed)
 	return nil
 }
+
+const (
+	stateRunning = 0
+	stateClosed  = 1
+)
