@@ -12,11 +12,8 @@ type defaultListener struct {
 }
 
 func newListener(current *atomic.Int64, committed, upstream sequenceBarrier, waiting WaitStrategy, handler Handler) ListenCloser {
-	state := &atomic.Int64{}
-	state.Store(stateRunning)
-
 	return &defaultListener{
-		state:     state,
+		state:     newAtomicInt64(stateRunning),
 		current:   current,
 		committed: committed,
 		upstream:  upstream,

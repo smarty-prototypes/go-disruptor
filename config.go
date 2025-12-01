@@ -109,9 +109,10 @@ func (this defaultWaitStrategy) Idle(int64) { time.Sleep(time.Millisecond) }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func newSequence() *atomic.Int64 {
+func newSequence() *atomic.Int64 { return newAtomicInt64(defaultSequenceValue) }
+func newAtomicInt64(initialState int64) *atomic.Int64 {
 	this := &atomic.Int64{}
-	this.Store(defaultSequenceValue)
+	this.Store(initialState)
 	return this
 }
 
