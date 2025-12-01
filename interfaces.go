@@ -6,7 +6,7 @@ import (
 )
 
 type Disruptor interface {
-	Writers() []Writer
+	Sequencers() []Sequencer
 	ListenCloser
 }
 
@@ -31,7 +31,7 @@ type Handler interface {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type Writer interface {
+type Sequencer interface {
 	Reserve(slots int64) (upperSequence int64)
 	Commit(lowerSequence, upperSequence int64)
 }

@@ -5,7 +5,7 @@ import "sync/atomic"
 type defaultListener struct {
 	state     *atomic.Int64
 	current   atomicSequence  // processed up to this sequence
-	committed sequenceBarrier // all writers have committed up to this sequence
+	committed sequenceBarrier // all sequencers have committed up to this sequence
 	upstream  sequenceBarrier // upstream listener(s) have completed up to this sequence
 	waiting   WaitStrategy
 	handler   Handler

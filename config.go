@@ -20,11 +20,11 @@ func New(options ...option) (Disruptor, error) {
 
 	committedSequence := newSequence()
 	listener, handledBarrier := config.newListeners(committedSequence)
-	writer := newWriter(committedSequence, handledBarrier, config.BufferCapacity)
+	sequencer := newSequencer(committedSequence, handledBarrier, config.BufferCapacity)
 
 	return &defaultDisruptor{
 		ListenCloser: listener,
-		writers:      []Writer{writer}, // TODO: multi-writer
+		sequencers:   []Sequencer{sequencer}, // TODO: multi
 	}, nil
 }
 func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
@@ -50,7 +50,7 @@ func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener L
 
 type configuration struct {
 	BufferCapacity int64
-	WriterCount    uint8
+	SequencerCount uint8
 	WaitStrategy   WaitStrategy
 	HandlerGroups  [][]Handler
 }
@@ -58,8 +58,8 @@ type configuration struct {
 func (singleton) BufferCapacity(value uint32) option {
 	return func(this *configuration) { this.BufferCapacity = int64(value) }
 }
-func (singleton) WriterCount(value uint8) option {
-	return func(this *configuration) { this.WriterCount = value }
+func (singleton) SequencerCount(value uint8) option {
+	return func(this *configuration) { this.SequencerCount = value }
 }
 func (singleton) WaitStrategy(value WaitStrategy) option {
 	return func(this *configuration) { this.WaitStrategy = value }
@@ -90,7 +90,7 @@ func (singleton) apply(options ...option) option {
 func (singleton) defaults(options ...option) []option {
 	return append([]option{
 		Options.BufferCapacity(1024),
-		Options.WriterCount(1),
+		Options.SequencerCount(1),
 		Options.WaitStrategy(defaultWaitStrategy{}),
 	}, options...)
 }
@@ -120,7 +120,7 @@ func newAtomicInt64(initialState int64) atomicSequence {
 
 type defaultDisruptor struct {
 	ListenCloser
-	writers []Writer
+	sequencers []Sequencer
 }
 
-func (this *defaultDisruptor) Writers() []Writer { return this.writers }
+func (this *defaultDisruptor) Sequencers() []Sequencer { return this.sequencers }
