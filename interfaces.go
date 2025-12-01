@@ -1,6 +1,9 @@
 package disruptor
 
-import "io"
+import (
+	"io"
+	"sync/atomic"
+)
 
 type Disruptor interface {
 	Writers() []Writer
@@ -36,6 +39,8 @@ type Writer interface {
 const ErrReservationSize = -1
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type atomicSequence = *atomic.Int64
 
 type sequenceBarrier interface {
 	Load() int64

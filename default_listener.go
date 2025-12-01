@@ -4,14 +4,14 @@ import "sync/atomic"
 
 type defaultListener struct {
 	state     *atomic.Int64
-	current   *atomic.Int64   // processed up to this sequence
+	current   atomicSequence  // processed up to this sequence
 	committed sequenceBarrier // all writers have committed up to this sequence
-	upstream  sequenceBarrier // upstream readers have completed up to this sequence
+	upstream  sequenceBarrier // upstream listener(s) have completed up to this sequence
 	waiting   WaitStrategy
 	handler   Handler
 }
 
-func newListener(current *atomic.Int64, committed, upstream sequenceBarrier, waiting WaitStrategy, handler Handler) ListenCloser {
+func newListener(current atomicSequence, committed, upstream sequenceBarrier, waiting WaitStrategy, handler Handler) ListenCloser {
 	return &defaultListener{
 		state:     newAtomicInt64(stateRunning),
 		current:   current,
