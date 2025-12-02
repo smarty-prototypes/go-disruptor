@@ -18,7 +18,7 @@ func newMultiSequencer(write *multiSequencerBarrier, upstream sequenceBarrier) *
 		upstream:  upstream,
 		capacity:  write.capacity,
 		gate:      newSequence(),
-		mask:      write.mask,
+		mask:      write.capacity - 1,
 		shift:     write.shift,
 		committed: write.committed,
 	}
