@@ -32,13 +32,40 @@ type Handler interface {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// The Sequencer tracks the state of a given "writer" or producer to the ring buffer. It is the heart of the Disruptor
+// pattern. When a caller desires to push events to the ring buffer, the caller or product must first Reserve the
+// desired slots on the ring buffer using a Sequencer. Subsequent to obtaining a reservation on certain slots of the
+// ring buffer, the caller must write the any data to the reserved slots and then indicate the completion of the
+// operation(s) by calling Commit which makes those slots available to any downstream Handler instances which then
+// handle or otherwise consume events from the ring buffer on different goroutines.
 type Sequencer interface {
+
+	// Reserve claims the desired number of slots in the ring buffer for the caller. When those slots become available
+	// because any configured Handlers have properly processed all necessary data in those slots, the Sequencer returns
+	// the upper-most or highest sequence of slot claimed and reserved for the caller.
+	//
+	// The lower-bound sequence in the ring buffer is obtained by subtracting the specified number of slots from the
+	// upper-most sequence returned. If the context.Context provided is canceled before the slots can be successfully
+	// claimed, ErrContextCanceled is returned.
+	//
+	// Each successful call to Reserve should *always* be followed by a single call to Commit.
 	Reserve(ctx context.Context, slots int64) (upperSequence int64)
+
+	// Commit indicates to the sequencer that the previously claimed slots in the ring buffer have been written to
+	// successfully and to make the data available to any configured Handler instances to process.
+	//
+	// Each successful call to Commit should *always* be preceded by a single successful call to Reserve.
 	Commit(lowerSequence, upperSequence int64)
 }
 
 const (
+
+	// ErrReservationSize indicates that the reservation requested is nonsensical, e.g. lower > upper OR that the
+	// desired reservation size exceeds the capacity of the ring buffer altogether.
+
 	ErrReservationSize = -1
+	// ErrContextCanceled indicates that the reservation request failed because the provided context.Context has
+	// been canceled or otherwise timed out.
 	ErrContextCanceled = -2
 )
 
