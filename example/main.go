@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/smarty-prototypes/go-disruptor"
@@ -20,8 +21,10 @@ func publish(myDisruptor disruptor.Disruptor) {
 	defer func() { _ = myDisruptor.Close() }()
 	sequencer := myDisruptor.Sequencers()[0]
 
+	ctx := context.Background()
+
 	for sequence := int64(0); sequence <= Iterations; {
-		sequence = sequencer.Reserve(Reservations)
+		sequence = sequencer.Reserve(ctx, Reservations)
 
 		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {
 			ringBuffer[lower&BufferMask] = lower
