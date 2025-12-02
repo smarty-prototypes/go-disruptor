@@ -43,8 +43,7 @@ func (this *multiSequencer) Commit(lower, upper int64) {
 	if lower == upper {
 		this.committed[upper&this.mask] = int32(upper >> this.shift)
 	} else {
-		// working down the array keeps all items in the commit together
-		// otherwise the reader(s) could split up the group
+		// working down the array to keep items in the commit together; otherwise the reader(s) could split up the group
 		for upper >= lower {
 			this.committed[upper&this.mask] = int32(upper >> this.shift)
 			upper--
@@ -56,7 +55,6 @@ type multiSequencerBarrier struct {
 	written   atomicSequence
 	committed []int32
 	capacity  int64
-	mask      int64
 	shift     uint8
 }
 
@@ -70,17 +68,16 @@ func newSharedWriterBarrier(written atomicSequence, capacity int64) *multiSequen
 		written:   written,
 		committed: committed,
 		capacity:  capacity,
-		mask:      capacity - 1,
 		shift:     uint8(math.Log2(float64(capacity))),
 	}
 }
 
 func (this *multiSequencerBarrier) Load(lower int64) int64 {
-	shift, mask := this.shift, this.mask
+	mask := this.capacity - 1
 	upper := this.written.Load()
 
 	for ; lower <= upper; lower++ {
-		if this.committed[lower&mask] != int32(lower>>shift) {
+		if this.committed[lower&mask] != int32(lower>>this.shift) {
 			return lower - 1
 		}
 	}

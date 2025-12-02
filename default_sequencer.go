@@ -27,9 +27,10 @@ func (this *defaultSequencer) Reserve(count int64) int64 {
 
 	this.current += count
 
-	// blocks until desired number of slots becomes available
+	// blocks until desired number of slots becomes available;
 	for spin := int64(0); this.current-this.capacity > this.gate; spin++ {
 		if spin&spinMask == 0 {
+			// TODO: should we pass context.Context into this? if the caller aborts, we can skip the reservation request
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}
 
