@@ -7,7 +7,6 @@ type multiSequencer struct {
 	gate      atomicSequence
 	upstream  sequenceBarrier
 	capacity  int64
-	mask      int64
 	shift     uint8
 	committed []int32
 }
@@ -18,7 +17,6 @@ func newMultiSequencer(write *multiSequencerBarrier, upstream sequenceBarrier) *
 		upstream:  upstream,
 		capacity:  write.capacity,
 		gate:      newSequence(),
-		mask:      write.capacity - 1,
 		shift:     write.shift,
 		committed: write.committed,
 	}
@@ -40,12 +38,14 @@ func (this *multiSequencer) Reserve(count int64) int64 {
 }
 
 func (this *multiSequencer) Commit(lower, upper int64) {
+	mask := this.capacity - 1
+
 	if lower == upper {
-		this.committed[upper&this.mask] = int32(upper >> this.shift)
+		this.committed[upper&mask] = int32(upper >> this.shift)
 	} else {
 		// working down the array to keep items in the commit together; otherwise the reader(s) could split up the group
 		for upper >= lower {
-			this.committed[upper&this.mask] = int32(upper >> this.shift)
+			this.committed[upper&mask] = int32(upper >> this.shift)
 			upper--
 		}
 	}
