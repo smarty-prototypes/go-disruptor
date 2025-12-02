@@ -1,6 +1,9 @@
 package disruptor
 
-import "math"
+import (
+	"math"
+	"runtime"
+)
 
 type multiSequencer struct {
 	written   atomicSequence
@@ -19,7 +22,7 @@ type multiSequencerBarrier struct {
 
 func (this *multiSequencer) Reserve(count int64) int64 {
 	// blocks until desired number of slots becomes available
-	for {
+	for spin := uint64(0); ; spin++ {
 		previous := this.written.Load()
 		upper := previous + count
 
@@ -31,7 +34,10 @@ func (this *multiSequencer) Reserve(count int64) int64 {
 			return upper
 		}
 
-		// TODO: should we pass context.Context into this? if the caller aborts, we can skip the reservation request
+		if spin&spinMask == 0 {
+			// TODO: should we pass context.Context into this? if the caller aborts, we can skip the reservation request
+			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+		}
 	}
 }
 func (this *multiSequencer) Commit(lower, upper int64) {
