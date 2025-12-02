@@ -1,6 +1,7 @@
 package disruptor
 
 import (
+	"context"
 	"io"
 	"sync/atomic"
 )
@@ -32,11 +33,14 @@ type Handler interface {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type Sequencer interface {
-	Reserve(slots int64) (upperSequence int64)
+	Reserve(ctx context.Context, slots int64) (upperSequence int64)
 	Commit(lowerSequence, upperSequence int64)
 }
 
-const ErrReservationSize = -1
+const (
+	ErrReservationSize = -1
+	ErrContextCanceled = -2
+)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

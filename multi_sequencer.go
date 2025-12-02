@@ -1,6 +1,7 @@
 package disruptor
 
 import (
+	"context"
 	"math"
 	"runtime"
 )
@@ -20,7 +21,7 @@ type multiSequencerBarrier struct {
 	shift     uint8
 }
 
-func (this *multiSequencer) Reserve(count int64) int64 {
+func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
 	// blocks until desired number of slots becomes available
 	for spin := uint64(0); ; spin++ {
 		previous := this.written.Load()
@@ -35,7 +36,10 @@ func (this *multiSequencer) Reserve(count int64) int64 {
 		}
 
 		if spin&spinMask == 0 {
-			// TODO: should we pass context.Context into this? if the caller aborts, we can skip the reservation request
+			if ctx.Err() != nil {
+				return ErrContextCanceled
+			}
+
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}
 	}
