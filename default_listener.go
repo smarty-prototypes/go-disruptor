@@ -2,11 +2,13 @@ package disruptor
 
 import "sync/atomic"
 
+// The defaultListener is single threaded and designed to run in a single goroutine. It which slots or events in the
+// associated ring buffer have been read, processed, or handled in some manner.
 type defaultListener struct {
 	state     *atomic.Int64
-	current   atomicSequence  // processed up to this sequence
-	committed sequenceBarrier // all sequencers have committed up to this sequence
-	upstream  sequenceBarrier // upstream listener(s) have completed up to this sequence
+	current   atomicSequence  // the configured handler has processed up to this sequence
+	committed sequenceBarrier // all sequencers (writers) have committed up to this sequence
+	upstream  sequenceBarrier // any other configured groups handlers prior to or upstream have processed up to this sequence
 	waiting   WaitStrategy
 	handler   Handler
 }
