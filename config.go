@@ -76,7 +76,7 @@ func (singleton) NewHandlerGroup(values ...Handler) option {
 		}
 
 		if len(filtered) > 0 {
-			this.HandlerGroups = append(this.HandlerGroups, values)
+			this.HandlerGroups = append(this.HandlerGroups, filtered)
 		}
 	}
 }
