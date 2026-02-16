@@ -33,6 +33,7 @@ func (this *defaultSequencer) Reserve(ctx context.Context, count int64) int64 {
 	for spin := int64(0); this.current-this.capacity > this.gate; spin++ {
 		if spin&spinMask == 0 {
 			if ctx.Err() != nil {
+				this.current -= count
 				return ErrContextCanceled
 			}
 
