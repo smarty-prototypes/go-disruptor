@@ -3,7 +3,6 @@ package disruptor
 import (
 	"context"
 	"log"
-	"math"
 	"testing"
 )
 
@@ -144,15 +143,15 @@ func BenchmarkWriterReserve(b *testing.B) {
 }
 func BenchmarkWriterNextWrapPoint(b *testing.B) {
 	read, written := newSequence(), newSequence()
-	writer := newSequencer(written, newAtomicBarrier(read), 1024)
+	writer := newSequencer(written, newAtomicBarrier(read), 4096)
 	ctx := context.Background()
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	read.Store(math.MaxInt64)
 	for i := int64(0); i < iterations; i++ {
-		writer.Reserve(ctx, 1)
+		sequence := writer.Reserve(ctx, 1)
+		read.Store(sequence)
 	}
 }
 func BenchmarkWriterCommit(b *testing.B) {
