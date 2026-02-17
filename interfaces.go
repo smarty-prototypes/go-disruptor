@@ -1,7 +1,6 @@
 package disruptor
 
 import (
-	"context"
 	"io"
 	"sync/atomic"
 )
@@ -27,9 +26,7 @@ type HandleWaitStrategy interface {
 	Idle(int64)
 }
 type ReserveWaitStrategy interface {
-	// SpinMask represents the number of times the producer can spin before invoking Wait. This value must be a 2^n-1.
-	SpinMask() int64
-	Wait(context.Context) error
+	Wait()
 }
 
 type Handler interface {
@@ -48,16 +45,14 @@ type Sequencer interface {
 
 	// Reserve claims the desired number of slots in the ring buffer for the caller. When those slots become available
 	// because any configured Handlers have properly processed all necessary data in those slots, the Sequencer returns
-	// the upper-most or highest sequence of slot claimed and reserved for the caller.
+	// the uppermost or highest sequence of slot claimed and reserved for the caller.
 	//
 	// The lower-bound sequence in the ring buffer is obtained by subtracting the specified number of slots from the
-	// upper-most sequence returned. If the context.Context provided is canceled before the slots can be successfully
-	// claimed, ErrContextCanceled is returned.
-	//
-	// If the number of desired slots is larger than the capacity of the ring buffer, ErrReservationSize is returned.
+	// uppermost sequence returned. If the number of desired slots is larger than the capacity of the ring buffer,
+	// ErrReservationSize is returned.
 	//
 	// Each successful call to Reserve should *always* be followed by a single call to Commit.
-	Reserve(ctx context.Context, slots int64) (upperSequence int64)
+	Reserve(slots int64) (upperSequence int64)
 
 	// Commit indicates to the sequencer that the previously claimed slots in the ring buffer have been written to
 	// successfully and to make the data available to any configured Handler instances to process.
@@ -70,9 +65,6 @@ const (
 	// ErrReservationSize indicates that the reservation requested is nonsensical, e.g. lower > upper OR that the
 	// desired reservation size exceeds the capacity of the ring buffer altogether.
 	ErrReservationSize = -1
-	// ErrContextCanceled indicates that the reservation request failed because the provided context.Context has
-	// been canceled or otherwise timed out.
-	ErrContextCanceled = -2
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

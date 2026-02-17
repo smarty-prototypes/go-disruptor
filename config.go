@@ -1,7 +1,6 @@
 package disruptor
 
 import (
-	"context"
 	"errors"
 	"runtime"
 	"sync/atomic"
@@ -117,10 +116,9 @@ var Options singleton
 
 type defaultWaitStrategy struct{}
 
-func (this defaultWaitStrategy) Gate(int64)                     { time.Sleep(time.Nanosecond) }
-func (this defaultWaitStrategy) Idle(int64)                     { time.Sleep(time.Millisecond) }
-func (this defaultWaitStrategy) SpinMask() int64                { return 1024*16 - 1 }                  // arbitrary; we'll want to experiment with different values (to be inlined)
-func (this defaultWaitStrategy) Wait(ctx context.Context) error { runtime.Gosched(); return ctx.Err() } // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+func (this defaultWaitStrategy) Gate(int64) { time.Sleep(time.Nanosecond) }
+func (this defaultWaitStrategy) Idle(int64) { time.Sleep(time.Millisecond) }
+func (this defaultWaitStrategy) Wait()      { runtime.Gosched() } // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

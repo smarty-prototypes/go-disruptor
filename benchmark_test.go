@@ -1,7 +1,6 @@
 package disruptor
 
 import (
-	"context"
 	"log"
 	"testing"
 )
@@ -131,26 +130,24 @@ func BenchmarkSequenceLoadAsBarrier(b *testing.B) {
 func BenchmarkWriterReserve(b *testing.B) {
 	read, written := newSequence(), newSequence()
 	writer := newSequencer(1024, written, newAtomicBarrier(read), defaultWaitStrategy{})
-	ctx := context.Background()
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		sequence := writer.Reserve(ctx, 1)
+		sequence := writer.Reserve(1)
 		read.Store(sequence)
 	}
 }
 func BenchmarkWriterNextWrapPoint(b *testing.B) {
 	read, written := newSequence(), newSequence()
 	writer := newSequencer(1024*16, written, newAtomicBarrier(read), defaultWaitStrategy{})
-	ctx := context.Background()
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		sequence := writer.Reserve(ctx, 1)
+		sequence := writer.Reserve(1)
 		read.Store(sequence)
 	}
 }
@@ -182,7 +179,6 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 
 	simpleDisruptor := newSimpleDisruptor(consumers...)
 	writer := simpleDisruptor.Sequencers()[0]
-	ctx := context.Background()
 
 	go func() {
 		b.ReportAllocs()
@@ -190,7 +186,7 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 
 		var sequence int64 = -1
 		for sequence < iterations {
-			sequence = writer.Reserve(ctx, count)
+			sequence = writer.Reserve(count)
 			for i := sequence - (count - 1); i <= sequence; i++ {
 				ringBuffer[i&ringBufferMask] = i
 			}

@@ -1,57 +1,47 @@
 package disruptor
 
 import (
-	"context"
 	"math"
 	"sync/atomic"
 )
 
 type multiSequencer struct {
 	capacity  uint32              // 4B  — read every Reserve + Commit
-	spinMask  uint32              // 4B  — spin loop only
-	shift     uint8               // 1B  — read every Commit (+7B padding)
-	written   atomicSequence      // 8B  — Load+CAS every Reserve
+	shift     uint8               // 1B  — read every Commit
+	upper     atomicSequence      // 8B  — Load+CAS every Reserve
 	gate      atomicSequence      // 8B  — read every Reserve (wrap check)
 	committed []atomic.Int32      // 24B — read every Commit (slice header)
 	upstream  sequenceBarrier     // 16B — spin loop only
 	waiter    ReserveWaitStrategy // 16B — spin loop only
 }
 
-func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
+func (this *multiSequencer) Reserve(count int64) int64 {
 	capacity := int64(this.capacity)
 	if count <= 0 || count > capacity {
 		return ErrReservationSize
 	}
 
-	spinMask := int64(this.spinMask)
-	for spin := int64(0); ; spin++ {
-		previous := this.written.Load()
-		upper := previous + count
-		wrap := upper - capacity
-		cachedGate := this.gate.Load()
+	// using atomic Add because it scales even with contention compared to CAS
+	// this was at the cost of allowing Reserve to be canceled.
+	var (
+		upper = this.upper.Add(count) // claims the slot for the caller
+		lower = upper - count
+		wrap  = upper - capacity
+		gate  = this.gate.Load()
+	)
 
-		if wrap > cachedGate || cachedGate > previous {
-			gate := this.upstream.Load(0)
-			this.gate.Store(gate)
-
-			for innerSpin := int64(0); wrap > gate; innerSpin++ {
-				if innerSpin&spinMask == 0 && this.waiter.Wait(ctx) != nil {
-					return ErrContextCanceled
-				}
-
-				gate = this.upstream.Load(0)
-				this.gate.Store(gate)
-			}
-		}
-
-		if this.written.CompareAndSwap(previous, upper) {
-			return upper
-		}
-
-		if spin&spinMask == 0 && this.waiter.Wait(ctx) != nil {
-			return ErrContextCanceled
-		}
+	// fast path
+	if wrap <= gate && gate <= lower {
+		return upper
 	}
+
+	// slow path
+	for gate = this.upstream.Load(0); wrap > gate; gate = this.upstream.Load(0) {
+		this.waiter.Wait()
+	}
+
+	this.gate.Store(gate)
+	return upper
 }
 
 func (this *multiSequencer) Commit(lower, upper int64) {
@@ -116,10 +106,9 @@ func (this *multiSequencerConfiguration) NewBarrier() *multiSequencerBarrier {
 
 func (this *multiSequencerConfiguration) NewSequencer(upstream sequenceBarrier, waiting ReserveWaitStrategy) Sequencer {
 	return &multiSequencer{
-		written:   this.written,
+		upper:     this.written,
 		gate:      newSequence(),
 		capacity:  uint32(this.capacity),
-		spinMask:  uint32(waiting.SpinMask()),
 		shift:     this.shift,
 		committed: this.committed,
 		upstream:  upstream,
