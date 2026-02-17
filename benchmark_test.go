@@ -143,7 +143,7 @@ func BenchmarkWriterReserve(b *testing.B) {
 }
 func BenchmarkWriterNextWrapPoint(b *testing.B) {
 	read, written := newSequence(), newSequence()
-	writer := newSequencer(written, newAtomicBarrier(read), 4096)
+	writer := newSequencer(written, newAtomicBarrier(read), 1024*16)
 	ctx := context.Background()
 	iterations := int64(b.N)
 	b.ReportAllocs()
