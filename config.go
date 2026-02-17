@@ -20,7 +20,7 @@ func New(options ...option) (Disruptor, error) {
 
 	committedSequence := newSequence()
 	listener, handledBarrier := config.newListeners(newAtomicBarrier(committedSequence))
-	sequencer := newSequencer(committedSequence, handledBarrier, config.BufferCapacity)
+	sequencer := newSequencer(committedSequence, handledBarrier, config.BufferCapacity) // TODO: multi
 
 	return &defaultDisruptor{
 		ListenCloser: listener,
@@ -65,9 +65,11 @@ func (singleton) SequencerCount(value uint8) option {
 func (singleton) WaitStrategy(value WaitStrategy) option {
 	return func(this *configuration) { this.WaitStrategy = value }
 }
+
+// NewHandlerGroup defines a set of one or more Handler instance (each of which runs in its own goroutine), which set
+// operate and gate together. That is, each group does not allow a subsequent group of Handlers to operate on the ring
+// on the underlying buffer until the current group has completed all operations.
 func (singleton) NewHandlerGroup(values ...Handler) option {
-	// Each handler will be run on a separate goroutine. Each group of handlers will run as a unit meaning that a
-	// subsequence group of handlers will not execute until the current group of handlers has completed successfully.
 	return func(this *configuration) {
 		filtered := make([]Handler, 0, len(values))
 		for _, value := range values {

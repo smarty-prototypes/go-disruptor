@@ -19,8 +19,8 @@ func (this compositeListener) Listen() {
 
 	for _, item := range this {
 		go func(listener ListenCloser) {
+			defer waiter.Done()
 			listener.Listen()
-			waiter.Done()
 		}(item)
 	}
 }
