@@ -30,16 +30,20 @@ func (this *defaultSequencer) Reserve(ctx context.Context, count int64) int64 {
 
 	upper := this.current + count
 
-	for spin := int64(0); upper-this.capacity > this.gate; spin++ {
-		if spin&spinMask == 0 {
-			if ctx.Err() != nil {
-				return ErrContextCanceled
+	if wrap := upper - this.capacity; wrap > this.gate {
+		this.written.Store(this.current) // StoreLoad fence (TODO confirm this)
+
+		for spin := int64(0); wrap > this.gate; spin++ {
+			if spin&spinMask == 0 {
+				if ctx.Err() != nil {
+					return ErrContextCanceled
+				}
+
+				runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 			}
 
-			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+			this.gate = this.upstream.Load(0)
 		}
-
-		this.gate = this.upstream.Load(0)
 	}
 
 	this.current = upper
