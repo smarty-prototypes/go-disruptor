@@ -3,29 +3,31 @@ package disruptor
 import (
 	"context"
 	"math"
-	"runtime"
 	"sync/atomic"
 )
 
 type multiSequencer struct {
-	written   atomicSequence
-	gate      atomicSequence
-	upstream  sequenceBarrier
-	committed []atomic.Int32
-	capacity  int64
-	shift     uint8
+	capacity  uint32              // 4B  — read every Reserve + Commit
+	spinMask  uint32              // 4B  — spin loop only
+	shift     uint8               // 1B  — read every Commit (+7B padding)
+	written   atomicSequence      // 8B  — Load+CAS every Reserve
+	gate      atomicSequence      // 8B  — read every Reserve (wrap check)
+	committed []atomic.Int32      // 24B — read every Commit (slice header)
+	upstream  sequenceBarrier     // 16B — spin loop only
+	waiter    ReserveWaitStrategy // 16B — spin loop only
 }
 
 func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
-	if count <= 0 || count > this.capacity {
+	capacity := int64(this.capacity)
+	if count <= 0 || count > capacity {
 		return ErrReservationSize
 	}
 
-	// block until desired number of slots becomes available
-	for spin := uint64(0); ; spin++ {
+	spinMask := int64(this.spinMask)
+	for spin := int64(0); ; spin++ {
 		previous := this.written.Load()
 		upper := previous + count
-		wrap := upper - this.capacity
+		wrap := upper - capacity
 		cachedGate := this.gate.Load()
 
 		if wrap > cachedGate || cachedGate > previous {
@@ -33,12 +35,8 @@ func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
 			this.gate.Store(gate)
 
 			for innerSpin := int64(0); wrap > gate; innerSpin++ {
-				if innerSpin&spinMask == 0 {
-					if ctx.Err() != nil {
-						return ErrContextCanceled
-					}
-
-					runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+				if innerSpin&spinMask == 0 && this.waiter.Wait(ctx) != nil {
+					return ErrContextCanceled
 				}
 
 				gate = this.upstream.Load(0)
@@ -50,18 +48,14 @@ func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
 			return upper
 		}
 
-		if spin&spinMask == 0 {
-			if ctx.Err() != nil {
-				return ErrContextCanceled
-			}
-
-			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+		if spin&spinMask == 0 && this.waiter.Wait(ctx) != nil {
+			return ErrContextCanceled
 		}
 	}
 }
 
 func (this *multiSequencer) Commit(lower, upper int64) {
-	for mask := this.capacity - 1; lower <= upper; lower++ {
+	for mask := int64(this.capacity) - 1; lower <= upper; lower++ {
 		this.committed[lower&mask].Store(int32(lower >> this.shift))
 	}
 }
@@ -120,13 +114,15 @@ func (this *multiSequencerConfiguration) NewBarrier() *multiSequencerBarrier {
 	}
 }
 
-func (this *multiSequencerConfiguration) NewSequencer(upstream sequenceBarrier) Sequencer {
+func (this *multiSequencerConfiguration) NewSequencer(upstream sequenceBarrier, waiting ReserveWaitStrategy) Sequencer {
 	return &multiSequencer{
 		written:   this.written,
 		gate:      newSequence(),
-		upstream:  upstream,
-		committed: this.committed,
-		capacity:  this.capacity,
+		capacity:  uint32(this.capacity),
+		spinMask:  uint32(waiting.SpinMask()),
 		shift:     this.shift,
+		committed: this.committed,
+		upstream:  upstream,
+		waiter:    waiting,
 	}
 }

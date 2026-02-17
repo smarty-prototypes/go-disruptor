@@ -9,17 +9,17 @@ type defaultListener struct {
 	current   atomicSequence  // the configured handler has processed up to this sequence
 	committed sequenceBarrier // all sequencers (writers) have committed up to this sequence
 	upstream  sequenceBarrier // any other configured groups handlers prior to or upstream have processed up to this sequence
-	waiting   WaitStrategy
+	waiter    HandleWaitStrategy
 	handler   Handler
 }
 
-func newListener(current atomicSequence, committed, upstream sequenceBarrier, waiting WaitStrategy, handler Handler) ListenCloser {
+func newListener(current atomicSequence, committed, upstream sequenceBarrier, waiter HandleWaitStrategy, handler Handler) ListenCloser {
 	return &defaultListener{
 		state:     newAtomicInt64(stateRunning),
 		current:   current,
 		committed: committed,
 		upstream:  upstream,
-		waiting:   waiting,
+		waiter:    waiter,
 		handler:   handler,
 	}
 }
@@ -41,11 +41,11 @@ func (this *defaultListener) Listen() {
 		} else if upper = this.committed.Load(lower); lower <= upper {
 			gatedCount++
 			idlingCount = 0
-			this.waiting.Gate(gatedCount)
+			this.waiter.Gate(gatedCount)
 		} else if this.state.Load() == stateRunning {
 			idlingCount++
 			gatedCount = 0
-			this.waiting.Idle(idlingCount)
+			this.waiter.Idle(idlingCount)
 		} else {
 			break
 		}

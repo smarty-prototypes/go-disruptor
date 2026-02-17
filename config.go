@@ -1,7 +1,9 @@
 package disruptor
 
 import (
+	"context"
 	"errors"
+	"runtime"
 	"sync/atomic"
 	"time"
 )
@@ -20,7 +22,7 @@ func New(options ...option) (Disruptor, error) {
 
 	committedSequence := newSequence()
 	listener, handledBarrier := config.newListeners(newAtomicBarrier(committedSequence))
-	sequencer := newSequencer(committedSequence, handledBarrier, config.BufferCapacity) // TODO: multi
+	sequencer := newSequencer(config.BufferCapacity, committedSequence, handledBarrier, config.ReserveWaitStrategy) // TODO: multi
 
 	return &defaultDisruptor{
 		ListenCloser: listener,
@@ -38,7 +40,7 @@ func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener L
 		for _, handler := range handlers {
 			currentSequence := newSequence()
 			sequences = append(sequences, currentSequence)
-			group = append(group, newListener(currentSequence, writeBarrier, handledBarrier, this.WaitStrategy, handler))
+			group = append(group, newListener(currentSequence, writeBarrier, handledBarrier, this.HandleWaitStrategy, handler))
 		}
 		handledBarrier = newCompositeBarrier(sequences...) // next batch cannot handle beyond the sequences the current batch have handled.
 		listeners = append(listeners, newCompositeListener(group))
@@ -50,20 +52,27 @@ func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener L
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type configuration struct {
-	BufferCapacity int64
-	SequencerCount uint8
-	WaitStrategy   WaitStrategy
-	HandlerGroups  [][]Handler
+	BufferCapacity      int64
+	SequencerCount      uint8
+	HandleWaitStrategy  HandleWaitStrategy
+	ReserveWaitStrategy ReserveWaitStrategy
+	HandlerGroups       [][]Handler
 }
 
 func (singleton) BufferCapacity(value uint32) option {
 	return func(this *configuration) { this.BufferCapacity = int64(value) }
 }
+
+// SequencerCount indicates the number of Sequencer instances to build. Each Sequencer instance should be attached to
+// a message writer or producer and should not be shared among writers/producers without explicit synchronization.
 func (singleton) SequencerCount(value uint8) option {
 	return func(this *configuration) { this.SequencerCount = value }
 }
-func (singleton) WaitStrategy(value WaitStrategy) option {
-	return func(this *configuration) { this.WaitStrategy = value }
+func (singleton) HandleWaitStrategy(value HandleWaitStrategy) option {
+	return func(this *configuration) { this.HandleWaitStrategy = value }
+}
+func (singleton) ReserveWaitStrategy(value ReserveWaitStrategy) option {
+	return func(this *configuration) { this.ReserveWaitStrategy = value }
 }
 
 // NewHandlerGroup defines a set of one or more Handler instances, each of which runs in its own goroutine, and which
@@ -94,7 +103,8 @@ func (singleton) defaults(options ...option) []option {
 	return append([]option{
 		Options.BufferCapacity(1024),
 		Options.SequencerCount(1),
-		Options.WaitStrategy(defaultWaitStrategy{}),
+		Options.HandleWaitStrategy(defaultWaitStrategy{}),
+		Options.ReserveWaitStrategy(defaultWaitStrategy{}),
 	}, options...)
 }
 
@@ -107,8 +117,10 @@ var Options singleton
 
 type defaultWaitStrategy struct{}
 
-func (this defaultWaitStrategy) Gate(int64) { time.Sleep(time.Nanosecond) }
-func (this defaultWaitStrategy) Idle(int64) { time.Sleep(time.Millisecond) }
+func (this defaultWaitStrategy) Gate(int64)                     { time.Sleep(time.Nanosecond) }
+func (this defaultWaitStrategy) Idle(int64)                     { time.Sleep(time.Millisecond) }
+func (this defaultWaitStrategy) SpinMask() int64                { return 1024*16 - 1 }                  // arbitrary; we'll want to experiment with different values (to be inlined)
+func (this defaultWaitStrategy) Wait(ctx context.Context) error { runtime.Gosched(); return ctx.Err() } // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

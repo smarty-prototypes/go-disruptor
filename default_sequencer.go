@@ -1,45 +1,44 @@
 package disruptor
 
-import (
-	"context"
-	"runtime"
-)
+import "context"
 
 type defaultSequencer struct {
-	written  atomicSequence  // ring has been written up to this sequence
-	upstream sequenceBarrier // all readers have advanced up to this sequence
-	capacity int64
-	current  int64
-	gate     int64
+	capacity uint32              // 4B  — read every Reserve
+	spinMask uint32              // 4B  — spin loop only
+	current  int64               // 8B  — read+write every Reserve
+	gate     int64               // 8B  — read every Reserve (wrap check)
+	written  atomicSequence      // 8B  — ring has been written up to this sequence
+	upstream sequenceBarrier     // 16B — all readers have advanced up to this sequence
+	waiter   ReserveWaitStrategy // 16B — spin loop only
 }
 
-func newSequencer(written atomicSequence, upstream sequenceBarrier, capacity int64) Sequencer {
+func newSequencer(capacity int64, written atomicSequence, upstream sequenceBarrier, waiter ReserveWaitStrategy) Sequencer {
 	return &defaultSequencer{
-		upstream: upstream,
-		written:  written,
-		capacity: capacity,
+		capacity: uint32(capacity),
+		spinMask: uint32(waiter.SpinMask()),
 		current:  defaultSequenceValue,
 		gate:     defaultSequenceValue,
+		written:  written,
+		upstream: upstream,
+		waiter:   waiter,
 	}
 }
 
 func (this *defaultSequencer) Reserve(ctx context.Context, count int64) int64 {
-	if count <= 0 || count > this.capacity {
+	capacity := int64(this.capacity)
+	if count <= 0 || count > capacity {
 		return ErrReservationSize
 	}
 
 	upper := this.current + count
+	spinMask := int64(this.spinMask)
 
-	if wrap := upper - this.capacity; wrap > this.gate || this.gate > this.current {
+	if wrap := upper - capacity; wrap > this.gate || this.gate > this.current {
 		this.written.Store(this.current) // StoreLoad fence (TODO confirm this)
 
 		for spin := int64(0); wrap > this.gate; spin++ {
-			if spin&spinMask == 0 {
-				if ctx.Err() != nil {
-					return ErrContextCanceled
-				}
-
-				runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+			if spin&spinMask == 0 && this.waiter.Wait(ctx) != nil {
+				return ErrContextCanceled
 			}
 
 			this.gate = this.upstream.Load(0)
@@ -50,5 +49,3 @@ func (this *defaultSequencer) Reserve(ctx context.Context, count int64) int64 {
 	return upper
 }
 func (this *defaultSequencer) Commit(_, upper int64) { this.written.Store(upper) }
-
-const spinMask = 1024*16 - 1 // arbitrary; we'll want to experiment with different values

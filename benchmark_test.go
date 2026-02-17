@@ -130,7 +130,7 @@ func BenchmarkSequenceLoadAsBarrier(b *testing.B) {
 
 func BenchmarkWriterReserve(b *testing.B) {
 	read, written := newSequence(), newSequence()
-	writer := newSequencer(written, newAtomicBarrier(read), 1024)
+	writer := newSequencer(1024, written, newAtomicBarrier(read), defaultWaitStrategy{})
 	ctx := context.Background()
 	iterations := int64(b.N)
 	b.ReportAllocs()
@@ -143,7 +143,7 @@ func BenchmarkWriterReserve(b *testing.B) {
 }
 func BenchmarkWriterNextWrapPoint(b *testing.B) {
 	read, written := newSequence(), newSequence()
-	writer := newSequencer(written, newAtomicBarrier(read), 1024*16)
+	writer := newSequencer(1024*16, written, newAtomicBarrier(read), defaultWaitStrategy{})
 	ctx := context.Background()
 	iterations := int64(b.N)
 	b.ReportAllocs()
@@ -155,7 +155,7 @@ func BenchmarkWriterNextWrapPoint(b *testing.B) {
 	}
 }
 func BenchmarkWriterCommit(b *testing.B) {
-	writer := newSequencer(newSequence(), nil, 1024)
+	writer := newSequencer(1024, newSequence(), nil, defaultWaitStrategy{})
 	iterations := int64(b.N)
 	b.ReportAllocs()
 	b.ResetTimer()

@@ -22,9 +22,14 @@ type Listener interface {
 	Listen()
 }
 
-type WaitStrategy interface {
+type HandleWaitStrategy interface {
 	Gate(int64)
 	Idle(int64)
+}
+type ReserveWaitStrategy interface {
+	// SpinMask represents the number of times the producer can spin before invoking Wait. This value must be a 2^n-1.
+	SpinMask() int64
+	Wait(context.Context) error
 }
 
 type Handler interface {
@@ -48,6 +53,8 @@ type Sequencer interface {
 	// The lower-bound sequence in the ring buffer is obtained by subtracting the specified number of slots from the
 	// upper-most sequence returned. If the context.Context provided is canceled before the slots can be successfully
 	// claimed, ErrContextCanceled is returned.
+	//
+	// If the number of desired slots is larger than the capacity of the ring buffer, ErrReservationSize is returned.
 	//
 	// Each successful call to Reserve should *always* be followed by a single call to Commit.
 	Reserve(ctx context.Context, slots int64) (upperSequence int64)
