@@ -30,7 +30,7 @@ func (this *defaultSequencer) Reserve(ctx context.Context, count int64) int64 {
 
 	upper := this.current + count
 
-	if wrap := upper - this.capacity; wrap > this.gate {
+	if wrap := upper - this.capacity; wrap > this.gate || this.gate > this.current {
 		this.written.Store(this.current) // StoreLoad fence (TODO confirm this)
 
 		for spin := int64(0); wrap > this.gate; spin++ {
