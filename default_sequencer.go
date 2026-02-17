@@ -28,12 +28,11 @@ func (this *defaultSequencer) Reserve(ctx context.Context, count int64) int64 {
 		return ErrReservationSize
 	}
 
-	this.current += count
+	upper := this.current + count
 
-	for spin := int64(0); this.current-this.capacity > this.gate; spin++ {
+	for spin := int64(0); upper-this.capacity > this.gate; spin++ {
 		if spin&spinMask == 0 {
 			if ctx.Err() != nil {
-				this.current -= count
 				return ErrContextCanceled
 			}
 
@@ -43,7 +42,8 @@ func (this *defaultSequencer) Reserve(ctx context.Context, count int64) int64 {
 		this.gate = this.upstream.Load(0)
 	}
 
-	return this.current
+	this.current = upper
+	return upper
 }
 func (this *defaultSequencer) Commit(_, upper int64) { this.written.Store(upper) }
 
