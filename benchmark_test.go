@@ -91,7 +91,7 @@ func BenchmarkCompositeBarrierRead(b *testing.B) {
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		barrier.Load()
+		barrier.Load(0)
 	}
 }
 
@@ -118,20 +118,20 @@ func BenchmarkSequenceLoad(b *testing.B) {
 	}
 }
 func BenchmarkSequenceLoadAsBarrier(b *testing.B) {
-	var barrier sequenceBarrier = newSequence()
+	var barrier sequenceBarrier = newAtomicBarrier(newSequence())
 	iterations := int64(b.N)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := int64(0); i < iterations; i++ {
-		_ = barrier.Load()
+		_ = barrier.Load(0)
 	}
 }
 
 func BenchmarkWriterReserve(b *testing.B) {
 	read, written := newSequence(), newSequence()
-	writer := newSequencer(written, read, 1024)
+	writer := newSequencer(written, newAtomicBarrier(read), 1024)
 	ctx := context.Background()
 	iterations := int64(b.N)
 	b.ReportAllocs()
@@ -144,7 +144,7 @@ func BenchmarkWriterReserve(b *testing.B) {
 }
 func BenchmarkWriterNextWrapPoint(b *testing.B) {
 	read, written := newSequence(), newSequence()
-	writer := newSequencer(written, read, 1024)
+	writer := newSequencer(written, newAtomicBarrier(read), 1024)
 	ctx := context.Background()
 	iterations := int64(b.N)
 	b.ReportAllocs()

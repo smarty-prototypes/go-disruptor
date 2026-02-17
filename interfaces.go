@@ -73,7 +73,14 @@ const (
 type atomicSequence = *atomic.Int64
 
 type sequenceBarrier interface {
-	Load() int64
+	Load(int64) int64
 }
+
+type atomicBarrier struct{ sequence atomicSequence }
+
+func newAtomicBarrier(sequence atomicSequence) *atomicBarrier {
+	return &atomicBarrier{sequence: sequence}
+}
+func (this *atomicBarrier) Load(_ int64) int64 { return this.sequence.Load() }
 
 const defaultSequenceValue = -1

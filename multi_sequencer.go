@@ -33,7 +33,7 @@ func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
 		upper := previous + count
 
 		for upper-this.capacity > this.gate.Load() {
-			this.gate.Store(this.upstream.Load())
+			this.gate.Store(this.upstream.Load(0))
 		}
 
 		if this.written.CompareAndSwap(previous, upper) {

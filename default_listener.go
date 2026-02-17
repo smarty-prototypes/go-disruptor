@@ -30,13 +30,13 @@ func (this *defaultListener) Listen() {
 
 	for {
 		lower = current + 1
-		upper = this.upstream.Load()
+		upper = this.upstream.Load(lower)
 
 		if lower <= upper {
 			this.handler.Handle(lower, upper)
 			this.current.Store(upper)
 			current = upper
-		} else if upper = this.committed.Load(); lower <= upper {
+		} else if upper = this.committed.Load(lower); lower <= upper {
 			gatedCount++
 			idlingCount = 0
 			this.waiting.Gate(gatedCount)

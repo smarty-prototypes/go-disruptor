@@ -19,7 +19,7 @@ func New(options ...option) (Disruptor, error) {
 	}
 
 	committedSequence := newSequence()
-	listener, handledBarrier := config.newListeners(committedSequence)
+	listener, handledBarrier := config.newListeners(newAtomicBarrier(committedSequence))
 	sequencer := newSequencer(committedSequence, handledBarrier, config.BufferCapacity)
 
 	return &defaultDisruptor{

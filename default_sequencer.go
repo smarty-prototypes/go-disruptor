@@ -40,7 +40,7 @@ func (this *defaultSequencer) Reserve(ctx context.Context, count int64) int64 {
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}
 
-		this.gate = this.upstream.Load()
+		this.gate = this.upstream.Load(0)
 	}
 
 	return this.current
