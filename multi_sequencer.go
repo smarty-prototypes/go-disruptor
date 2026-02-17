@@ -32,8 +32,15 @@ func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
 			gate := this.upstream.Load(0)
 			this.gate.Store(gate)
 
-			for wrap > gate {
-				runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+			for innerSpin := int64(0); wrap > gate; innerSpin++ {
+				if innerSpin&spinMask == 0 {
+					if ctx.Err() != nil {
+						return ErrContextCanceled
+					}
+
+					runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+				}
+
 				gate = this.upstream.Load(0)
 				this.gate.Store(gate)
 			}
