@@ -23,7 +23,11 @@ type multiSequencerBarrier struct {
 }
 
 func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
-	// blocks until desired number of slots becomes available
+	if count <= 0 || count > this.capacity {
+		return ErrReservationSize
+	}
+
+	// block until desired number of slots becomes available
 	for spin := uint64(0); ; spin++ {
 		previous := this.written.Load()
 		upper := previous + count

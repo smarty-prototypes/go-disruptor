@@ -11,6 +11,7 @@ func main() {
 	myDisruptor, _ := disruptor.New(
 		disruptor.Options.BufferCapacity(BufferSize),
 		disruptor.Options.NewHandlerGroup(simpleHandler{}))
+	defer func() { _ = myDisruptor.Close() }()
 
 	go publish(myDisruptor)
 
