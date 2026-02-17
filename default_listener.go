@@ -36,6 +36,8 @@ func (this *defaultListener) Listen() {
 			this.handler.Handle(lower, upper)
 			this.current.Store(upper)
 			current = upper
+			gatedCount = 0
+			idlingCount = 0
 		} else if upper = this.committed.Load(lower); lower <= upper {
 			gatedCount++
 			idlingCount = 0
