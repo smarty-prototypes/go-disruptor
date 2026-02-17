@@ -66,9 +66,9 @@ func (singleton) WaitStrategy(value WaitStrategy) option {
 	return func(this *configuration) { this.WaitStrategy = value }
 }
 
-// NewHandlerGroup defines a set of one or more Handler instance (each of which runs in its own goroutine), which set
-// operate and gate together. That is, each group does not allow a subsequent group of Handlers to operate on the ring
-// on the underlying buffer until the current group has completed all operations.
+// NewHandlerGroup defines a set of one or more Handler instances, each of which runs in its own goroutine, and which
+// gate together. That is, each group does not allow a subsequent group of Handlers to operate on the underlying ring
+// buffer until the current all Handlers within the current group have completed all operations.
 func (singleton) NewHandlerGroup(values ...Handler) option {
 	return func(this *configuration) {
 		filtered := make([]Handler, 0, len(values))
