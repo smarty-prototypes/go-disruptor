@@ -4,20 +4,14 @@ import (
 	"context"
 	"math"
 	"runtime"
+	"sync/atomic"
 )
 
 type multiSequencer struct {
 	written   atomicSequence
 	gate      atomicSequence
 	upstream  sequenceBarrier
-	committed []int32
-	capacity  int64
-	shift     uint8
-}
-
-type multiSequencerBarrier struct {
-	written   atomicSequence
-	committed []int32
+	committed []atomic.Int32
 	capacity  int64
 	shift     uint8
 }
@@ -31,9 +25,18 @@ func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
 	for spin := uint64(0); ; spin++ {
 		previous := this.written.Load()
 		upper := previous + count
+		wrap := upper - this.capacity
+		cachedGate := this.gate.Load()
 
-		for upper-this.capacity > this.gate.Load() {
-			this.gate.Store(this.upstream.Load(0))
+		if wrap > cachedGate || cachedGate > previous {
+			gate := this.upstream.Load(0)
+			this.gate.Store(gate)
+
+			for wrap > gate {
+				runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+				gate = this.upstream.Load(0)
+				this.gate.Store(gate)
+			}
 		}
 
 		if this.written.CompareAndSwap(previous, upper) {
@@ -51,17 +54,26 @@ func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
 }
 
 func (this *multiSequencer) Commit(lower, upper int64) {
-	for mask := this.capacity - 1; upper >= lower; {
-		this.committed[upper&mask] = int32(upper >> this.shift)
-		upper--
+	for mask := this.capacity - 1; lower <= upper; lower++ {
+		this.committed[lower&mask].Store(int32(lower >> this.shift))
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type multiSequencerBarrier struct {
+	written   atomicSequence
+	committed []atomic.Int32 // Go uses address of the slice element as a pointer-receiver methods, so it operates in-place, not on a copy. Otherwise it would be a heap allocation.
+	capacity  int64
+	shift     uint8
 }
 
 func (this *multiSequencerBarrier) Load(lower int64) int64 {
 	upper := this.written.Load()
 
+	// walk up the slice when finding the next available slot
 	for mask := this.capacity - 1; lower <= upper; lower++ {
-		if this.committed[lower&mask] != int32(lower>>this.shift) {
+		if this.committed[lower&mask].Load() != int32(lower>>this.shift) {
 			return lower - 1
 		}
 	}
@@ -73,15 +85,15 @@ func (this *multiSequencerBarrier) Load(lower int64) int64 {
 
 type multiSequencerConfiguration struct {
 	written   atomicSequence
-	committed []int32
+	committed []atomic.Int32
 	capacity  int64
 	shift     uint8
 }
 
 func newMultiSequencerConfiguration(written atomicSequence, capacity uint32) *multiSequencerConfiguration {
-	committed := make([]int32, capacity)
+	committed := make([]atomic.Int32, capacity)
 	for i := range committed {
-		committed[i] = int32(defaultSequenceValue)
+		committed[i].Store(int32(defaultSequenceValue))
 	}
 
 	return &multiSequencerConfiguration{
