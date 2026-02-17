@@ -27,6 +27,7 @@ func New(options ...option) (Disruptor, error) {
 		sequencers:   []Sequencer{sequencer}, // TODO: multi
 	}, nil
 }
+
 func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
 	handledBarrier = writeBarrier
 	var listeners []ListenCloser

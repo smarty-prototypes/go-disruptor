@@ -17,6 +17,7 @@ type ListenCloser interface {
 	Listener
 	io.Closer
 }
+
 type Listener interface {
 	Listen()
 }
@@ -34,8 +35,8 @@ type Handler interface {
 
 // The Sequencer tracks the state of a given "writer" or producer to the ring buffer. It is the heart of the Disruptor
 // pattern. When a caller desires to push events to the ring buffer, the caller or product must first Reserve the
-// desired slots on the ring buffer using a Sequencer. Subsequent to obtaining a reservation on certain slots of the
-// ring buffer, the caller must write the any data to the reserved slots and then indicate the completion of the
+// desired slots on the ring buffer using a Sequencer. After obtaining a reservation on certain slots of the ring
+// buffer, the caller must write the any data to the reserved slots and then indicate the completion of the
 // operation(s) by calling Commit which makes those slots available to any downstream Handler instances which then
 // handle or otherwise consume events from the ring buffer on different goroutines.
 type Sequencer interface {
@@ -59,10 +60,8 @@ type Sequencer interface {
 }
 
 const (
-
 	// ErrReservationSize indicates that the reservation requested is nonsensical, e.g. lower > upper OR that the
 	// desired reservation size exceeds the capacity of the ring buffer altogether.
-
 	ErrReservationSize = -1
 	// ErrContextCanceled indicates that the reservation request failed because the provided context.Context has
 	// been canceled or otherwise timed out.

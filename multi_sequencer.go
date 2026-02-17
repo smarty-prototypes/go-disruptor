@@ -14,6 +14,7 @@ type multiSequencer struct {
 	capacity  int64
 	shift     uint8
 }
+
 type multiSequencerBarrier struct {
 	written   atomicSequence
 	committed []int32
@@ -44,6 +45,7 @@ func (this *multiSequencer) Reserve(ctx context.Context, count int64) int64 {
 		}
 	}
 }
+
 func (this *multiSequencer) Commit(lower, upper int64) {
 	for mask := this.capacity - 1; upper >= lower; {
 		this.committed[upper&mask] = int32(upper >> this.shift)
@@ -94,6 +96,7 @@ func (this *multiSequencerConfiguration) NewBarrier() *multiSequencerBarrier {
 		shift:     this.shift,
 	}
 }
+
 func (this *multiSequencerConfiguration) NewSequencer(upstream sequenceBarrier) Sequencer {
 	return &multiSequencer{
 		written:   this.written,
