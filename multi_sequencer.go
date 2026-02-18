@@ -26,13 +26,12 @@ func (this *multiSequencer) Reserve(count int64) int64 {
 	// this was at the cost of allowing Reserve to be canceled.
 	var (
 		upper = this.upper.Add(count) // claims the slot for the caller
-		lower = upper - count
 		wrap  = upper - capacity
 		gate  = this.gate.Load()
 	)
 
 	// fast path
-	if wrap <= gate && gate <= lower {
+	if wrap <= gate && gate <= upper-count {
 		return upper
 	}
 
