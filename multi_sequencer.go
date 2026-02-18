@@ -5,10 +5,11 @@ import (
 	"sync/atomic"
 )
 
+// TODO: add padding around fields to prevent false sharing with CPU cache lines
 type multiSequencer struct {
 	capacity  uint32          // 4B  — read every Reserve + Commit
 	shift     uint8           // 1B  — read every Commit
-	upper     atomicSequence  // 8B  — Load+CAS every Reserve
+	upper     atomicSequence  // 8B  — atomic Add every Reserve
 	gate      atomicSequence  // 8B  — read every Reserve (wrap check)
 	committed []atomic.Int32  // 24B — read every Commit (slice header)
 	upstream  sequenceBarrier // 16B — spin loop only

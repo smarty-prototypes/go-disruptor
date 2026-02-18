@@ -1,5 +1,6 @@
 package disruptor
 
+// TODO: add padding around fields to prevent false sharing with CPU cache lines
 type defaultSequencer struct {
 	capacity uint32          // 4B  — read every Reserve
 	upper    int64           // 8B  — read+write every Reserve
