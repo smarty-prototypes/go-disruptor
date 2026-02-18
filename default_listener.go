@@ -9,11 +9,11 @@ type defaultListener struct {
 	current   atomicSequence  // the configured handler has processed up to this sequence
 	committed sequenceBarrier // all sequencers (writers) have committed up to this sequence
 	upstream  sequenceBarrier // any other configured groups handlers prior to or upstream have processed up to this sequence
-	waiter    HandleWaitStrategy
+	waiter    WaitStrategy
 	handler   Handler
 }
 
-func newListener(current atomicSequence, committed, upstream sequenceBarrier, waiter HandleWaitStrategy, handler Handler) ListenCloser {
+func newListener(current atomicSequence, committed, upstream sequenceBarrier, waiter WaitStrategy, handler Handler) ListenCloser {
 	return &defaultListener{
 		state:     newAtomicInt64(stateRunning),
 		current:   current,

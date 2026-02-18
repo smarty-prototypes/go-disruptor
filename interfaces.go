@@ -21,12 +21,14 @@ type Listener interface {
 	Listen()
 }
 
-type HandleWaitStrategy interface {
+type WaitStrategy interface {
+	// Gate is invoked when we know that a Sequencer and corresponding producer is about to write data but that data has
+	// not yet been committed by the Sequencer to the underlying ring buffer.
 	Gate(int64)
+	// Idle is invoked when there are no slots with available messages.
 	Idle(int64)
-}
-type ReserveWaitStrategy interface {
-	Wait()
+	// Reserve is invoked by the Sequencer when there are no available slots in the underlying ring buffer.
+	Reserve()
 }
 
 type Handler interface {

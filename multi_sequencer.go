@@ -6,13 +6,13 @@ import (
 )
 
 type multiSequencer struct {
-	capacity  uint32              // 4B  — read every Reserve + Commit
-	shift     uint8               // 1B  — read every Commit
-	upper     atomicSequence      // 8B  — Load+CAS every Reserve
-	gate      atomicSequence      // 8B  — read every Reserve (wrap check)
-	committed []atomic.Int32      // 24B — read every Commit (slice header)
-	upstream  sequenceBarrier     // 16B — spin loop only
-	waiter    ReserveWaitStrategy // 16B — spin loop only
+	capacity  uint32          // 4B  — read every Reserve + Commit
+	shift     uint8           // 1B  — read every Commit
+	upper     atomicSequence  // 8B  — Load+CAS every Reserve
+	gate      atomicSequence  // 8B  — read every Reserve (wrap check)
+	committed []atomic.Int32  // 24B — read every Commit (slice header)
+	upstream  sequenceBarrier // 16B — spin loop only
+	waiter    WaitStrategy    // 16B — spin loop only
 }
 
 func (this *multiSequencer) Reserve(count int64) int64 {
@@ -37,7 +37,7 @@ func (this *multiSequencer) Reserve(count int64) int64 {
 
 	// slow path
 	for gate = this.upstream.Load(0); wrap > gate; gate = this.upstream.Load(0) {
-		this.waiter.Wait()
+		this.waiter.Reserve()
 	}
 
 	this.gate.Store(gate)
@@ -104,7 +104,7 @@ func (this *multiSequencerConfiguration) NewBarrier() *multiSequencerBarrier {
 	}
 }
 
-func (this *multiSequencerConfiguration) NewSequencer(upstream sequenceBarrier, waiting ReserveWaitStrategy) Sequencer {
+func (this *multiSequencerConfiguration) NewSequencer(upstream sequenceBarrier, waiting WaitStrategy) Sequencer {
 	return &multiSequencer{
 		upper:     this.written,
 		gate:      newSequence(),

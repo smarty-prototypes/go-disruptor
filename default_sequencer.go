@@ -1,15 +1,15 @@
 package disruptor
 
 type defaultSequencer struct {
-	capacity uint32              // 4B  — read every Reserve
-	upper    int64               // 8B  — read+write every Reserve
-	gate     int64               // 8B  — read every Reserve (wrap check)
-	written  atomicSequence      // 8B  — ring has been written up to this sequence
-	upstream sequenceBarrier     // 16B — all readers have advanced up to this sequence
-	waiter   ReserveWaitStrategy // 16B — spin loop only
+	capacity uint32          // 4B  — read every Reserve
+	upper    int64           // 8B  — read+write every Reserve
+	gate     int64           // 8B  — read every Reserve (wrap check)
+	written  atomicSequence  // 8B  — ring has been written up to this sequence
+	upstream sequenceBarrier // 16B — all readers have advanced up to this sequence
+	waiter   WaitStrategy    // 16B — spin loop only
 }
 
-func newSequencer(capacity int64, written atomicSequence, upstream sequenceBarrier, waiter ReserveWaitStrategy) Sequencer {
+func newSequencer(capacity int64, written atomicSequence, upstream sequenceBarrier, waiter WaitStrategy) Sequencer {
 	return &defaultSequencer{
 		capacity: uint32(capacity),
 		upper:    defaultSequenceValue,
@@ -36,7 +36,7 @@ func (this *defaultSequencer) Reserve(count int64) int64 {
 
 	// slow path
 	for this.gate = this.upstream.Load(0); wrap > this.gate; this.gate = this.upstream.Load(0) {
-		this.waiter.Wait()
+		this.waiter.Reserve()
 	}
 
 	return this.upper
