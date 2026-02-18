@@ -71,7 +71,7 @@ func benchmarkNonBlocking(b *testing.B, writers int64) {
 		select {
 		case msg := <-channel:
 			if writers == 1 && msg != i {
-				// panic("Out of sequence")
+				panic("out of sequence")
 			}
 		default:
 			continue
