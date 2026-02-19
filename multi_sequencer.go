@@ -7,17 +7,27 @@ import (
 
 // TODO: add padding around fields to prevent false sharing with CPU cache lines
 type multiSequencer struct {
-	capacity  uint32          // 4B  — read every Reserve + Commit
-	shift     uint8           // 1B  — read every Commit
 	upper     atomicSequence  // 8B  — atomic Add every Reserve
 	gate      atomicSequence  // 8B  — read every Reserve (wrap check)
-	committed []atomic.Int32  // 24B — read every Commit (slice header)
+	committed []atomic.Int32  // 24B — read every Reserve + Commit (slice header; len is capacity)
 	upstream  sequenceBarrier // 16B — spin loop only
 	waiter    WaitStrategy    // 16B — spin loop only
+	shift     uint8           // 1B  — read every Commit
+}                                 // 80B total (73B + 7B tail padding) — spans two 64B cache lines
+
+func newMultiSequencer(upper atomicSequence, committed []atomic.Int32, shift uint8, upstream sequenceBarrier, waiter WaitStrategy) *multiSequencer {
+	return &multiSequencer{
+		upper:     upper,
+		gate:      newSequence(),
+		shift:     shift,
+		committed: committed,
+		upstream:  upstream,
+		waiter:    waiter,
+	}
 }
 
 func (this *multiSequencer) Reserve(count int64) int64 {
-	capacity := int64(this.capacity)
+	capacity := int64(len(this.committed))
 	if count <= 0 || count > capacity {
 		return ErrReservationSize
 	}
@@ -45,7 +55,7 @@ func (this *multiSequencer) Reserve(count int64) int64 {
 }
 
 func (this *multiSequencer) Commit(lower, upper int64) {
-	for mask := int64(this.capacity) - 1; lower <= upper; lower++ {
+	for mask := int64(len(this.committed)) - 1; lower <= upper; lower++ {
 		this.committed[lower&mask].Store(int32(lower >> this.shift))
 	}
 }
@@ -53,17 +63,19 @@ func (this *multiSequencer) Commit(lower, upper int64) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type multiSequencerBarrier struct {
-	written   atomicSequence
-	committed []atomic.Int32 // Go uses address of the slice element as a pointer-receiver methods, so it operates in-place, not on a copy. Otherwise it would be a heap allocation.
-	capacity  int64
-	shift     uint8
+	committed []atomic.Int32  // 24B — walked every Load (loop body; len is capacity)
+	written   atomicSequence  // 8B  — read once per Load (upper bound)
+	shift     uint8           // 1B  — read every Load (shift computation)
+}                                 // 33B total — fits in a single 64B cache line, no padding
+
+func newMultiSequencerBarrier(written atomicSequence, committed []atomic.Int32, shift uint8) *multiSequencerBarrier {
+	return &multiSequencerBarrier{written: written, committed: committed, shift: shift}
 }
 
 func (this *multiSequencerBarrier) Load(lower int64) int64 {
 	upper := this.written.Load()
 
-	// walk up the slice when finding the next available slot
-	for mask := this.capacity - 1; lower <= upper; lower++ {
+	for mask := int64(len(this.committed)) - 1; lower <= upper; lower++ {
 		if this.committed[lower&mask].Load() != int32(lower>>this.shift) {
 			return lower - 1
 		}
@@ -74,44 +86,10 @@ func (this *multiSequencerBarrier) Load(lower int64) int64 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type multiSequencerConfiguration struct {
-	written   atomicSequence
-	committed []atomic.Int32
-	capacity  int64
-	shift     uint8
-}
-
-func newMultiSequencerConfiguration(written atomicSequence, capacity uint32) *multiSequencerConfiguration {
+func newCommittedBuffer(capacity uint32) ([]atomic.Int32, uint8) {
 	committed := make([]atomic.Int32, capacity)
 	for i := range committed {
 		committed[i].Store(int32(defaultSequenceValue))
 	}
-
-	return &multiSequencerConfiguration{
-		written:   written,
-		committed: committed,
-		capacity:  int64(capacity),
-		shift:     uint8(math.Log2(float64(capacity))),
-	}
-}
-
-func (this *multiSequencerConfiguration) NewBarrier() *multiSequencerBarrier {
-	return &multiSequencerBarrier{
-		written:   this.written,
-		committed: this.committed,
-		capacity:  this.capacity,
-		shift:     this.shift,
-	}
-}
-
-func (this *multiSequencerConfiguration) NewSequencer(upstream sequenceBarrier, waiting WaitStrategy) Sequencer {
-	return &multiSequencer{
-		upper:     this.written,
-		gate:      newSequence(),
-		capacity:  uint32(this.capacity),
-		shift:     this.shift,
-		committed: this.committed,
-		upstream:  upstream,
-		waiter:    waiting,
-	}
+	return committed, uint8(math.Log2(float64(capacity)))
 }
