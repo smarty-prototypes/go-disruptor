@@ -65,7 +65,7 @@ type multiSequencerBarrier struct {
 	committed []atomic.Int32  // 24B — walked every Load (loop body; len is capacity)
 	written   *atomicSequence // 8B  — read once per Load (upper bound)
 	shift     uint8           // 1B  — read every Load (shift computation)
-}                                 // 33B total — fits in a single 64B cache line, no padding
+}                                 // 40B total (33B + 7B tail padding) — fits in a single 64B cache line
 
 func newMultiSequencerBarrier(written *atomicSequence, committed []atomic.Int32, shift uint8) *multiSequencerBarrier {
 	return &multiSequencerBarrier{written: written, committed: committed, shift: shift}
