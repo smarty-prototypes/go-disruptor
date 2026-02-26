@@ -9,7 +9,7 @@ func BenchmarkChannelBlockingOneGoroutine(b *testing.B) {
 	benchmarkBlocking(b, 1)
 }
 func BenchmarkChannelBlockingTwoGoroutines(b *testing.B) {
-	benchmarkBlocking(b, 1)
+	benchmarkBlocking(b, 2)
 }
 func BenchmarkChannelBlockingThreeGoroutinesWithContendedWrite(b *testing.B) {
 	benchmarkBlocking(b, 2)
@@ -41,7 +41,7 @@ func BenchmarkChannelNonBlockingOneGoroutine(b *testing.B) {
 	benchmarkNonBlocking(b, 1)
 }
 func BenchmarkChannelNonBlockingTwoGoroutines(b *testing.B) {
-	benchmarkNonBlocking(b, 1)
+	benchmarkNonBlocking(b, 2)
 }
 func BenchmarkChannelNonBlockingThreeGoroutinesWithContendedWrite(b *testing.B) {
 	benchmarkNonBlocking(b, 2)
@@ -191,7 +191,7 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 			for i := sequence - (count - 1); i <= sequence; i++ {
 				ringBuffer[i&ringBufferMask] = i
 			}
-			writer.Commit(sequence, sequence)
+			writer.Commit(sequence-(count-1), sequence)
 		}
 
 		_ = simpleDisruptor.Close()
