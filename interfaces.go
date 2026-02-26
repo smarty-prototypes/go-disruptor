@@ -71,15 +71,19 @@ const (
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type atomicSequence = *atomic.Int64
+type atomicSequence struct {
+	_ [7]int64 // 56B left padding
+	atomic.Int64
+	_ [7]int64 // 56B right padding
+}
 
 type sequenceBarrier interface {
 	Load(int64) int64
 }
 
-type atomicBarrier struct{ sequence atomicSequence }
+type atomicBarrier struct{ sequence *atomicSequence }
 
-func newAtomicBarrier(sequence atomicSequence) *atomicBarrier {
+func newAtomicBarrier(sequence *atomicSequence) *atomicBarrier {
 	return &atomicBarrier{sequence: sequence}
 }
 func (this *atomicBarrier) Load(_ int64) int64 { return this.sequence.Load() }

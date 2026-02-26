@@ -5,17 +5,16 @@ import (
 	"sync/atomic"
 )
 
-// TODO: add padding around fields to prevent false sharing with CPU cache lines
 type multiSequencer struct {
-	upper     atomicSequence  // 8B  — atomic Add every Reserve
-	gate      atomicSequence  // 8B  — read every Reserve (wrap check)
+	upper     *atomicSequence // 8B  — atomic Add every Reserve
+	gate      *atomicSequence // 8B  — read every Reserve (wrap check)
 	committed []atomic.Int32  // 24B — read every Reserve + Commit (slice header; len is capacity)
 	upstream  sequenceBarrier // 16B — spin loop only
 	waiter    WaitStrategy    // 16B — spin loop only
 	shift     uint8           // 1B  — read every Commit
 }                                 // 80B total (73B + 7B tail padding) — spans two 64B cache lines
 
-func newMultiSequencer(upper atomicSequence, committed []atomic.Int32, shift uint8, upstream sequenceBarrier, waiter WaitStrategy) *multiSequencer {
+func newMultiSequencer(upper *atomicSequence, committed []atomic.Int32, shift uint8, upstream sequenceBarrier, waiter WaitStrategy) *multiSequencer {
 	return &multiSequencer{
 		upper:     upper,
 		gate:      newSequence(),
@@ -64,11 +63,11 @@ func (this *multiSequencer) Commit(lower, upper int64) {
 
 type multiSequencerBarrier struct {
 	committed []atomic.Int32  // 24B — walked every Load (loop body; len is capacity)
-	written   atomicSequence  // 8B  — read once per Load (upper bound)
+	written   *atomicSequence // 8B  — read once per Load (upper bound)
 	shift     uint8           // 1B  — read every Load (shift computation)
 }                                 // 33B total — fits in a single 64B cache line, no padding
 
-func newMultiSequencerBarrier(written atomicSequence, committed []atomic.Int32, shift uint8) *multiSequencerBarrier {
+func newMultiSequencerBarrier(written *atomicSequence, committed []atomic.Int32, shift uint8) *multiSequencerBarrier {
 	return &multiSequencerBarrier{written: written, committed: committed, shift: shift}
 }
 

@@ -3,7 +3,6 @@ package disruptor
 import (
 	"errors"
 	"runtime"
-	"sync/atomic"
 	"time"
 )
 
@@ -50,7 +49,7 @@ func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener L
 
 	for _, handlers := range this.HandlerGroups {
 		group := make([]ListenCloser, 0, len(handlers))
-		sequences := make([]atomicSequence, 0, len(handlers))
+		sequences := make([]*atomicSequence, 0, len(handlers))
 		for _, handler := range handlers {
 			currentSequence := newSequence()
 			sequences = append(sequences, currentSequence)
@@ -132,10 +131,9 @@ func (this defaultWaitStrategy) Reserve()   { runtime.Gosched() } // LockSupport
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func newSequence() atomicSequence { return newAtomicInt64(defaultSequenceValue) }
-func newAtomicInt64(initialState int64) atomicSequence {
-	this := &atomic.Int64{}
-	this.Store(initialState)
+func newSequence() *atomicSequence {
+	this := &atomicSequence{}
+	this.Store(defaultSequenceValue)
 	return this
 }
 

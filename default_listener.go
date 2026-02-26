@@ -6,16 +6,16 @@ import "sync/atomic"
 // associated ring buffer have been read, processed, or handled in some manner.
 type defaultListener struct {
 	state     *atomic.Int64
-	current   atomicSequence  // the configured handler has processed up to this sequence
+	current   *atomicSequence // the configured handler has processed up to this sequence
 	committed sequenceBarrier // all sequencers (writers) have committed up to this sequence
 	upstream  sequenceBarrier // any other configured groups handlers prior to or upstream have processed up to this sequence
 	waiter    WaitStrategy
 	handler   Handler
 }
 
-func newListener(current atomicSequence, committed, upstream sequenceBarrier, waiter WaitStrategy, handler Handler) ListenCloser {
+func newListener(current *atomicSequence, committed, upstream sequenceBarrier, waiter WaitStrategy, handler Handler) ListenCloser {
 	return &defaultListener{
-		state:     newAtomicInt64(stateRunning),
+		state:     &atomic.Int64{},
 		current:   current,
 		committed: committed,
 		upstream:  upstream,
