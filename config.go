@@ -45,18 +45,25 @@ func newMultiWriterDisruptor(config configuration) (*defaultDisruptor, error) {
 }
 func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
 	handledBarrier = writeBarrier
-	var listeners []ListenCloser
 
+	totalSequences := 0
 	for _, handlers := range this.HandlerGroups {
-		group := make([]ListenCloser, 0, len(handlers))
-		sequences := make([]*atomicSequence, 0, len(handlers))
-		for _, handler := range handlers {
-			currentSequence := newSequence()
-			sequences = append(sequences, currentSequence)
-			group = append(group, newListener(currentSequence, writeBarrier, handledBarrier, this.WaitStrategy, handler))
+		totalSequences += len(handlers)
+	}
+	allSequences := newSequences(totalSequences)
+
+	listeners := make([]ListenCloser, len(this.HandlerGroups))
+	offset := 0
+	for groupIndex, handlers := range this.HandlerGroups {
+		sequences := make([]*atomicSequence, len(handlers))
+		group := make([]ListenCloser, len(handlers))
+		for handlerIndex, handler := range handlers {
+			sequences[handlerIndex] = &allSequences[offset+handlerIndex]
+			group[handlerIndex] = newListener(sequences[handlerIndex], writeBarrier, handledBarrier, this.WaitStrategy, handler)
 		}
-		handledBarrier = newCompositeBarrier(sequences...) // next batch cannot handle beyond the sequences the current batch have handled.
-		listeners = append(listeners, newCompositeListener(group))
+		handledBarrier = newCompositeBarrier(sequences...) // next group cannot handle beyond the sequences the current group have handled.
+		listeners[groupIndex] = newCompositeListener(group)
+		offset += len(handlers)
 	}
 
 	return newCompositeListener(listeners), handledBarrier
@@ -135,6 +142,15 @@ func newSequence() *atomicSequence {
 	this := &atomicSequence{}
 	this.Store(defaultSequenceValue)
 	return this
+}
+
+// newSequences allocates a slice of *atomicSequence in a contiguous space in memory
+func newSequences(count int) []atomicSequence {
+	sequences := make([]atomicSequence, count)
+	for i := range sequences {
+		sequences[i].Store(defaultSequenceValue)
+	}
+	return sequences
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
