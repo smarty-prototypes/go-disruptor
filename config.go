@@ -19,16 +19,31 @@ func New(options ...option) (Disruptor, error) {
 		return nil, errors.New("no handlers have been provided")
 	}
 
+	if config.SequencerCount > 1 {
+		return newMultiWriterDisruptor(config)
+	}
+
+	return newSingleWriterDisruptor(config)
+}
+func newSingleWriterDisruptor(config configuration) (*defaultDisruptor, error) {
 	committedSequence := newSequence()
 	listener, handledBarrier := config.newListeners(newAtomicBarrier(committedSequence))
-	sequencer := newSequencer(config.BufferCapacity, committedSequence, handledBarrier, config.WaitStrategy) // TODO: multi
-
-	return &defaultDisruptor{
-		ListenCloser: listener,
-		sequencers:   []Sequencer{sequencer}, // TODO: multi
-	}, nil
+	sequencer := newSequencer(config.BufferCapacity, committedSequence, handledBarrier, config.WaitStrategy)
+	return &defaultDisruptor{ListenCloser: listener, sequencers: []Sequencer{sequencer}}, nil
 }
+func newMultiWriterDisruptor(config configuration) (*defaultDisruptor, error) {
+	committed, shift := newCommittedBuffer(uint32(config.BufferCapacity))
+	upper := newSequence()
+	writeBarrier := newMultiSequencerBarrier(upper, committed, shift)
+	listener, handledBarrier := config.newListeners(writeBarrier)
 
+	sequencers := make([]Sequencer, config.SequencerCount)
+	for i := range sequencers {
+		sequencers[i] = newMultiSequencer(upper, committed, shift, handledBarrier, config.WaitStrategy)
+	}
+
+	return &defaultDisruptor{ListenCloser: listener, sequencers: sequencers}, nil
+}
 func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
 	handledBarrier = writeBarrier
 	var listeners []ListenCloser
