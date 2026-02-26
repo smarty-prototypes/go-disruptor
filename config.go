@@ -58,7 +58,7 @@ func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener L
 		sequences := make([]*atomicSequence, len(handlers))
 		group := make([]ListenCloser, len(handlers))
 		for handlerIndex, handler := range handlers {
-			sequences[handlerIndex] = &allSequences[offset+handlerIndex]
+			sequences[handlerIndex] = allSequences[offset+handlerIndex]
 			group[handlerIndex] = newListener(sequences[handlerIndex], writeBarrier, handledBarrier, this.WaitStrategy, handler)
 		}
 		handledBarrier = newCompositeBarrier(sequences...) // next group cannot handle beyond the sequences the current group have handled.
@@ -145,10 +145,10 @@ func newSequence() *atomicSequence {
 }
 
 // newSequences allocates a slice of *atomicSequence in a contiguous space in memory
-func newSequences(count int) []atomicSequence {
-	sequences := make([]atomicSequence, count)
+func newSequences(count int) []*atomicSequence {
+	sequences := make([]*atomicSequence, count)
 	for i := range sequences {
-		sequences[i].Store(defaultSequenceValue)
+		sequences[i] = newSequence()
 	}
 	return sequences
 }
