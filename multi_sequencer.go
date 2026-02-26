@@ -32,7 +32,7 @@ func (this *multiSequencer) Reserve(count int64) int64 {
 	}
 
 	// using atomic Add because it scales even with contention compared to CAS
-	// this was at the cost of allowing Reserve to be canceled.
+	// this was at the cost of NOT allowing Reserve to be canceled.
 	var (
 		upper = this.upper.Add(count) // claims the slot for the caller
 		wrap  = upper - capacity
