@@ -23,8 +23,9 @@ type sharedSequencer struct {
 func newSharedSequencer(capacity uint32, upper *atomicSequence, waiter WaitStrategy) *sharedSequencer {
 	committed := make([]atomic.Int32, capacity)
 	for i := range committed {
-		committed[i].Store(int32(defaultSequenceValue))
+		committed[i].Store(defaultSequenceValue)
 	}
+
 	return &sharedSequencer{
 		written:   upper,
 		gate:      newSequence(),
@@ -40,25 +41,24 @@ func (this *sharedSequencer) Reserve(count int64) int64 {
 		return ErrReservationSize
 	}
 
-	// using atomic Add because it scales even with contention compared to CAS
-	// this was at the cost of NOT allowing Reserve to be canceled.
 	var (
-		upper = this.written.Add(count) // claims the slot for the caller
-		wrap  = upper - capacity
-		gate  = this.gate.Load()
+		upper      = this.written.Add(count) // claims the slot for the caller (not using CAS operation)
+		lower      = upper - count
+		wrap       = upper - capacity
+		cachedGate = this.gate.Load()
 	)
 
 	// fast path
-	if wrap <= gate && gate <= upper-count {
+	if wrap <= cachedGate && cachedGate <= lower {
 		return upper
 	}
 
 	// slow path
-	for gate = this.upstream.Load(0); wrap > gate; gate = this.upstream.Load(0) {
+	for cachedGate = this.upstream.Load(0); wrap > cachedGate; cachedGate = this.upstream.Load(0) {
 		this.waiter.Reserve()
 	}
 
-	this.gate.Store(gate)
+	this.gate.Store(cachedGate)
 	return upper
 }
 
@@ -73,21 +73,24 @@ func (this *sharedSequencer) TryReserve(ctx context.Context, count int64) int64 
 
 		if this.hasAvailableCapacity(lower, count) && this.written.CompareAndSwap(lower, upper) {
 			return upper // successfully claimed slot
-		}
-
-		if this.waiter.TryReserve(ctx) != nil {
+		} else if this.waiter.TryReserve(ctx) != nil {
 			return ErrContextCanceled
 		}
 	}
 }
 func (this *sharedSequencer) hasAvailableCapacity(lower, count int64) bool {
-	upper := lower + count
-	wrap := upper - int64(len(this.committed))
-	cachedGate := this.gate.Load()
+	var (
+		upper      = lower + count
+		wrap       = upper - int64(len(this.committed))
+		cachedGate = this.gate.Load()
+	)
+
+	// fast path
 	if wrap <= cachedGate && cachedGate <= lower {
 		return true
 	}
 
+	// slow path
 	gate := this.upstream.Load(0)
 	this.gate.Store(gate)
 	return wrap <= gate
