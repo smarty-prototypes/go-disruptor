@@ -176,7 +176,7 @@ func BenchmarkSingleWriterReserveOneMultipleConsumers(b *testing.B) {
 func BenchmarkSingleWriterReserveManyMultipleConsumers(b *testing.B) {
 	benchmarkSequencerReservations(b, reserveMany, simpleHandler{}, simpleHandler{})
 }
-func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Handler) {
+func benchmarkSequencerReservations(b *testing.B, count uint32, consumers ...Handler) {
 	iterations := int64(b.N)
 
 	simpleDisruptor := newSimpleDisruptor(false, consumers...)
@@ -186,12 +186,13 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 		b.ResetTimer()
 
 		var sequence int64 = -1
+		slots := int64(count)
 		for sequence < iterations {
 			sequence = simpleDisruptor.Reserve(count)
-			for i := sequence - (count - 1); i <= sequence; i++ {
+			for i := sequence - (slots - 1); i <= sequence; i++ {
 				ringBuffer[i&ringBufferMask] = i
 			}
-			simpleDisruptor.Commit(sequence-(count-1), sequence)
+			simpleDisruptor.Commit(sequence-(slots-1), sequence)
 		}
 
 		_ = simpleDisruptor.Close()
@@ -218,7 +219,7 @@ func BenchmarkSharedWriterReserveManyMultipleConsumers(b *testing.B) {
 func BenchmarkSharedWriterReserveManyMultipleConsumers_ThreeWriters(b *testing.B) {
 	benchmarkSharedSequencerReservations(b, reserveMany, 3, simpleHandler{}, simpleHandler{})
 }
-func benchmarkSharedSequencerReservations(b *testing.B, count, writerCount int64, consumers ...Handler) {
+func benchmarkSharedSequencerReservations(b *testing.B, count uint32, writerCount int64, consumers ...Handler) {
 	iterations := int64(b.N)
 
 	sharedDisruptor := newSimpleDisruptor(true, consumers...)
@@ -230,16 +231,17 @@ func benchmarkSharedSequencerReservations(b *testing.B, count, writerCount int64
 		var waiter sync.WaitGroup
 		waiter.Add(int(writerCount))
 
+		slots := int64(count)
 		for writerIndex := int64(0); writerIndex < writerCount; writerIndex++ {
 			go func() {
 				defer waiter.Done()
 				var sequence int64 = -1
 				for sequence < iterations {
 					sequence = sharedDisruptor.Reserve(count)
-					for i := sequence - (count - 1); i <= sequence; i++ {
+					for i := sequence - (slots - 1); i <= sequence; i++ {
 						ringBuffer[i&ringBufferMask] = i
 					}
-					sharedDisruptor.Commit(sequence-(count-1), sequence)
+					sharedDisruptor.Commit(sequence-(slots-1), sequence)
 				}
 			}()
 		}

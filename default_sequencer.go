@@ -23,16 +23,16 @@ func newSequencer(capacity uint32, written *atomicSequence, upstream sequenceBar
 	}
 }
 
-func (this *defaultSequencer) Reserve(count int64) int64 {
-	capacity := int64(this.capacity)
-	if count <= 0 || count > capacity {
+func (this *defaultSequencer) Reserve(count uint32) int64 {
+	if count == 0 || count > this.capacity {
 		return ErrReservationSize
 	}
 
 	// fast path
+	slots := int64(count)
 	lower := this.upper
-	this.upper += count
-	wrap := this.upper - capacity
+	this.upper += slots
+	wrap := this.upper - int64(this.capacity)
 	if wrap <= this.gate && this.gate <= lower {
 		return this.upper
 	}
@@ -44,16 +44,16 @@ func (this *defaultSequencer) Reserve(count int64) int64 {
 
 	return this.upper
 }
-func (this *defaultSequencer) TryReserve(ctx context.Context, count int64) int64 {
-	capacity := int64(this.capacity)
-	if count <= 0 || count > capacity {
+func (this *defaultSequencer) TryReserve(ctx context.Context, count uint32) int64 {
+	if count == 0 || count > this.capacity {
 		return ErrReservationSize
 	}
 
 	// fast path
+	slots := int64(count)
 	lower := this.upper
-	this.upper += count
-	wrap := this.upper - capacity
+	this.upper += slots
+	wrap := this.upper - int64(this.capacity)
 	if wrap <= this.gate && this.gate <= lower {
 		return this.upper
 	}
@@ -61,7 +61,7 @@ func (this *defaultSequencer) TryReserve(ctx context.Context, count int64) int64
 	// slow path — check context every spinMask+1 iterations
 	for spin := int64(0); wrap > this.gate; spin++ {
 		if spin&spinMask == 0 && this.waiter.TryReserve(ctx) != nil {
-			this.upper -= count // undo reservation (safe for single writer)
+			this.upper -= slots // undo reservation (safe for single writer)
 			return ErrContextCanceled
 		}
 

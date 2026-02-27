@@ -37,14 +37,15 @@ func newSharedSequencer(capacity uint32, upper *atomicSequence, waiter WaitStrat
 	}
 }
 
-func (this *sharedSequencer) Reserve(count int64) int64 {
-	if count <= 0 || count > int64(this.capacity) {
+func (this *sharedSequencer) Reserve(count uint32) int64 {
+	if count == 0 || count > this.capacity {
 		return ErrReservationSize
 	}
 
 	var (
-		upper      = this.written.Add(count) // claims the slot for the caller (not using CAS operation)
-		lower      = upper - count
+		slots      = int64(count)
+		upper      = this.written.Add(slots) // claims the slot for the caller (not using CAS operation)
+		lower      = upper - slots
 		wrap       = upper - int64(this.capacity)
 		cachedGate = this.gate.Load()
 	)
@@ -63,16 +64,17 @@ func (this *sharedSequencer) Reserve(count int64) int64 {
 	return upper
 }
 
-func (this *sharedSequencer) TryReserve(ctx context.Context, count int64) int64 {
-	if count <= 0 || count > int64(this.capacity) {
+func (this *sharedSequencer) TryReserve(ctx context.Context, count uint32) int64 {
+	if count == 0 || count > this.capacity {
 		return ErrReservationSize
 	}
 
+	slots := int64(count)
 	for {
 		lower := this.written.Load()
-		upper := lower + count
+		upper := lower + slots
 
-		if this.hasAvailableCapacity(lower, count) && this.written.CompareAndSwap(lower, upper) {
+		if this.hasAvailableCapacity(lower, slots) && this.written.CompareAndSwap(lower, upper) {
 			return upper // successfully claimed slot
 		} else if this.waiter.TryReserve(ctx) != nil {
 			return ErrContextCanceled

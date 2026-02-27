@@ -57,7 +57,7 @@ type Sequencer interface {
 	// ErrReservationSize is returned.
 	//
 	// Each successful call to Reserve should *always* be followed by a single call to Commit.
-	Reserve(slots int64) (upperSequence int64)
+	Reserve(slots uint32) (upperSequence int64)
 
 	// TryReserve behaves like Reserve but can be canceled via the provided context.Context. If the context is
 	// canceled before the slots can be successfully claimed, ErrContextCanceled is returned. For the shared
@@ -65,7 +65,7 @@ type Sequencer interface {
 	// cancellation.
 	//
 	// Each successful call to TryReserve should *always* be followed by a single call to Commit.
-	TryReserve(ctx context.Context, slots int64) (upperSequence int64)
+	TryReserve(ctx context.Context, slots uint32) (upperSequence int64)
 
 	// Commit indicates to the sequencer that the previously claimed slots in the ring buffer have been written to
 	// successfully and to make the data available to any configured Handler instances to process.
