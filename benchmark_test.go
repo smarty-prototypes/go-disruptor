@@ -2,6 +2,7 @@ package disruptor
 
 import (
 	"log"
+	"sync"
 	"testing"
 )
 
@@ -178,7 +179,7 @@ func BenchmarkSingleWriterReserveManyMultipleConsumers(b *testing.B) {
 func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Handler) {
 	iterations := int64(b.N)
 
-	simpleDisruptor := newSimpleDisruptor(consumers...)
+	simpleDisruptor := newSimpleDisruptor(false, consumers...)
 
 	go func() {
 		b.ReportAllocs()
@@ -199,6 +200,56 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 	simpleDisruptor.Listen()
 }
 
+func _BenchmarkSharedWriterReserveOneSingleConsumer(b *testing.B) {
+	benchmarkSharedSequencerReservations(b, reserveOne, 2, simpleHandler{})
+}
+func _BenchmarkSharedWriterReserveManySingleConsumer(b *testing.B) {
+	benchmarkSharedSequencerReservations(b, reserveMany, 2, simpleHandler{})
+}
+
+func _BenchmarkSharedWriterReserveOneMultipleConsumers(b *testing.B) {
+	benchmarkSharedSequencerReservations(b, reserveOne, 2, simpleHandler{}, simpleHandler{})
+}
+
+func _BenchmarkSharedWriterReserveManyMultipleConsumers(b *testing.B) {
+	benchmarkSharedSequencerReservations(b, reserveMany, 2, simpleHandler{}, simpleHandler{})
+}
+
+func _BenchmarkSharedWriterReserveManyMultipleConsumers_ThreeWriters(b *testing.B) {
+	benchmarkSharedSequencerReservations(b, reserveMany, 3, simpleHandler{}, simpleHandler{})
+}
+func benchmarkSharedSequencerReservations(b *testing.B, writerCount, count int64, consumers ...Handler) {
+	iterations := int64(b.N)
+
+	sharedDisruptor := newSimpleDisruptor(true, consumers...)
+
+	go func() {
+		b.ReportAllocs()
+		b.ResetTimer()
+
+		var waiter sync.WaitGroup
+		waiter.Add(2)
+
+		for writerIndex := int64(0); writerIndex < writerCount; writerIndex++ {
+			go func() {
+				defer waiter.Done()
+				var sequence int64 = -1
+				for sequence < iterations {
+					sequence = sharedDisruptor.Reserve(count)
+					for i := sequence - (count - 1); i <= sequence; i++ {
+						ringBuffer[i&ringBufferMask] = i
+					}
+					sharedDisruptor.Commit(sequence-(count-1), sequence)
+				}
+			}()
+		}
+		waiter.Wait()
+		_ = sharedDisruptor.Close()
+	}()
+
+	sharedDisruptor.Listen()
+}
+
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type simpleHandler struct{}
@@ -213,9 +264,10 @@ func (this simpleHandler) Handle(lower, upper int64) {
 		lower++
 	}
 }
-func newSimpleDisruptor(consumers ...Handler) Disruptor {
+func newSimpleDisruptor(shared bool, consumers ...Handler) Disruptor {
 	this, _ := New(
 		Options.BufferCapacity(ringBufferSize),
+		Options.SingleWriter(!shared),
 		Options.NewHandlerGroup(consumers...))
 	return this
 }
