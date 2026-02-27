@@ -1,6 +1,7 @@
 package disruptor
 
 import (
+	"context"
 	"errors"
 	"runtime"
 	"time"
@@ -62,7 +63,7 @@ type configuration struct {
 	BufferCapacity int64
 	SingleWriter   bool
 	WaitStrategy   WaitStrategy
-	HandlerGroups   [][]Handler
+	HandlerGroups  [][]Handler
 }
 
 func (singleton) BufferCapacity(value uint32) option {
@@ -120,6 +121,10 @@ type defaultWaitStrategy struct{}
 func (this defaultWaitStrategy) Gate(int64) { time.Sleep(time.Nanosecond) }
 func (this defaultWaitStrategy) Idle(int64) { time.Sleep(time.Millisecond) }
 func (this defaultWaitStrategy) Reserve()   { runtime.Gosched() } // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+func (this defaultWaitStrategy) TryReserve(ctx context.Context) error {
+	runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+	return ctx.Err()
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

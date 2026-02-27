@@ -1,5 +1,7 @@
 package disruptor
 
+import "context"
+
 type defaultSequencer struct {
 	capacity uint32          // 4B  — read every Reserve
 	_        [4]byte         // 4B  — explicit alignment padding
@@ -8,7 +10,7 @@ type defaultSequencer struct {
 	written  *atomicSequence // 8B  — ring has been written up to this sequence
 	upstream sequenceBarrier // 16B — all readers have advanced up to this sequence
 	waiter   WaitStrategy    // 16B — spin loop only
-}                            // 64B total — fills a single 64B cache line
+} // 64B total — fills a single 64B cache line
 
 func newSequencer(capacity int64, written *atomicSequence, upstream sequenceBarrier, waiter WaitStrategy) Sequencer {
 	return &defaultSequencer{
@@ -38,6 +40,32 @@ func (this *defaultSequencer) Reserve(count int64) int64 {
 	// slow path
 	for this.gate = this.upstream.Load(0); wrap > this.gate; this.gate = this.upstream.Load(0) {
 		this.waiter.Reserve()
+	}
+
+	return this.upper
+}
+func (this *defaultSequencer) TryReserve(ctx context.Context, count int64) int64 {
+	capacity := int64(this.capacity)
+	if count <= 0 || count > capacity {
+		return ErrReservationSize
+	}
+
+	// fast path
+	lower := this.upper
+	this.upper += count
+	wrap := this.upper - capacity
+	if wrap <= this.gate && this.gate <= lower {
+		return this.upper
+	}
+
+	// slow path — check context every spinMask+1 iterations
+	for spin := int64(0); wrap > this.gate; spin++ {
+		if spin&spinMask == 0 && this.waiter.TryReserve(ctx) != nil {
+			this.upper -= count // undo reservation (safe for single writer)
+			return ErrContextCanceled
+		}
+
+		this.gate = this.upstream.Load(0)
 	}
 
 	return this.upper

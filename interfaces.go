@@ -1,6 +1,7 @@
 package disruptor
 
 import (
+	"context"
 	"io"
 	"sync/atomic"
 )
@@ -29,6 +30,8 @@ type WaitStrategy interface {
 	Idle(int64)
 	// Reserve is invoked by the Sequencer when there are no available slots in the underlying ring buffer.
 	Reserve()
+	// TryReserve is invoked by the Sequencer when there are no available slots in the underlying ring buffer.
+	TryReserve(context.Context) error
 }
 
 type Handler interface {
@@ -56,6 +59,14 @@ type Sequencer interface {
 	// Each successful call to Reserve should *always* be followed by a single call to Commit.
 	Reserve(slots int64) (upperSequence int64)
 
+	// TryReserve behaves like Reserve but can be canceled via the provided context.Context. If the context is
+	// canceled before the slots can be successfully claimed, ErrContextCanceled is returned. For the shared
+	// sequencer, this uses a CAS loop instead of atomic Add, which is slower under contention but allows
+	// cancellation.
+	//
+	// Each successful call to TryReserve should *always* be followed by a single call to Commit.
+	TryReserve(ctx context.Context, slots int64) (upperSequence int64)
+
 	// Commit indicates to the sequencer that the previously claimed slots in the ring buffer have been written to
 	// successfully and to make the data available to any configured Handler instances to process.
 	//
@@ -67,6 +78,13 @@ const (
 	// ErrReservationSize indicates that the reservation requested is nonsensical, e.g. lower > upper OR that the
 	// desired reservation size exceeds the capacity of the ring buffer altogether.
 	ErrReservationSize = -1
+	// ErrContextCanceled indicates that the reservation request failed because the provided context.Context has
+	// been canceled or otherwise timed out.
+	ErrContextCanceled = -2
+
+	// spinMask controls how often the context is checked in TryReserve slow paths.
+	// Must be 2^n-1. Context is checked every spinMask+1 iterations.
+	spinMask = 1024*16 - 1
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
