@@ -66,20 +66,26 @@ type configuration struct {
 	HandlerGroups  [][]Handler
 }
 
+// BufferCapacity sets the number of slots in the ring buffer. Must be a power of 2. Default: 1024.
 func (singleton) BufferCapacity(value uint32) option {
 	return func(this *configuration) { this.BufferCapacity = value }
 }
 
+// SingleWriter configures whether the Disruptor uses a single-writer Sequencer (true) or a multi-writer shared
+// Sequencer (false). The single-writer Sequencer is faster but must not be used concurrently from multiple
+// goroutines. Default: true.
 func (singleton) SingleWriter(value bool) option {
 	return func(this *configuration) { this.SingleWriter = value }
 }
+
+// WaitStrategy sets the backpressure strategy used by both producers and consumers. Default: defaultWaitStrategy.
 func (singleton) WaitStrategy(value WaitStrategy) option {
 	return func(this *configuration) { this.WaitStrategy = value }
 }
 
 // NewHandlerGroup defines a set of one or more Handler instances, each of which runs in its own goroutine, and which
 // gate together. That is, each group does not allow a subsequent group of Handlers to operate on the underlying ring
-// buffer until the current all Handlers within the current group have completed all operations.
+// buffer until all Handlers within the current group have completed all operations.
 func (singleton) NewHandlerGroup(values ...Handler) option {
 	return func(this *configuration) {
 		filtered := make([]Handler, 0, len(values))

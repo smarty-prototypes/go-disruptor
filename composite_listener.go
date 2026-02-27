@@ -2,6 +2,9 @@ package disruptor
 
 import "sync"
 
+// compositeListener is a ListenCloser that manages multiple listeners concurrently. Listen starts each child
+// listener on its own goroutine and waits for all of them to complete. Close propagates to all child listeners.
+// The constructor optimizes for the single-listener case by returning it unwrapped.
 type compositeListener []ListenCloser
 
 func newCompositeListener(listeners []ListenCloser) ListenCloser {
