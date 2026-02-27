@@ -6,34 +6,65 @@ import (
 	"sync/atomic"
 )
 
+// sharedSequencer is a multi-writer Sequencer that allows multiple goroutines to concurrently reserve slots in the
+// same ring buffer. Unlike defaultSequencer, it is goroutine-safe for concurrent producers. The struct occupies two
+// cache lines: the first for the hot path (Reserve/Commit/Load), the second for the slow path only. The fields are
+// as follows:
+//
+//   - reservedSequence: a shared atomicSequence representing the highest sequence value that has been claimed across
+//     all producers. Incremented via atomic Add on every Reserve call. Also read by Load to determine the upper
+//     bound of potentially committed data.
+//
+//   - cachedConsumerSequence: an atomic cache of the slowest consumer's sequence position. Checked on every Reserve
+//     to avoid reading the more expensive consumerBarrier when no wrap contention exists (the fast path). Unlike
+//     defaultSequencer, this is an atomicSequence (not a plain int64) because multiple writers may update it
+//     concurrently. Further, the value here is merely a cache and will almost certainly be clobbered or overwritten
+//     by multiple writers reserving sequences in the ring buffer. But checking this cached value is significantly
+//     less expensive than checking the consumerBarrier field.
+//
+//   - committedSlots: a per-slot commit status array indexed by sequence & mask. Each entry stores the "round"
+//     (sequence >> shift) to indicate that a specific slot has been committed. Commit writes slots from lowest to
+//     highest, and Load reads in the same direction, stopping at the first uncommitted slot to find the highest
+//     contiguously committed sequence. The slice header lives on cache line 1; the backing array is allocated
+//     separately but in contiguous memory.
+//
+//   - capacity: the total number of slots in the ring buffer, always a power of 2.
+//
+//   - shift: log2(capacity), used to compute the round number stored in committedSlots on every Commit and Load.
+//
+//   - consumerBarrier: a barrier used to determine the slowest sequence position across all downstream consumers.
+//     Only read during the slow-path spin loop when a producer has detected possible overwrite contention.
+//
+//   - waiter: the WaitStrategy used during the slow-path spin loop. Its Reserve method is called on each iteration
+//     while waiting for consumers to advance.
 type sharedSequencer struct {
 	// cache line 1 — hot path (Reserve/Commit/Load)
-	written   *atomicSequence // 8B  — atomic Add every Reserve; read every Load (upper bound of written)
-	gate      *atomicSequence // 8B  — read every Reserve (wrap check)
-	committed []atomic.Int32  // 24B — Store every Commit; scanned every Load (slice header; len is capacity)
-	capacity  uint32          // 4B  — buffer capacity (power of 2)
-	shift     uint8           // 1B  — read every Commit and Load
-	_         [19]byte        // 19B — padding to 64B boundary
+	reservedSequence       *atomicSequence // 8B  — atomic Add every Reserve; read every Load
+	cachedConsumerSequence *atomicSequence // 8B  — read every Reserve (wrap check)
+	committedSlots         []atomic.Int32  // 24B — Store every Commit; scanned every Load (slice header)
+	capacity               uint32          // 4B  — buffer capacity (power of 2)
+	shift                  uint8           // 1B  — read every Commit and Load
+	_                      [19]byte        // 19B — padding to 64B boundary
 
 	// cache line 2 — slow path only
-	upstream sequenceBarrier // 16B — spin loop only
-	waiter   WaitStrategy    // 16B — spin loop only
-	_        [32]byte        // 32B — tail padding
+	consumerBarrier sequenceBarrier // 16B — slow path
+	waiter          WaitStrategy    // 16B — slow path
+	_               [32]byte        // 32B — tail padding
 } // 128B total — fills two 64B cache lines
 
-func newSharedSequencer(capacity uint32, upper *atomicSequence, waiter WaitStrategy) *sharedSequencer {
-	committed := make([]atomic.Int32, capacity)
-	for i := range committed {
-		committed[i].Store(defaultSequenceValue)
+func newSharedSequencer(capacity uint32, reservedSequence *atomicSequence, waiter WaitStrategy) *sharedSequencer {
+	committedSlots := make([]atomic.Int32, capacity)
+	for i := range committedSlots {
+		committedSlots[i].Store(defaultSequenceValue)
 	}
 
 	return &sharedSequencer{
-		written:   upper,
-		gate:      newSequence(),
-		shift:     uint8(math.Log2(float64(capacity))),
-		capacity:  capacity,
-		committed: committed,
-		waiter:    waiter,
+		reservedSequence:       reservedSequence,
+		cachedConsumerSequence: newSequence(),
+		shift:                  uint8(math.Log2(float64(capacity))),
+		capacity:               capacity,
+		committedSlots:         committedSlots,
+		waiter:                 waiter,
 	}
 }
 
@@ -43,25 +74,27 @@ func (this *sharedSequencer) Reserve(count uint32) int64 {
 	}
 
 	var (
-		slots      = int64(count)
-		upper      = this.written.Add(slots) // claims the slot for the caller (not using CAS operation)
-		lower      = upper - slots
-		wrap       = upper - int64(this.capacity)
-		cachedGate = this.gate.Load()
+		slots               = int64(count)
+		reservedSequence         = this.reservedSequence.Add(slots) // claims the slot for the caller (not using CAS operation)
+		previousReservedSequence = reservedSequence - slots
+		minimumSequence          = reservedSequence - int64(this.capacity)
+		consumerSequence         = this.cachedConsumerSequence.Load()
 	)
 
 	// fast path
-	if wrap <= cachedGate && cachedGate <= lower {
-		return upper
+	if minimumSequence <= consumerSequence && consumerSequence <= previousReservedSequence {
+		return reservedSequence
 	}
 
 	// slow path
-	for cachedGate = this.upstream.Load(0); wrap > cachedGate; cachedGate = this.upstream.Load(0) {
+	for consumerSequence = this.consumerBarrier.Load(0); minimumSequence > consumerSequence; consumerSequence = this.consumerBarrier.Load(0) {
 		this.waiter.Reserve()
 	}
 
-	this.gate.Store(cachedGate)
-	return upper
+	// This value will get overwritten by multiple writers but it's only useful for helping prevent the slow path.
+	// In a worst-case scenario, the value is incorrect and the slow path is required.
+	this.cachedConsumerSequence.Store(consumerSequence)
+	return reservedSequence
 }
 
 func (this *sharedSequencer) TryReserve(ctx context.Context, count uint32) int64 {
@@ -69,47 +102,46 @@ func (this *sharedSequencer) TryReserve(ctx context.Context, count uint32) int64
 		return ErrReservationSize
 	}
 
-	slots := int64(count)
-	for {
-		lower := this.written.Load()
-		upper := lower + slots
+	for slots := int64(count); ; {
+		previousReservedSequence := this.reservedSequence.Load()
+		reservedSequence := previousReservedSequence + slots
 
-		if this.hasAvailableCapacity(lower, slots) && this.written.CompareAndSwap(lower, upper) {
-			return upper // successfully claimed slot
+		if this.hasAvailableCapacity(previousReservedSequence, slots) && this.reservedSequence.CompareAndSwap(previousReservedSequence, reservedSequence) {
+			return reservedSequence // successfully claimed slot
 		} else if this.waiter.TryReserve(ctx) != nil {
 			return ErrContextCanceled
 		}
 	}
 }
-func (this *sharedSequencer) hasAvailableCapacity(lower, count int64) bool {
+func (this *sharedSequencer) hasAvailableCapacity(previousReservedSequence, count int64) bool {
 	var (
-		upper      = lower + count
-		wrap       = upper - int64(this.capacity)
-		cachedGate = this.gate.Load()
+		reservedSequence = previousReservedSequence + count
+		minimumSequence  = reservedSequence - int64(this.capacity)
+		consumerSequence = this.cachedConsumerSequence.Load()
 	)
 
 	// fast path
-	if wrap <= cachedGate && cachedGate <= lower {
+	if minimumSequence <= consumerSequence && consumerSequence <= previousReservedSequence {
 		return true
 	}
 
 	// slow path
-	gate := this.upstream.Load(0)
-	this.gate.Store(gate)
-	return wrap <= gate
+	consumerSequence = this.consumerBarrier.Load(0)
+	this.cachedConsumerSequence.Store(consumerSequence)
+	return minimumSequence <= consumerSequence
 }
 
 func (this *sharedSequencer) Commit(lower, upper int64) {
 	for mask := int64(this.capacity) - 1; lower <= upper; lower++ {
-		this.committed[lower&mask].Store(int32(lower >> this.shift))
+		this.committedSlots[lower&mask].Store(int32(lower >> this.shift))
 	}
 }
 
 func (this *sharedSequencer) Load(lower int64) int64 {
-	upper := this.written.Load()
+	upper := this.reservedSequence.Load()
 
 	for mask := int64(this.capacity) - 1; lower <= upper; lower++ {
-		if this.committed[lower&mask].Load() != int32(lower>>this.shift) {
+		if this.committedSlots[lower&mask].Load() != int32(lower>>this.shift) {
 			return lower - 1
 		}
 	}

@@ -28,11 +28,11 @@ func New(options ...option) (Disruptor, error) {
 
 	sequencer := newSharedSequencer(uint32(config.BufferCapacity), upperSequence, config.WaitStrategy)
 	listener, handledBarrier := config.newListeners(sequencer)
-	sequencer.upstream = handledBarrier
+	sequencer.consumerBarrier = handledBarrier
 	return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
 }
-func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
-	handledBarrier = writeBarrier
+func (this configuration) newListeners(committedBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
+	handledBarrier = committedBarrier
 
 	totalSequences := 0
 	for _, handlers := range this.HandlerGroups {
@@ -47,7 +47,7 @@ func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener L
 		group := make([]ListenCloser, len(handlers))
 		for handlerIndex, handler := range handlers {
 			sequences[handlerIndex] = allSequences[offset+handlerIndex]
-			group[handlerIndex] = newListener(sequences[handlerIndex], writeBarrier, handledBarrier, this.WaitStrategy, handler)
+			group[handlerIndex] = newListener(sequences[handlerIndex], committedBarrier, handledBarrier, this.WaitStrategy, handler)
 		}
 		handledBarrier = newCompositeBarrier(sequences...) // next group cannot handle beyond the sequences the current group have handled.
 		listeners[groupIndex] = newCompositeListener(group)
