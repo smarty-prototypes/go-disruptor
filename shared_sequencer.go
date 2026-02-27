@@ -11,8 +11,9 @@ type sharedSequencer struct {
 	written   *atomicSequence // 8B  — atomic Add every Reserve; read every Load (upper bound of written)
 	gate      *atomicSequence // 8B  — read every Reserve (wrap check)
 	committed []atomic.Int32  // 24B — Store every Commit; scanned every Load (slice header; len is capacity)
+	capacity  uint32          // 4B  — buffer capacity (power of 2)
 	shift     uint8           // 1B  — read every Commit and Load
-	_         [23]byte        // 23B — padding to 64B boundary
+	_         [19]byte        // 19B — padding to 64B boundary
 
 	// cache line 2 — slow path only
 	upstream sequenceBarrier // 16B — spin loop only
@@ -30,21 +31,21 @@ func newSharedSequencer(capacity uint32, upper *atomicSequence, waiter WaitStrat
 		written:   upper,
 		gate:      newSequence(),
 		shift:     uint8(math.Log2(float64(capacity))),
+		capacity:  capacity,
 		committed: committed,
 		waiter:    waiter,
 	}
 }
 
 func (this *sharedSequencer) Reserve(count int64) int64 {
-	capacity := int64(len(this.committed))
-	if count <= 0 || count > capacity {
+	if count <= 0 || count > int64(this.capacity) {
 		return ErrReservationSize
 	}
 
 	var (
 		upper      = this.written.Add(count) // claims the slot for the caller (not using CAS operation)
 		lower      = upper - count
-		wrap       = upper - capacity
+		wrap       = upper - int64(this.capacity)
 		cachedGate = this.gate.Load()
 	)
 
@@ -63,7 +64,7 @@ func (this *sharedSequencer) Reserve(count int64) int64 {
 }
 
 func (this *sharedSequencer) TryReserve(ctx context.Context, count int64) int64 {
-	if count <= 0 || count > int64(len(this.committed)) {
+	if count <= 0 || count > int64(this.capacity) {
 		return ErrReservationSize
 	}
 
@@ -81,7 +82,7 @@ func (this *sharedSequencer) TryReserve(ctx context.Context, count int64) int64 
 func (this *sharedSequencer) hasAvailableCapacity(lower, count int64) bool {
 	var (
 		upper      = lower + count
-		wrap       = upper - int64(len(this.committed))
+		wrap       = upper - int64(this.capacity)
 		cachedGate = this.gate.Load()
 	)
 
@@ -97,7 +98,7 @@ func (this *sharedSequencer) hasAvailableCapacity(lower, count int64) bool {
 }
 
 func (this *sharedSequencer) Commit(lower, upper int64) {
-	for mask := int64(len(this.committed)) - 1; lower <= upper; lower++ {
+	for mask := int64(this.capacity) - 1; lower <= upper; lower++ {
 		this.committed[lower&mask].Store(int32(lower >> this.shift))
 	}
 }
@@ -105,7 +106,7 @@ func (this *sharedSequencer) Commit(lower, upper int64) {
 func (this *sharedSequencer) Load(lower int64) int64 {
 	upper := this.written.Load()
 
-	for mask := int64(len(this.committed)) - 1; lower <= upper; lower++ {
+	for mask := int64(this.capacity) - 1; lower <= upper; lower++ {
 		if this.committed[lower&mask].Load() != int32(lower>>this.shift) {
 			return lower - 1
 		}

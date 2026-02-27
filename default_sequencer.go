@@ -12,9 +12,9 @@ type defaultSequencer struct {
 	waiter   WaitStrategy    // 16B — spin loop only
 } // 64B total — fills a single 64B cache line
 
-func newSequencer(capacity int64, written *atomicSequence, upstream sequenceBarrier, waiter WaitStrategy) Sequencer {
+func newSequencer(capacity uint32, written *atomicSequence, upstream sequenceBarrier, waiter WaitStrategy) Sequencer {
 	return &defaultSequencer{
-		capacity: uint32(capacity),
+		capacity: capacity,
 		upper:    defaultSequenceValue,
 		gate:     defaultSequenceValue,
 		written:  written,

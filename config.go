@@ -60,14 +60,14 @@ func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener L
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type configuration struct {
-	BufferCapacity int64
+	BufferCapacity uint32
 	SingleWriter   bool
 	WaitStrategy   WaitStrategy
 	HandlerGroups  [][]Handler
 }
 
 func (singleton) BufferCapacity(value uint32) option {
-	return func(this *configuration) { this.BufferCapacity = int64(value) }
+	return func(this *configuration) { this.BufferCapacity = value }
 }
 
 func (singleton) SingleWriter(value bool) option {
