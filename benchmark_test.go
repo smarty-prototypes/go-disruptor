@@ -200,25 +200,25 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 	simpleDisruptor.Listen()
 }
 
-func _BenchmarkSharedWriterReserveOneSingleConsumer(b *testing.B) {
+func BenchmarkSharedWriterReserveOneSingleConsumer(b *testing.B) {
 	benchmarkSharedSequencerReservations(b, reserveOne, 2, simpleHandler{})
 }
-func _BenchmarkSharedWriterReserveManySingleConsumer(b *testing.B) {
+func BenchmarkSharedWriterReserveManySingleConsumer(b *testing.B) {
 	benchmarkSharedSequencerReservations(b, reserveMany, 2, simpleHandler{})
 }
 
-func _BenchmarkSharedWriterReserveOneMultipleConsumers(b *testing.B) {
+func BenchmarkSharedWriterReserveOneMultipleConsumers(b *testing.B) {
 	benchmarkSharedSequencerReservations(b, reserveOne, 2, simpleHandler{}, simpleHandler{})
 }
 
-func _BenchmarkSharedWriterReserveManyMultipleConsumers(b *testing.B) {
+func BenchmarkSharedWriterReserveManyMultipleConsumers(b *testing.B) {
 	benchmarkSharedSequencerReservations(b, reserveMany, 2, simpleHandler{}, simpleHandler{})
 }
 
-func _BenchmarkSharedWriterReserveManyMultipleConsumers_ThreeWriters(b *testing.B) {
+func BenchmarkSharedWriterReserveManyMultipleConsumers_ThreeWriters(b *testing.B) {
 	benchmarkSharedSequencerReservations(b, reserveMany, 3, simpleHandler{}, simpleHandler{})
 }
-func benchmarkSharedSequencerReservations(b *testing.B, writerCount, count int64, consumers ...Handler) {
+func benchmarkSharedSequencerReservations(b *testing.B, count, writerCount int64, consumers ...Handler) {
 	iterations := int64(b.N)
 
 	sharedDisruptor := newSimpleDisruptor(true, consumers...)
@@ -228,7 +228,7 @@ func benchmarkSharedSequencerReservations(b *testing.B, writerCount, count int64
 		b.ResetTimer()
 
 		var waiter sync.WaitGroup
-		waiter.Add(2)
+		waiter.Add(int(writerCount))
 
 		for writerIndex := int64(0); writerIndex < writerCount; writerIndex++ {
 			go func() {
