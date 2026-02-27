@@ -128,7 +128,7 @@ func BenchmarkSequenceLoadAsBarrier(b *testing.B) {
 	}
 }
 
-func BenchmarkWriterReserve(b *testing.B) {
+func BenchmarkSingleWriterReserve(b *testing.B) {
 	read, written := newSequence(), newSequence()
 	writer := newSequencer(1024, written, newAtomicBarrier(read), defaultWaitStrategy{})
 	iterations := int64(b.N)
@@ -140,7 +140,7 @@ func BenchmarkWriterReserve(b *testing.B) {
 		read.Store(sequence)
 	}
 }
-func BenchmarkWriterNextWrapPoint(b *testing.B) {
+func BenchmarkSingleWriterNextWrapPoint(b *testing.B) {
 	read, written := newSequence(), newSequence()
 	writer := newSequencer(1024*16, written, newAtomicBarrier(read), defaultWaitStrategy{})
 	iterations := int64(b.N)
@@ -152,7 +152,7 @@ func BenchmarkWriterNextWrapPoint(b *testing.B) {
 		read.Store(sequence)
 	}
 }
-func BenchmarkWriterCommit(b *testing.B) {
+func BenchmarkSingleWriterCommit(b *testing.B) {
 	writer := newSequencer(1024, newSequence(), nil, defaultWaitStrategy{})
 	iterations := int64(b.N)
 	b.ReportAllocs()
@@ -163,16 +163,16 @@ func BenchmarkWriterCommit(b *testing.B) {
 	}
 }
 
-func BenchmarkWriterReserveOneSingleConsumer(b *testing.B) {
+func BenchmarkSingleWriterReserveOneSingleConsumer(b *testing.B) {
 	benchmarkSequencerReservations(b, reserveOne, simpleHandler{})
 }
-func BenchmarkWriterReserveManySingleConsumer(b *testing.B) {
+func BenchmarkSingleWriterReserveManySingleConsumer(b *testing.B) {
 	benchmarkSequencerReservations(b, reserveMany, simpleHandler{})
 }
-func BenchmarkWriterReserveOneMultipleConsumers(b *testing.B) {
+func BenchmarkSingleWriterReserveOneMultipleConsumers(b *testing.B) {
 	benchmarkSequencerReservations(b, reserveOne, simpleHandler{}, simpleHandler{})
 }
-func BenchmarkWriterReserveManyMultipleConsumers(b *testing.B) {
+func BenchmarkSingleWriterReserveManyMultipleConsumers(b *testing.B) {
 	benchmarkSequencerReservations(b, reserveMany, simpleHandler{}, simpleHandler{})
 }
 func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Handler) {
