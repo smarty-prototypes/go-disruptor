@@ -2,7 +2,7 @@ package disruptor
 
 import "sync/atomic"
 
-// The defaultListener is single threaded and designed to run in a single goroutine. It tracks which slots or events in
+// The defaultListener is not thread safe and designed to run in a single goroutine. It tracks which slots or events in
 // the associated ring buffer have been read, processed, or handled in some manner.
 type defaultListener struct {
 	state     *atomic.Int64
