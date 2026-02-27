@@ -19,16 +19,15 @@ func main() {
 
 func publish(myDisruptor disruptor.Disruptor) {
 	defer func() { _ = myDisruptor.Close() }()
-	sequencer := myDisruptor.Sequencers()[0]
 
 	for sequence := int64(0); sequence <= Iterations; {
-		sequence = sequencer.Reserve(Reservations)
+		sequence = myDisruptor.Reserve(Reservations)
 
 		for lower := sequence - Reservations + 1; lower <= sequence; lower++ {
 			ringBuffer[lower&BufferMask] = lower
 		}
 
-		sequencer.Commit(sequence-Reservations+1, sequence)
+		myDisruptor.Commit(sequence-Reservations+1, sequence)
 	}
 }
 

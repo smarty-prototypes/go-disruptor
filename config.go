@@ -18,30 +18,17 @@ func New(options ...option) (Disruptor, error) {
 		return nil, errors.New("no handlers have been provided")
 	}
 
-	if config.SequencerCount > 1 {
-		return newMultiWriterDisruptor(config)
+	upperSequence := newSequence()
+	if config.SingleWriter {
+		listener, handledBarrier := config.newListeners(newAtomicBarrier(upperSequence))
+		sequencer := newSequencer(config.BufferCapacity, upperSequence, handledBarrier, config.WaitStrategy)
+		return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
 	}
 
-	return newSingleWriterDisruptor(config)
-}
-func newSingleWriterDisruptor(config configuration) (*defaultDisruptor, error) {
-	committedSequence := newSequence()
-	listener, handledBarrier := config.newListeners(newAtomicBarrier(committedSequence))
-	sequencer := newSequencer(config.BufferCapacity, committedSequence, handledBarrier, config.WaitStrategy)
-	return &defaultDisruptor{ListenCloser: listener, sequencers: []Sequencer{sequencer}}, nil
-}
-func newMultiWriterDisruptor(config configuration) (*defaultDisruptor, error) {
-	committed, shift := newCommittedBuffer(uint32(config.BufferCapacity))
-	upper := newSequence()
-	writeBarrier := newMultiSequencerBarrier(upper, committed, shift)
-	listener, handledBarrier := config.newListeners(writeBarrier)
-
-	sequencers := make([]Sequencer, config.SequencerCount)
-	for i := range sequencers {
-		sequencers[i] = newMultiSequencer(upper, committed, shift, handledBarrier, config.WaitStrategy)
-	}
-
-	return &defaultDisruptor{ListenCloser: listener, sequencers: sequencers}, nil
+	sequencer := newSharedSequencer(uint32(config.BufferCapacity), upperSequence, config.WaitStrategy)
+	listener, handledBarrier := config.newListeners(sequencer)
+	sequencer.upstream = handledBarrier
+	return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
 }
 func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
 	handledBarrier = writeBarrier
@@ -73,19 +60,17 @@ func (this configuration) newListeners(writeBarrier sequenceBarrier) (listener L
 
 type configuration struct {
 	BufferCapacity int64
-	SequencerCount uint8
+	SingleWriter   bool
 	WaitStrategy   WaitStrategy
-	HandlerGroups  [][]Handler
+	HandlerGroups   [][]Handler
 }
 
 func (singleton) BufferCapacity(value uint32) option {
 	return func(this *configuration) { this.BufferCapacity = int64(value) }
 }
 
-// SequencerCount indicates the number of Sequencer instances to build. Each Sequencer instance should be attached to
-// a message writer or producer and should not be shared among writers/producers without explicit synchronization.
-func (singleton) SequencerCount(value uint8) option {
-	return func(this *configuration) { this.SequencerCount = value }
+func (singleton) SingleWriter(value bool) option {
+	return func(this *configuration) { this.SingleWriter = value }
 }
 func (singleton) WaitStrategy(value WaitStrategy) option {
 	return func(this *configuration) { this.WaitStrategy = value }
@@ -118,7 +103,7 @@ func (singleton) apply(options ...option) option {
 func (singleton) defaults(options ...option) []option {
 	return append([]option{
 		Options.BufferCapacity(1024),
-		Options.SequencerCount(1),
+		Options.SingleWriter(true),
 		Options.WaitStrategy(defaultWaitStrategy{}),
 	}, options...)
 }
@@ -159,7 +144,5 @@ func newSequences(count int) []*atomicSequence {
 
 type defaultDisruptor struct {
 	ListenCloser
-	sequencers []Sequencer
+	Sequencer
 }
-
-func (this *defaultDisruptor) Sequencers() []Sequencer { return this.sequencers }

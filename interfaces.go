@@ -6,7 +6,7 @@ import (
 )
 
 type Disruptor interface {
-	Sequencers() []Sequencer
+	Sequencer
 	ListenCloser
 }
 

@@ -179,7 +179,6 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 	iterations := int64(b.N)
 
 	simpleDisruptor := newSimpleDisruptor(consumers...)
-	writer := simpleDisruptor.Sequencers()[0]
 
 	go func() {
 		b.ReportAllocs()
@@ -187,11 +186,11 @@ func benchmarkSequencerReservations(b *testing.B, count int64, consumers ...Hand
 
 		var sequence int64 = -1
 		for sequence < iterations {
-			sequence = writer.Reserve(count)
+			sequence = simpleDisruptor.Reserve(count)
 			for i := sequence - (count - 1); i <= sequence; i++ {
 				ringBuffer[i&ringBufferMask] = i
 			}
-			writer.Commit(sequence-(count-1), sequence)
+			simpleDisruptor.Commit(sequence-(count-1), sequence)
 		}
 
 		_ = simpleDisruptor.Close()
