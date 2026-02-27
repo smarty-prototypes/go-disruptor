@@ -43,7 +43,7 @@ type Handler interface {
 // The Sequencer tracks the state of a given "writer" or producer to the ring buffer. It is the heart of the Disruptor
 // pattern. When a caller desires to push events to the ring buffer, the caller or product must first Reserve the
 // desired slots on the ring buffer using a Sequencer. After obtaining a reservation on certain slots of the ring
-// buffer, the caller must write the any data to the reserved slots and then indicate the completion of the
+// buffer, the caller must write any data to the reserved slots and then indicate the completion of the
 // operation(s) by calling Commit which makes those slots available to any downstream Handler instances which then
 // handle or otherwise consume events from the ring buffer on different goroutines.
 type Sequencer interface {
