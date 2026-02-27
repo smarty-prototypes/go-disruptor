@@ -12,7 +12,8 @@ type multiSequencer struct {
 	upstream  sequenceBarrier // 16B — spin loop only
 	waiter    WaitStrategy    // 16B — spin loop only
 	shift     uint8           // 1B  — read every Commit
-}                                 // 80B total (73B + 7B tail padding) — spans two 64B cache lines
+	_         [55]byte        // 55B — tail padding
+}                             // 128B total — fills two 64B cache lines
 
 func newMultiSequencer(upper *atomicSequence, committed []atomic.Int32, shift uint8, upstream sequenceBarrier, waiter WaitStrategy) *multiSequencer {
 	return &multiSequencer{
