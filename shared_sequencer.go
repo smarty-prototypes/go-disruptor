@@ -107,10 +107,10 @@ func (this *sharedSequencer) TryReserve(ctx context.Context, count uint32) int64
 
 	for slots := int64(count); ; {
 		previousReservedSequence := this.reservedSequence.Load()
-		reservedSequence := previousReservedSequence + slots
+		reservedSequenceAttempt := previousReservedSequence + slots
 
-		if this.hasAvailableCapacity(previousReservedSequence, slots) && this.reservedSequence.CompareAndSwap(previousReservedSequence, reservedSequence) {
-			return reservedSequence // successfully claimed slot
+		if this.hasAvailableCapacity(previousReservedSequence, slots) && this.reservedSequence.CompareAndSwap(previousReservedSequence, reservedSequenceAttempt) {
+			return reservedSequenceAttempt // successfully claimed slot
 		} else if this.waiter.TryReserve(ctx) != nil {
 			return ErrContextCanceled
 		}
@@ -130,13 +130,13 @@ func (this *sharedSequencer) hasAvailableCapacity(previousReservedSequence, coun
 
 	// slow path
 	consumerSequence = this.consumerBarrier.Load(0)
-	this.cachedConsumerSequence.Store(consumerSequence)
+	this.cachedConsumerSequence.Store(consumerSequence) // see notes above for cachedConsumerSequence field
 	return minimumSequence <= consumerSequence
 }
 
 func (this *sharedSequencer) Commit(lower, upper int64) {
 	for mask := int64(this.capacity) - 1; lower <= upper; lower++ {
-		this.committedSlots[lower&mask].Store(int32(lower >> this.shift))
+		this.committedSlots[lower&mask].Store(int32(lower >> this.shift)) // see notes above for shift field
 	}
 }
 
