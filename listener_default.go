@@ -1,6 +1,8 @@
 package disruptor
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
 // defaultListener is not goroutine-safe and is designed to run on a single goroutine. It tracks which slots or
 // events in the associated ring buffer have been read, processed, or handled in some manner. The fields are as

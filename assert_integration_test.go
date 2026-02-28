@@ -53,11 +53,11 @@ func TestEndToEnd_SharedWriter(t *testing.T) {
 	verifyEndToEndBuffer(t)
 }
 
-func newEndToEndDisruptor(writerCount int) Disruptor {
+func newEndToEndDisruptor(contention WriterContention) Disruptor {
 	endToEndBuffer = [endToEndBufferSize]endToEndValues{}
 	value, err := New(
 		Options.BufferCapacity(endToEndBufferSize),
-		Options.SingleWriter(writerCount <= 1),
+		Options.WriterContention(contention),
 		Options.NewHandlerGroup(newEvenSequenceHandler(), newOddSequenceHandler()),
 		Options.NewHandlerGroup(newEvenSequenceHandler(), newOddSequenceHandler()),
 	)
@@ -135,11 +135,11 @@ func assertEndToEndField(t *testing.T, index int, name string, actual, expected 
 var endToEndBuffer [endToEndBufferSize]endToEndValues
 
 const (
-	endToEndBufferSize      = 1024 * 128
-	EndToEndBufferMask      = endToEndBufferSize - 1
-	endToEndSequences       = endToEndBufferSize * 4
-	endToEndWraps           = endToEndSequences / endToEndBufferSize
-	endToEndHandlerGroups   = 2
-	endToEndMultiplier  = 1 << endToEndHandlerGroups
-	endToEndWriterCount = 2
+	endToEndBufferSize    = 1024 * 128
+	EndToEndBufferMask    = endToEndBufferSize - 1
+	endToEndSequences     = endToEndBufferSize * 4
+	endToEndWraps         = endToEndSequences / endToEndBufferSize
+	endToEndHandlerGroups = 2
+	endToEndMultiplier    = 1 << endToEndHandlerGroups
+	endToEndWriterCount   = 2
 )

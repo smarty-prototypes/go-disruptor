@@ -1,10 +1,6 @@
 package disruptor
 
-import (
-	"context"
-	"io"
-	"sync/atomic"
-)
+import "io"
 
 // Disruptor is the top-level container combining a Sequencer (producer API) with a ListenCloser (consumer
 // lifecycle). Created via invocations of New(...option).
@@ -36,8 +32,6 @@ type WaitStrategy interface {
 	Idle(int64)
 	// Reserve is invoked by the Sequencer when there are no available slots in the underlying ring buffer.
 	Reserve(int64)
-	// TryReserve is invoked by the Sequencer when there are no available slots in the underlying ring buffer.
-	TryReserve(context.Context) error
 }
 
 // Handler is the consumer callback invoked by a Listener with each batch of available sequences from the ring buffer.
@@ -67,13 +61,13 @@ type Sequencer interface {
 	// Each successful call to Reserve should *always* be followed by a single call to Commit.
 	Reserve(slots uint32) (upperSequence int64)
 
-	// TryReserve behaves like Reserve but can be canceled via the provided context.Context. If the context is
-	// canceled before the slots can be successfully claimed, ErrContextCanceled is returned. For the shared
-	// Sequencer, which is capable of being shared by multiple goroutines, this uses a CAS-based loop instead of
-	// atomic Add, which is slower under contention but allows cancellation.
+	// TryReserve attempts a single non-blocking reservation of the desired number of slots. If the slots are
+	// immediately available, the uppermost sequence is returned. If the ring buffer has insufficient capacity
+	// because consumers have not yet advanced far enough, ErrCapacityUnavailable is returned without waiting.
+	// For the shared Sequencer, this uses a single CAS attempt rather than atomic Add.
 	//
 	// Each successful call to TryReserve should *always* be followed by a single call to Commit.
-	TryReserve(ctx context.Context, slots uint32) (upperSequence int64)
+	TryReserve(slots uint32) (upperSequence int64)
 
 	// Commit indicates to the Sequencer that the previously claimed slots in the ring buffer have been written to
 	// successfully and that the data is now available to any configured Handler instances to process.
@@ -86,38 +80,17 @@ const (
 	// ErrReservationSize indicates that the reservation requested is nonsensical, e.g. lower > upper OR that the
 	// desired reservation size exceeds the capacity of the ring buffer altogether.
 	ErrReservationSize = -1
-	// ErrContextCanceled indicates that the reservation request failed because the provided context.Context has
-	// been canceled or otherwise timed out.
-	ErrContextCanceled = -2
-
-	// spinMask controls how often the context is checked in TryReserve slow paths.
-	// Must be 2^n-1. Context is checked every spinMask+1 iterations.
-	spinMask = 1024*16 - 1
+	// ErrCapacityUnavailable indicates that TryReserve could not claim the requested slots because consumers
+	// have not yet advanced far enough and the ring buffer has insufficient capacity.
+	ErrCapacityUnavailable = -2
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// atomicSequence is a cache-line-padded atomic int64 used to track sequence positions without false sharing. The 56
-// bytes of padding on each side ensure the embedded atomic.Int64 occupies its own cache line.
-type atomicSequence struct {
-	_ [7]int64 // 56B left padding
-	atomic.Int64
-	_ [7]int64 // 56B right padding
-}
+type WriterContention uint8
 
-// sequenceBarrier abstracts reading the committed or handled position from one or more sequences. Load returns the
-// highest sequence that is safe to read up to from the given lower bound.
-type sequenceBarrier interface {
-	Load(int64) int64
-}
-
-// atomicBarrier is a sequenceBarrier backed by a single atomicSequence. Used when there is exactly one upstream
-// sequence to track, avoiding the iteration overhead of compositeBarrier.
-type atomicBarrier struct{ sequence *atomicSequence }
-
-func newAtomicBarrier(sequence *atomicSequence) *atomicBarrier {
-	return &atomicBarrier{sequence: sequence}
-}
-func (this *atomicBarrier) Load(_ int64) int64 { return this.sequence.Load() }
-
-const defaultSequenceValue = -1
+const (
+	ContentionNone WriterContention = 1
+	ContentionLow  WriterContention = 2
+	ContentionHigh WriterContention = 4
+)

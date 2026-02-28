@@ -8,7 +8,7 @@ type compositeBarrier []*atomicSequence
 
 func newCompositeBarrier(sequences ...*atomicSequence) sequenceBarrier {
 	if len(sequences) == 0 {
-		return compositeBarrier{} // TODO: panic?
+		return compositeBarrier{}
 	} else if len(sequences) == 1 {
 		return newAtomicBarrier(sequences[0])
 	} else {
