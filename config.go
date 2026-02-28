@@ -1,9 +1,9 @@
 package disruptor
 
 import (
-	"context"
 	"errors"
 	"runtime"
+	"time"
 )
 
 func New(options ...option) (Disruptor, error) {
@@ -19,13 +19,13 @@ func New(options ...option) (Disruptor, error) {
 	}
 
 	upperSequence := newSequence()
-	if config.SingleWriter {
+	if config.Writers <= 1 {
 		listener, handledBarrier := config.newListeners(newAtomicBarrier(upperSequence))
 		sequencer := newSequencer(config.BufferCapacity, upperSequence, handledBarrier, config.WaitStrategy)
 		return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
 	}
 
-	sequencer := newSharedSequencer(uint32(config.BufferCapacity), upperSequence, config.WaitStrategy)
+	sequencer := newSharedSequencer(config.BufferCapacity, upperSequence, config.WaitStrategy)
 	listener, handledBarrier := config.newListeners(sequencer)
 	sequencer.consumerBarrier = handledBarrier
 	return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
@@ -60,7 +60,7 @@ func (this configuration) newListeners(committedBarrier sequenceBarrier) (listen
 
 type configuration struct {
 	BufferCapacity uint32
-	SingleWriter   bool
+	Writers        uint8
 	WaitStrategy   WaitStrategy
 	HandlerGroups  [][]Handler
 }
@@ -70,11 +70,10 @@ func (singleton) BufferCapacity(value uint32) option {
 	return func(this *configuration) { this.BufferCapacity = value }
 }
 
-// SingleWriter configures whether the Disruptor uses a single-writer Sequencer (true) or a multi-writer shared
-// Sequencer (false). The single-writer Sequencer is faster but must not be used concurrently from multiple
-// goroutines. Default: true.
-func (singleton) SingleWriter(value bool) option {
-	return func(this *configuration) { this.SingleWriter = value }
+// Writers indicates the number of writers that will be operating on the underlying Sequencer. Any value over 1 will
+// configure the Disruptor to utilize a shared, thread-safe Sequencer.
+func (singleton) Writers(value uint8) option {
+	return func(this *configuration) { this.Writers = value }
 }
 
 // WaitStrategy sets the backpressure strategy used by both producers and consumers. Default: defaultWaitStrategy.
@@ -109,7 +108,7 @@ func (singleton) apply(options ...option) option {
 func (singleton) defaults(options ...option) []option {
 	return append([]option{
 		Options.BufferCapacity(1024),
-		Options.SingleWriter(true),
+		Options.Writers(1),
 		Options.WaitStrategy(defaultWaitStrategy{}),
 	}, options...)
 }
@@ -125,39 +124,11 @@ type defaultWaitStrategy struct{}
 
 // LockSupport.parkNanos(1L) is more or less equivalent to runtime.Gosched()
 
-func (this defaultWaitStrategy) Gate(int64) { runtime.Gosched() }
-func (this defaultWaitStrategy) Idle(int64) { runtime.Gosched() }
-func (this defaultWaitStrategy) Reserve(count int64) {
-	if count > 0 && count&(128-1) == 0 {
-		runtime.Gosched() // every 128th iteration, yield
-	}
-}
-func (this defaultWaitStrategy) TryReserve(ctx context.Context) error {
-	runtime.Gosched()
-	return ctx.Err()
-}
+func (this defaultWaitStrategy) Gate(int64)    { runtime.Gosched() }
+func (this defaultWaitStrategy) Idle(int64)    { time.Sleep(time.Nanosecond * 500) }
+func (this defaultWaitStrategy) Reserve(int64) { time.Sleep(time.Nanosecond) }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func newSequence() *atomicSequence {
-	this := &atomicSequence{}
-	this.Store(defaultSequenceValue)
-	return this
-}
-
-// newSequences allocates a slice of *atomicSequence in a contiguous space in memory
-func newSequences(count int) []*atomicSequence {
-	backing := make([]atomicSequence, count)
-	sequences := make([]*atomicSequence, count)
-	for i := range sequences {
-		backing[i].Store(defaultSequenceValue)
-		sequences[i] = &backing[i]
-	}
-	return sequences
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 type defaultDisruptor struct {
 	ListenCloser
 	Sequencer

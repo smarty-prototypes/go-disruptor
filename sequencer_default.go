@@ -1,7 +1,5 @@
 package disruptor
 
-import "context"
-
 // defaultSequencer is a single-writer Sequencer which "owns" writes to an associated ring buffer. An instance of
 // this Sequencer should not be shared among separate goroutines without explicit synchronization. The fields are as
 // follows:
@@ -75,7 +73,7 @@ func (this *defaultSequencer) Reserve(count uint32) int64 {
 
 	return this.reservedSequence
 }
-func (this *defaultSequencer) TryReserve(ctx context.Context, count uint32) int64 {
+func (this *defaultSequencer) TryReserve(count uint32) int64 {
 	if count == 0 || count > this.capacity {
 		return ErrReservationSize
 	}
@@ -88,14 +86,11 @@ func (this *defaultSequencer) TryReserve(ctx context.Context, count uint32) int6
 		return this.reservedSequence
 	}
 
-	// slow path — check context every spinMask+1 iterations
-	for spin := int64(0); minimumSequence > this.cachedConsumerSequence; spin++ {
-		if spin&spinMask == 0 && this.waiter.TryReserve(ctx) != nil {
-			this.reservedSequence -= int64(count) // undo reservation (safe for single writer)
-			return ErrContextCanceled
-		}
-
-		this.cachedConsumerSequence = this.consumerBarrier.Load(0)
+	// slow path
+	this.cachedConsumerSequence = this.consumerBarrier.Load(0)
+	if minimumSequence > this.cachedConsumerSequence {
+		this.reservedSequence -= int64(count)
+		return ErrCapacityUnavailable
 	}
 
 	return this.reservedSequence

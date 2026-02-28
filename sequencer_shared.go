@@ -1,7 +1,6 @@
 package disruptor
 
 import (
-	"context"
 	"math/bits"
 	"sync/atomic"
 )
@@ -104,21 +103,24 @@ func (this *sharedSequencer) Reserve(count uint32) int64 {
 	return reservedSequence
 }
 
-func (this *sharedSequencer) TryReserve(ctx context.Context, count uint32) int64 {
+func (this *sharedSequencer) TryReserve(count uint32) int64 {
 	if count == 0 || count > this.capacity {
 		return ErrReservationSize
 	}
 
-	for slots := int64(count); ; {
-		previousReservedSequence := this.reservedSequence.Load()
-		reservedSequenceAttempt := previousReservedSequence + slots
-
-		if this.hasAvailableCapacity(previousReservedSequence, slots) && this.reservedSequence.CompareAndSwap(previousReservedSequence, reservedSequenceAttempt) {
-			return reservedSequenceAttempt // successfully claimed slot
-		} else if this.waiter.TryReserve(ctx) != nil {
-			return ErrContextCanceled
-		}
+	// fast path
+	slots := int64(count)
+	previousReservedSequence := this.reservedSequence.Load()
+	if !this.hasAvailableCapacity(previousReservedSequence, slots) {
+		return ErrCapacityUnavailable
 	}
+
+	if !this.reservedSequence.CompareAndSwap(previousReservedSequence, previousReservedSequence+slots) {
+		return ErrCapacityUnavailable
+	}
+
+	// slow path
+	return previousReservedSequence + slots
 }
 func (this *sharedSequencer) hasAvailableCapacity(previousReservedSequence, count int64) bool {
 	var (
