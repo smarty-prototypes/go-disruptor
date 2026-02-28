@@ -35,7 +35,7 @@ type WaitStrategy interface {
 	// Idle is invoked when all meaningful work has been completed and there are no slots with available messages.
 	Idle(int64)
 	// Reserve is invoked by the Sequencer when there are no available slots in the underlying ring buffer.
-	Reserve()
+	Reserve(int64)
 	// TryReserve is invoked by the Sequencer when there are no available slots in the underlying ring buffer.
 	TryReserve(context.Context) error
 }

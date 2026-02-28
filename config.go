@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"runtime"
-	"time"
 )
 
 func New(options ...option) (Disruptor, error) {
@@ -124,11 +123,17 @@ var Options singleton
 
 type defaultWaitStrategy struct{}
 
-func (this defaultWaitStrategy) Gate(int64) { time.Sleep(time.Nanosecond) }
-func (this defaultWaitStrategy) Idle(int64) { time.Sleep(time.Millisecond) }
-func (this defaultWaitStrategy) Reserve()   { runtime.Gosched() } // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+// LockSupport.parkNanos(1L) is more or less equivalent to runtime.Gosched()
+
+func (this defaultWaitStrategy) Gate(int64) { runtime.Gosched() }
+func (this defaultWaitStrategy) Idle(int64) { runtime.Gosched() }
+func (this defaultWaitStrategy) Reserve(count int64) {
+	if count > 0 && count&(128-1) == 0 {
+		runtime.Gosched() // every 128th iteration, yield
+	}
+}
 func (this defaultWaitStrategy) TryReserve(ctx context.Context) error {
-	runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
+	runtime.Gosched()
 	return ctx.Err()
 }
 

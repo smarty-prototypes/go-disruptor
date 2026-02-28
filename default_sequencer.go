@@ -64,11 +64,13 @@ func (this *defaultSequencer) Reserve(count uint32) int64 {
 		return this.reservedSequence
 	}
 
-	// TODO: spin mask?
-
 	// slow path
-	for this.cachedConsumerSequence = this.consumerBarrier.Load(0); minimumSequence > this.cachedConsumerSequence; this.cachedConsumerSequence = this.consumerBarrier.Load(0) {
-		this.waiter.Reserve()
+	for spin := int64(0); ; spin++ {
+		this.cachedConsumerSequence = this.consumerBarrier.Load(0)
+		if minimumSequence <= this.cachedConsumerSequence {
+			break
+		}
+		this.waiter.Reserve(spin)
 	}
 
 	return this.reservedSequence

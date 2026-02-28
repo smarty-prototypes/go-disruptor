@@ -90,12 +90,16 @@ func (this *sharedSequencer) Reserve(count uint32) int64 {
 	}
 
 	// slow path
-	for consumerSequence = this.consumerBarrier.Load(0); minimumSequence > consumerSequence; consumerSequence = this.consumerBarrier.Load(0) {
-		this.waiter.Reserve()
+	for spin := int64(0); ; spin++ {
+		consumerSequence = this.consumerBarrier.Load(0)
+		if minimumSequence <= consumerSequence {
+			break
+		}
+		this.waiter.Reserve(spin)
 	}
 
-	// This value will get overwritten by multiple writers but it's only useful for helping prevent the slow path.
-	// In a worst-case scenario, the value is incorrect and the slow path is required.
+	// The cachedConsumerSequence field may be overwritten by multiple writers. It's only useful for helping prevent
+	// execution of the slow path. In a worst-case scenario, the value is behind and the slow path is traversed.
 	this.cachedConsumerSequence.Store(consumerSequence)
 	return reservedSequence
 }
