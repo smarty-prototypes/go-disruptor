@@ -1,7 +1,10 @@
 #!/usr/bin/make -f
 
 test:
-	go test -timeout=1s -race -covermode=atomic ./...
+	go test -timeout=1s -short -race -covermode=atomic ./...
+
+test.long:
+	go test -run TestEndToEnd -timeout=120s -race -covermode=atomic -v ./...
 
 benchmark:
 	go test -bench=. -benchmem
@@ -11,4 +14,4 @@ compile:
 
 build: test compile
 
-.PHONY: test compile build benchmark
+.PHONY: test test.long compile build benchmark
