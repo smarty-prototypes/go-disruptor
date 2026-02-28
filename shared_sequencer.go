@@ -2,7 +2,7 @@ package disruptor
 
 import (
 	"context"
-	"math"
+	"math/bits"
 	"sync/atomic"
 )
 
@@ -31,6 +31,9 @@ import (
 //   - capacity: the total number of slots in the ring buffer, always a power of 2.
 //
 //   - shift: log2(capacity), used to compute the round number stored in committedSlots on every Commit and Load.
+//     When a producer commits sequence s, it stores int32(s >> shift) at committedSlots[s & mask]. This lets Load
+//     verify that a slot was committed for the correct lap around the ring buffer, not a stale value from a
+//     previous lap of the ring buffer.
 //
 //   - consumerBarrier: a barrier used to determine the slowest sequence position across all downstream consumers.
 //     Only read during the slow-path spin loop when a producer has detected possible overwrite contention.
@@ -61,7 +64,7 @@ func newSharedSequencer(capacity uint32, reservedSequence *atomicSequence, waite
 	return &sharedSequencer{
 		reservedSequence:       reservedSequence,
 		cachedConsumerSequence: newSequence(),
-		shift:                  uint8(math.Log2(float64(capacity))),
+		shift:                  uint8(bits.TrailingZeros32(capacity)),
 		capacity:               capacity,
 		committedSlots:         committedSlots,
 		waiter:                 waiter,
@@ -74,7 +77,7 @@ func (this *sharedSequencer) Reserve(count uint32) int64 {
 	}
 
 	var (
-		slots               = int64(count)
+		slots                    = int64(count)
 		reservedSequence         = this.reservedSequence.Add(slots) // claims the slot for the caller (not using CAS operation)
 		previousReservedSequence = reservedSequence - slots
 		minimumSequence          = reservedSequence - int64(this.capacity)
