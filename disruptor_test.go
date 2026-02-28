@@ -2,6 +2,7 @@ package disruptor
 
 import (
 	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -9,8 +10,7 @@ func TestEndToEnd_SingleWriter(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping end-to-end test")
 	}
-	coordinator := newEndToEndDisruptor(1, t)
-	defer coordinator.Listen()
+	coordinator := newEndToEndDisruptor(1)
 
 	go func() {
 		defer func() { _ = coordinator.Close() }()
@@ -20,44 +20,46 @@ func TestEndToEnd_SingleWriter(t *testing.T) {
 			coordinator.Commit(sequence, sequence)
 		}
 	}()
+
+	coordinator.Listen()
+	verifyEndToEndBuffer(t)
 }
 func TestEndToEnd_SharedWriter(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping end-to-end test")
 	}
-	const writerCount = 2
-	coordinator := newEndToEndDisruptor(writerCount, t)
-	defer coordinator.Listen()
+	coordinator := newEndToEndDisruptor(endToEndWriterCount)
 
 	go func() {
 		var waiter sync.WaitGroup
-		waiter.Add(writerCount)
+		waiter.Add(endToEndWriterCount)
 		defer func() { waiter.Wait(); _ = coordinator.Close() }()
-		for writerIndex := 0; writerIndex < writerCount; writerIndex++ {
+
+		var remaining atomic.Int64
+		remaining.Store(endToEndSequences)
+		for writerIndex := 0; writerIndex < endToEndWriterCount; writerIndex++ {
 			go func() {
 				defer waiter.Done()
-				for {
+				for remaining.Add(-1) >= 0 {
 					sequence := coordinator.Reserve(1)
 					writeEndToEndEntry(sequence)
 					coordinator.Commit(sequence, sequence)
-					if sequence >= endToEndSequences-1 {
-						return
-					}
 				}
 			}()
 		}
 	}()
+
+	coordinator.Listen()
+	verifyEndToEndBuffer(t)
 }
 
-func newEndToEndDisruptor(writerCount int, t *testing.T) Disruptor {
+func newEndToEndDisruptor(writerCount int) Disruptor {
+	endToEndBuffer = [endToEndBufferSize]endToEndValues{}
 	value, err := New(
 		Options.BufferCapacity(endToEndBufferSize),
 		Options.SingleWriter(writerCount <= 1),
 		Options.NewHandlerGroup(newEvenSequenceHandler(), newOddSequenceHandler()),
 		Options.NewHandlerGroup(newEvenSequenceHandler(), newOddSequenceHandler()),
-		Options.NewHandlerGroup(newEvenSequenceHandler(), newOddSequenceHandler()),
-		Options.NewHandlerGroup(newEvenSequenceHandler(), newOddSequenceHandler()),
-		Options.NewHandlerGroup(&verificationHandler{t: t}),
 	)
 	if err != nil {
 		panic(err)
@@ -67,10 +69,10 @@ func newEndToEndDisruptor(writerCount int, t *testing.T) Disruptor {
 func writeEndToEndEntry(sequence int64) {
 	entry := &endToEndBuffer[sequence&EndToEndBufferMask]
 	entry.Sequence = sequence
-	entry.Value1 = sequence + 1
-	entry.Value2 = sequence + 2
-	entry.Value3 = sequence + 3
-	entry.Value4 = sequence + 4
+	entry.Value1 += sequence + 1
+	entry.Value2 += sequence + 2
+	entry.Value3 += sequence + 3
+	entry.Value4 += sequence + 4
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,35 +103,43 @@ func (this endToEndHandler) Handle(lower, upper int64) {
 	}
 }
 
-type verificationHandler struct{ t *testing.T }
-
-func (this *verificationHandler) Handle(lower, upper int64) {
-	for sequence := lower; sequence <= upper; sequence++ {
-		assertEndToEndEntry(this.t, int(sequence&EndToEndBufferMask))
+func verifyEndToEndBuffer(t *testing.T) {
+	t.Helper()
+	for i := range endToEndBuffer {
+		assertEndToEndEntry(t, i)
 	}
 }
 func assertEndToEndEntry(t *testing.T, index int) {
 	t.Helper()
 	entry := endToEndBuffer[index]
-	sequence := entry.Sequence
-	assertEndToEndField(t, index, sequence, "Value1", entry.Value1, sequence+1)
-	assertEndToEndField(t, index, sequence, "Value2", entry.Value2, sequence+2)
-	assertEndToEndField(t, index, sequence, "Value3", entry.Value3, sequence+3)
-	assertEndToEndField(t, index, sequence, "Value4", entry.Value4, sequence+4)
+	assertEndToEndField(t, index, "Value1", entry.Value1, expectedEndToEndValue(index, 1))
+	assertEndToEndField(t, index, "Value2", entry.Value2, expectedEndToEndValue(index, 2))
+	assertEndToEndField(t, index, "Value3", entry.Value3, expectedEndToEndValue(index, 3))
+	assertEndToEndField(t, index, "Value4", entry.Value4, expectedEndToEndValue(index, 4))
 }
-func assertEndToEndField(t *testing.T, index int, sequence int64, name string, actual, base int64) {
+func expectedEndToEndValue(index int, offset int64) int64 {
+	var value int64
+	for wrap := int64(0); wrap < endToEndWraps; wrap++ {
+		sequence := int64(index) + wrap*endToEndBufferSize
+		value = (value + sequence + offset) * endToEndMultiplier
+	}
+	return value
+}
+func assertEndToEndField(t *testing.T, index int, name string, actual, expected int64) {
 	t.Helper()
-	if expected := base * endToEndMultiplier; actual != expected {
-		t.Errorf("entry %d (seq %d): %s=%d, want %d", index, sequence, name, actual, expected)
+	if actual != expected {
+		t.Errorf("entry %d: %s=%d, want %d", index, name, actual, expected)
 	}
 }
 
 var endToEndBuffer [endToEndBufferSize]endToEndValues
 
 const (
-	endToEndBufferSize    = 1024 * 16
-	EndToEndBufferMask    = endToEndBufferSize - 1
-	endToEndSequences     = endToEndBufferSize * 4
-	endToEndHandlerGroups = 4
-	endToEndMultiplier    = 1 << endToEndHandlerGroups // 16
+	endToEndBufferSize      = 1024 * 128
+	EndToEndBufferMask      = endToEndBufferSize - 1
+	endToEndSequences       = endToEndBufferSize * 4
+	endToEndWraps           = endToEndSequences / endToEndBufferSize
+	endToEndHandlerGroups   = 2
+	endToEndMultiplier  = 1 << endToEndHandlerGroups
+	endToEndWriterCount = 2
 )
