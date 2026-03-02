@@ -151,7 +151,7 @@ func BenchmarkSharedSequencer(b *testing.B) {
 	b.Run("MP MC/R4", func(b *testing.B) { benchmarkDisruptor(b, reserve4, 4, nopHandler{}, nopHandler{}) })
 }
 func benchmarkDisruptor(b *testing.B, count uint32, writerCount uint8, consumers ...Handler) {
-	benchmarkDisruptorWith(b, count, int(writerCount), consumers, Options.Writers(writerCount))
+	benchmarkDisruptorWith(b, count, int(writerCount), consumers, Options.WriterCount(writerCount))
 }
 func benchmarkDisruptorWith(b *testing.B, count uint32, writerCount int, consumers []Handler, opts ...option) {
 	iterations := int64(b.N)

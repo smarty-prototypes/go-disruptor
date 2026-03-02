@@ -19,7 +19,7 @@ func New(options ...option) (Disruptor, error) {
 	}
 
 	upperSequence := newSequence()
-	if config.Writers <= 1 {
+	if config.WriterCount <= 1 {
 		listener, handledBarrier := config.newListeners(newAtomicBarrier(upperSequence))
 		sequencer := newSequencer(config.BufferCapacity, upperSequence, handledBarrier, config.WaitStrategy)
 		return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
@@ -27,7 +27,7 @@ func New(options ...option) (Disruptor, error) {
 
 	sequencer := newSharedSequencer(config.BufferCapacity, upperSequence, config.WaitStrategy)
 	listener, handledBarrier := config.newListeners(sequencer)
-	sequencer.consumerBarrier = handledBarrier
+	sequencer.consumerBarrier = handledBarrier // bi-directional dependency
 	return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
 }
 func (this configuration) newListeners(committedBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
@@ -56,27 +56,19 @@ func (this configuration) newListeners(committedBarrier sequenceBarrier) (listen
 	return newCompositeListener(listeners), handledBarrier
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type configuration struct {
-	BufferCapacity uint32
-	Writers        uint8
-	WaitStrategy   WaitStrategy
-	HandlerGroups  [][]Handler
-}
-
 // BufferCapacity sets the number of slots in the ring buffer. Must be a power of 2. Default: 1024.
 func (singleton) BufferCapacity(value uint32) option {
 	return func(this *configuration) { this.BufferCapacity = value }
 }
 
-// Writers indicates the number of writers that will be operating on the underlying Sequencer. Any value over 1 will
-// configure the Disruptor to utilize a shared, thread-safe Sequencer.
-func (singleton) Writers(value uint8) option {
-	return func(this *configuration) { this.Writers = value }
+// WriterCount indicates the number of active writers that will be operating on the underlying Sequencer concurrently.
+// A value > 1 will configure the Disruptor to utilize a shared, goroutine-safe Sequencer.
+func (singleton) WriterCount(value uint8) option {
+	return func(this *configuration) { this.WriterCount = value }
 }
 
-// WaitStrategy sets the backpressure strategy used by both producers and consumers. Default: defaultWaitStrategy.
+// WaitStrategy sets the backpressure strategy used by both producers and consumers and has the ability to profoundly
+// affect the throughput, latency, and other performance characteristics of the various producers and consumers.
 func (singleton) WaitStrategy(value WaitStrategy) option {
 	return func(this *configuration) { this.WaitStrategy = value }
 }
@@ -98,6 +90,7 @@ func (singleton) NewHandlerGroup(values ...Handler) option {
 		}
 	}
 }
+
 func (singleton) apply(options ...option) option {
 	return func(this *configuration) {
 		for _, item := range Options.defaults(options...) {
@@ -108,11 +101,17 @@ func (singleton) apply(options ...option) option {
 func (singleton) defaults(options ...option) []option {
 	return append([]option{
 		Options.BufferCapacity(1024),
-		Options.Writers(1),
+		Options.WriterCount(1),
 		Options.WaitStrategy(defaultWaitStrategy{}),
 	}, options...)
 }
 
+type configuration struct {
+	BufferCapacity uint32
+	WriterCount    uint8
+	WaitStrategy   WaitStrategy
+	HandlerGroups  [][]Handler
+}
 type singleton struct{}
 type option func(*configuration)
 

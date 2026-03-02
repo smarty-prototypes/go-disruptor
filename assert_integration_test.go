@@ -57,7 +57,7 @@ func newEndToEndDisruptor(writerCount uint8) Disruptor {
 	endToEndBuffer = [endToEndBufferSize]endToEndValues{}
 	value, err := New(
 		Options.BufferCapacity(endToEndBufferSize),
-		Options.Writers(writerCount),
+		Options.WriterCount(writerCount),
 		Options.NewHandlerGroup(newEvenSequenceHandler(), newOddSequenceHandler()),
 		Options.NewHandlerGroup(newEvenSequenceHandler(), newOddSequenceHandler()),
 	)
