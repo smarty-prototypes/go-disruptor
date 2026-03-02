@@ -11,15 +11,10 @@ type Disruptor interface {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// ListenCloser combines Listener with io.Closer, allowing consumers to be started and stopped.
+// ListenCloser processes events from the ring buffer. Listen blocks the calling goroutine until the listener is closed.
 type ListenCloser interface {
-	Listener
-	io.Closer
-}
-
-// Listener processes events from the ring buffer. Listen blocks the calling goroutine until the listener is closed.
-type Listener interface {
 	Listen()
+	io.Closer
 }
 
 // WaitStrategy provides pluggable backpressure for both producers and consumers. The default implementation uses
