@@ -9,9 +9,12 @@ test.long:
 benchmark:
 	go test -bench=. -benchmem
 
+benchmark.relaxed:
+	go test -bench=. -benchmem -tags relaxed_atomics -ldflags=-checklinkname=0
+
 compile:
 	go build ./...
 
 build: test compile
 
-.PHONY: test test.long compile build benchmark
+.PHONY: test test.long compile build benchmark benchmark.relaxed
