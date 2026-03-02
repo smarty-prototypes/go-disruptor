@@ -13,6 +13,7 @@ type atomicSequence struct {
 
 func newSequence() (this *atomicSequence) {
 	for this = new(atomicSequence); uintptr(unsafe.Pointer(this))%CacheLineBytes != 0; this = new(atomicSequence) {
+		// not cache aligned, try again
 	}
 
 	this.Store(defaultSequenceValue)
@@ -21,7 +22,7 @@ func newSequence() (this *atomicSequence) {
 
 // newSequences allocates a contiguous, cache-line-aligned slice of *atomicSequence
 func newSequences(count int) []*atomicSequence {
-	var contiguous []atomicSequence
+	var contiguous []atomicSequence // single, contiguous allocation
 	for contiguous = make([]atomicSequence, count); uintptr(unsafe.Pointer(&contiguous[0]))%CacheLineBytes != 0; contiguous = make([]atomicSequence, count) {
 		// not cache aligned, try again
 	}
