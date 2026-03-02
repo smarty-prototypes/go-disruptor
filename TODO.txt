@@ -1,1 +1,0 @@
-Max number of messages/events to handle per invocation to Handle()
