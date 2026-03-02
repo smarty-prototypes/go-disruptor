@@ -23,12 +23,17 @@ func New(options ...option) (Disruptor, error) {
 		listener, handledBarrier := config.newListeners(newAtomicBarrier(upperSequence))
 		sequencer := newSequencer(config.BufferCapacity, upperSequence, handledBarrier, config.WaitStrategy)
 		return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
+	} else if config.WriterCount < 4 {
+		sequencer := newSimpleSharedSequencer(config.BufferCapacity, upperSequence, config.WaitStrategy)
+		listener, handledBarrier := config.newListeners(sequencer)
+		sequencer.consumerBarrier = handledBarrier // bi-directional dependency
+		return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
+	} else {
+		sequencer := newSharedSequencer(config.BufferCapacity, upperSequence, config.WaitStrategy)
+		listener, handledBarrier := config.newListeners(sequencer)
+		sequencer.consumerBarrier = handledBarrier // bi-directional dependency
+		return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
 	}
-
-	sequencer := newSharedSequencer(config.BufferCapacity, upperSequence, config.WaitStrategy)
-	listener, handledBarrier := config.newListeners(sequencer)
-	sequencer.consumerBarrier = handledBarrier // bi-directional dependency
-	return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
 }
 func (this configuration) newListeners(committedBarrier sequenceBarrier) (listener ListenCloser, handledBarrier sequenceBarrier) {
 	handledBarrier = committedBarrier
