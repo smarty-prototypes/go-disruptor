@@ -19,14 +19,9 @@ func New(options ...option) (Disruptor, error) {
 	}
 
 	upperSequence := newSequence()
-	if config.WriterContention == ContentionNone {
+	if config.Writers <= 1 {
 		listener, handledBarrier := config.newListeners(newAtomicBarrier(upperSequence))
 		sequencer := newSequencer(config.BufferCapacity, upperSequence, handledBarrier, config.WaitStrategy)
-		return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
-	} else if config.WriterContention == ContentionLow {
-		sequencer := newLowContentionSequencer(config.BufferCapacity, upperSequence, config.WaitStrategy)
-		listener, handledBarrier := config.newListeners(sequencer)
-		sequencer.consumerBarrier = handledBarrier
 		return &defaultDisruptor{ListenCloser: listener, Sequencer: sequencer}, nil
 	}
 
@@ -64,10 +59,10 @@ func (this configuration) newListeners(committedBarrier sequenceBarrier) (listen
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type configuration struct {
-	BufferCapacity   uint32
-	WriterContention WriterContention
-	WaitStrategy     WaitStrategy
-	HandlerGroups    [][]Handler
+	BufferCapacity uint32
+	Writers        uint8
+	WaitStrategy   WaitStrategy
+	HandlerGroups  [][]Handler
 }
 
 // BufferCapacity sets the number of slots in the ring buffer. Must be a power of 2. Default: 1024.
@@ -75,9 +70,10 @@ func (singleton) BufferCapacity(value uint32) option {
 	return func(this *configuration) { this.BufferCapacity = value }
 }
 
-// WriterContention indicates the number of producers that will be writing to the Disruptor's Sequencer.
-func (singleton) WriterContention(value WriterContention) option {
-	return func(this *configuration) { this.WriterContention = value }
+// Writers indicates the number of writers that will be operating on the underlying Sequencer. Any value over 1 will
+// configure the Disruptor to utilize a shared, thread-safe Sequencer.
+func (singleton) Writers(value uint8) option {
+	return func(this *configuration) { this.Writers = value }
 }
 
 // WaitStrategy sets the backpressure strategy used by both producers and consumers. Default: defaultWaitStrategy.
@@ -112,7 +108,7 @@ func (singleton) apply(options ...option) option {
 func (singleton) defaults(options ...option) []option {
 	return append([]option{
 		Options.BufferCapacity(1024),
-		Options.WriterContention(ContentionNone),
+		Options.Writers(1),
 		Options.WaitStrategy(defaultWaitStrategy{}),
 	}, options...)
 }

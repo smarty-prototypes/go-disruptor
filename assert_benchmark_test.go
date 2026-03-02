@@ -138,31 +138,20 @@ func BenchmarkSequencer(b *testing.B) {
 			writer.Commit(i, i)
 		}
 	})
-	b.Run("SP SC", func(b *testing.B) { benchmarkDisruptor(b, false, reserve1, 1, nopHandler{}) })
-	b.Run("SP4SC", func(b *testing.B) { benchmarkDisruptor(b, false, reserve4, 1, nopHandler{}) })
-	b.Run("SP MC", func(b *testing.B) { benchmarkDisruptor(b, false, reserve1, 1, nopHandler{}, nopHandler{}) })
-	b.Run("SP4MC", func(b *testing.B) { benchmarkDisruptor(b, false, reserve4, 1, nopHandler{}, nopHandler{}) })
+	b.Run("SP SC", func(b *testing.B) { benchmarkDisruptor(b, reserve1, 1, nopHandler{}) })
+	b.Run("SP4SC", func(b *testing.B) { benchmarkDisruptor(b, reserve4, 1, nopHandler{}) })
+	b.Run("SP MC", func(b *testing.B) { benchmarkDisruptor(b, reserve1, 1, nopHandler{}, nopHandler{}) })
+	b.Run("SP4MC", func(b *testing.B) { benchmarkDisruptor(b, reserve4, 1, nopHandler{}, nopHandler{}) })
 }
 func BenchmarkSharedSequencer(b *testing.B) {
-	b.Run("SP SC/R1", func(b *testing.B) { benchmarkDisruptor(b, true, reserve1, 1, nopHandler{}) })
-	b.Run("MP SC/R1", func(b *testing.B) { benchmarkDisruptor(b, true, reserve1, 4, nopHandler{}) })
-	b.Run("MP SC/R4", func(b *testing.B) { benchmarkDisruptor(b, true, reserve4, 4, nopHandler{}) })
-	b.Run("MP MC/R1", func(b *testing.B) { benchmarkDisruptor(b, true, reserve1, 4, nopHandler{}, nopHandler{}) })
-	b.Run("MP MC/R4", func(b *testing.B) { benchmarkDisruptor(b, true, reserve4, 4, nopHandler{}, nopHandler{}) })
+	b.Run("SP SC/R1", func(b *testing.B) { benchmarkDisruptor(b, reserve1, 1, nopHandler{}) })
+	b.Run("MP SC/R1", func(b *testing.B) { benchmarkDisruptor(b, reserve1, 4, nopHandler{}) })
+	b.Run("MP SC/R4", func(b *testing.B) { benchmarkDisruptor(b, reserve4, 4, nopHandler{}) })
+	b.Run("MP MC/R1", func(b *testing.B) { benchmarkDisruptor(b, reserve1, 4, nopHandler{}, nopHandler{}) })
+	b.Run("MP MC/R4", func(b *testing.B) { benchmarkDisruptor(b, reserve4, 4, nopHandler{}, nopHandler{}) })
 }
-func BenchmarkSharedOrderedSequencer(b *testing.B) {
-	mk := func(b *testing.B, reserve uint32, writers int, consumers ...Handler) {
-		benchmarkDisruptorWith(b, reserve, writers, consumers, Options.WriterContention(ContentionLow))
-	}
-	b.Run("SP SC/R1", func(b *testing.B) { mk(b, reserve1, 1, nopHandler{}) })
-	b.Run("MP SC/R1", func(b *testing.B) { mk(b, reserve1, 2, nopHandler{}) })
-	b.Run("MP SC/R4", func(b *testing.B) { mk(b, reserve4, 2, nopHandler{}) })
-	b.Run("MP MC/R1", func(b *testing.B) { mk(b, reserve1, 2, nopHandler{}, nopHandler{}) })
-	b.Run("MP MC/R4", func(b *testing.B) { mk(b, reserve4, 2, nopHandler{}, nopHandler{}) })
-	b.Run("MP3MC/R4", func(b *testing.B) { mk(b, reserve4, 3, nopHandler{}, nopHandler{}) })
-}
-func benchmarkDisruptor(b *testing.B, shared bool, count uint32, writerCount int, consumers ...Handler) {
-	benchmarkDisruptorWith(b, count, writerCount, consumers, Options.WriterContention(WriterContention(writerCount)))
+func benchmarkDisruptor(b *testing.B, count uint32, writerCount uint8, consumers ...Handler) {
+	benchmarkDisruptorWith(b, count, int(writerCount), consumers, Options.Writers(writerCount))
 }
 func benchmarkDisruptorWith(b *testing.B, count uint32, writerCount int, consumers []Handler, opts ...option) {
 	iterations := int64(b.N)

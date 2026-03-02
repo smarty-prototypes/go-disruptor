@@ -84,13 +84,3 @@ const (
 	// have not yet advanced far enough and the ring buffer has insufficient capacity.
 	ErrCapacityUnavailable = -2
 )
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type WriterContention uint8
-
-const (
-	ContentionNone WriterContention = 1
-	ContentionLow  WriterContention = 2
-	ContentionHigh WriterContention = 4
-)
