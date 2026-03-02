@@ -18,13 +18,13 @@ func newSequence() *atomicSequence {
 
 // newSequences allocates a slice of *atomicSequence in a contiguous space in memory
 func newSequences(count int) []*atomicSequence {
-	backing := make([]atomicSequence, count)
-	sequences := make([]*atomicSequence, count)
-	for i := range sequences {
-		backing[i].Store(defaultSequenceValue)
-		sequences[i] = &backing[i]
+	actual := make([]atomicSequence, count)
+	this := make([]*atomicSequence, count)
+	for i := range this {
+		actual[i].Store(defaultSequenceValue)
+		this[i] = &actual[i]
 	}
-	return sequences
+	return this
 }
 
 const defaultSequenceValue = -1
