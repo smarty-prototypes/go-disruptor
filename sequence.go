@@ -11,8 +11,10 @@ type atomicSequence struct {
 	atomic.Int64
 }
 
-func newSequence() *atomicSequence {
-	this := &atomicSequence{}
+func newSequence() (this *atomicSequence) {
+	for this = new(atomicSequence); uintptr(unsafe.Pointer(this))%CacheLineBytes != 0; this = new(atomicSequence) {
+	}
+
 	this.Store(defaultSequenceValue)
 	return this
 }
