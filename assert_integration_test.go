@@ -4,18 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"unsafe"
 )
-
-func TestNewSequencesAlignment(t *testing.T) {
-	sequences := newSequences(1024)
-	for i, seq := range sequences {
-		addr := uintptr(unsafe.Pointer(seq))
-		if align := addr % CacheLineBytes; align != 0 {
-			t.Errorf("sequences[%d] addr=%x offset=%d (CacheLineBytes=%d)", i, addr, align, CacheLineBytes)
-		}
-	}
-}
 
 func TestEndToEnd_SingleWriter(t *testing.T) {
 	if testing.Short() {

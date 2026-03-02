@@ -19,11 +19,18 @@ func newSequence() (this *atomicSequence) {
 	return this
 }
 
-// newSequences allocates a slice of *atomicSequence in a contiguous space in memory
+// newSequences allocates a contiguous, cache-line-aligned slice of *atomicSequence
 func newSequences(count int) []*atomicSequence {
+	var contiguous []atomicSequence
+	for contiguous = make([]atomicSequence, count); uintptr(unsafe.Pointer(&contiguous[0]))%CacheLineBytes != 0; contiguous = make([]atomicSequence, count) {
+		// not cache aligned, try again
+	}
+
+	// guaranteed cache alignment of underlying sequence values which are *contiguous*
 	this := make([]*atomicSequence, count)
 	for i := range this {
-		this[i] = newSequence()
+		this[i] = &contiguous[i]
+		this[i].Store(defaultSequenceValue)
 	}
 	return this
 }
