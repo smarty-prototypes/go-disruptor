@@ -142,7 +142,7 @@ func (this *sharedSequencer) hasAvailableCapacity(previousReservedSequence, coun
 
 func (this *sharedSequencer) Commit(lower, upper int64) {
 	for mask := int64(this.capacity) - 1; lower <= upper; lower++ {
-		int32Store(&this.committedSlots[lower&mask], int32(lower>>this.shift)) // see notes above for shift field
+		this.committedSlots[lower&mask].Store(int32(lower >> this.shift)) // see notes above for shift field
 	}
 }
 
@@ -150,7 +150,7 @@ func (this *sharedSequencer) Load(lower int64) int64 {
 	upper := this.reservedSequence.Load()
 
 	for mask := int64(this.capacity) - 1; lower <= upper; lower++ {
-		if int32Load(&this.committedSlots[lower&mask]) != int32(lower>>this.shift) {
+		if this.committedSlots[lower&mask].Load() != int32(lower>>this.shift) {
 			return lower - 1
 		}
 	}

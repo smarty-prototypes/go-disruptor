@@ -150,14 +150,6 @@ func BenchmarkSharedSequencer(b *testing.B) {
 	b.Run("MP MC/R1", func(b *testing.B) { benchmarkDisruptor(b, reserve1, 4, nopHandler{}, nopHandler{}) })
 	b.Run("MP MC/R4", func(b *testing.B) { benchmarkDisruptor(b, reserve4, 4, nopHandler{}, nopHandler{}) })
 }
-func BenchmarkSimpleSharedSequencer(b *testing.B) {
-	b.Run("SP SC/R1", func(b *testing.B) { benchmarkDisruptor(b, reserve1, 1, nopHandler{}) })
-	b.Run("MP SC/R1", func(b *testing.B) { benchmarkDisruptor(b, reserve1, 2, nopHandler{}) })
-	b.Run("MP SC/R4", func(b *testing.B) { benchmarkDisruptor(b, reserve4, 2, nopHandler{}) })
-	b.Run("MP MC/R1", func(b *testing.B) { benchmarkDisruptor(b, reserve1, 2, nopHandler{}, nopHandler{}) })
-	b.Run("MP MC/R4", func(b *testing.B) { benchmarkDisruptor(b, reserve4, 2, nopHandler{}, nopHandler{}) })
-	b.Run("MP3MC/R4", func(b *testing.B) { benchmarkDisruptor(b, reserve4, 3, nopHandler{}, nopHandler{}) })
-}
 func benchmarkDisruptor(b *testing.B, count uint32, writerCount uint8, consumers ...Handler) {
 	benchmarkDisruptorWith(b, count, int(writerCount), consumers, Options.WriterCount(writerCount))
 }
