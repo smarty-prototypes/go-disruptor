@@ -15,9 +15,9 @@ import (
 
 func BenchmarkChannel(b *testing.B) {
 	b.Run("SPSC/Blocking", func(b *testing.B) { benchmarkChannelBlocking(b, 1) })
-	b.Run("MPSC/Blocking", func(b *testing.B) { benchmarkChannelBlocking(b, 2) })
+	b.Run("MPSC/Blocking", func(b *testing.B) { benchmarkChannelBlocking(b, 4) })
 	b.Run("SPSC/NonBlocking", func(b *testing.B) { benchmarkChannelNonBlocking(b, 1) })
-	b.Run("MPSC/NonBlocking", func(b *testing.B) { benchmarkChannelNonBlocking(b, 2) })
+	b.Run("MPSC/NonBlocking", func(b *testing.B) { benchmarkChannelNonBlocking(b, 4) })
 }
 func benchmarkChannelBlocking(b *testing.B, writers int64) {
 	channel := make(chan int64, 1024*16)
