@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/smarty-prototypes/go-disruptor"
+	"github.com/smarty/go-disruptor"
 )
 
 func main() {

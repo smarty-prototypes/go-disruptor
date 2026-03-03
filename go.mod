@@ -1,3 +1,3 @@
-module github.com/smarty-prototypes/go-disruptor
+module github.com/smarty/go-disruptor
 
 go 1.26
