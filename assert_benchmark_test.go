@@ -10,7 +10,7 @@ import (
 // SP   = single-producer
 // MP   = multi-producer
 // SC   = single-consumer
-// MC   = multi-producer
+// MC   = multi-consumer
 // R[N] = reserve N number of slots
 
 func BenchmarkChannel(b *testing.B) {
